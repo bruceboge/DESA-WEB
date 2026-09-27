@@ -47,25 +47,25 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
+        url: "/images/desa-logo.jpg",
+        width: 1024,
+        height: 1024,
+        alt: "Official Crest of DESA - DeKUT Engineering Students Association",
+      },
+      {
         url: "/images/dekut-campus.jpg",
         width: 1200,
         height: 630,
         alt: "Dedan Kimathi University of Technology Engineering Complex & Campus",
       },
-      {
-        url: "/images/desa-logo.jpg",
-        width: 600,
-        height: 600,
-        alt: "Official Crest of DESA - DeKUT Engineering Students Association",
-      },
     ],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
       "Official portal for student engineers at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
-    images: ["/images/dekut-campus.jpg"],
+    images: ["/images/desa-logo.jpg"],
   },
   robots: {
     index: true,
