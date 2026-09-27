@@ -16,19 +16,14 @@ import {
 } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Leadership & Committees | DESA - DeKUT Engineering Students Association",
+  title: "Leadership & Committees | DESA DeKUT",
   description:
-    "Meet the elected Executive Council, Cohort Representatives, and working Committees steering the Dedan Kimathi University Engineering Students Association (DESA) at DeKUT.",
-  keywords: [
-    "DESA Leadership",
-    "DeKUT Engineering Committee",
-    "Executive Council DESA",
-    "Cohort Representatives",
-    "Dedan Kimathi University Engineering Students Association",
-  ],
+    "Meet the elected Executive Council, Cohort Representatives, and working Committees steering the Engineering Students Association at Dedan Kimathi University of Technology.",
+  alternates: { canonical: "/leadership" },
 };
 
 interface LeaderProfile {
+  name: string;
   role: string;
   department?: string;
   year?: string;
@@ -36,10 +31,12 @@ interface LeaderProfile {
   mandate: string;
   email: string;
   badge: string;
+  photo?: string;
 }
 
 const executiveCouncil: LeaderProfile[] = [
   {
+    name: "Executive Chairperson",
     role: "Chairperson",
     department: "Executive Office",
     year: "Elected Term",
@@ -49,6 +46,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Vice Chairperson",
     role: "Vice Chairperson",
     department: "Executive Office",
     year: "Elected Term",
@@ -58,6 +56,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Secretary-General",
     role: "Secretary-General",
     department: "Secretariat",
     year: "Elected Term",
@@ -67,6 +66,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Treasurer",
     role: "Treasurer",
     department: "Treasury",
     year: "Elected Term",
@@ -76,6 +76,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Organizing Secretary",
     role: "Organizing Secretary",
     department: "Events & Logistics",
     year: "Elected Term",
@@ -85,6 +86,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Publicity Manager",
     role: "Publicity Manager",
     department: "Publicity & Media",
     year: "Elected Term",
@@ -94,6 +96,7 @@ const executiveCouncil: LeaderProfile[] = [
     badge: "Executive Official",
   },
   {
+    name: "Technical Projects Lead",
     role: "Technical Projects Lead",
     department: "Technical & Innovation",
     year: "Elected Term",
@@ -281,7 +284,7 @@ export default function LeadershipPage() {
                 className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-[#e5a93c] transition-all flex flex-col justify-between group"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-4">
                     <span className="inline-block text-[11px] font-bold uppercase tracking-wider text-[#b87a14] bg-[#e5a93c]/15 px-2.5 py-1 rounded-md border border-[#e5a93c]/30">
                       {leader.badge}
                     </span>
@@ -290,11 +293,36 @@ export default function LeadershipPage() {
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-bold text-[#071325] group-hover:text-[#b87a14] transition-colors">
-                    {leader.role}
-                  </h3>
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-[#071325] to-[#162a4a] border border-[#e5a93c]/40 shadow-inner flex items-center justify-center text-white shrink-0">
+                      {leader.photo ? (
+                        <Image
+                          src={leader.photo}
+                          alt={`${leader.name} - ${leader.role}`}
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center font-extrabold text-xs text-[#e5a93c] tracking-wider">
+                          {leader.role.split(" ").map(w => w[0]).slice(0, 2).join("")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-bold text-[#071325] group-hover:text-[#b87a14] transition-colors leading-snug truncate">
+                        {leader.name}
+                      </h3>
+                      <p className="text-xs font-semibold text-[#0a5c36] leading-tight">
+                        {leader.role}
+                      </p>
+                      <span className="text-[11px] text-slate-400 block">
+                        {leader.department}
+                      </span>
+                    </div>
+                  </div>
 
-                  <p className="text-xs text-slate-600 mt-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                     {leader.bio}
                   </p>
 

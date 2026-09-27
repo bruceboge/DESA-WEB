@@ -4,9 +4,10 @@ import Link from "next/link";
 import { ChevronRightIcon, ShieldCheckIcon, MailIcon, MapPinIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | DESA - DeKUT School of Engineering",
+  title: "Privacy Policy | DESA DeKUT",
   description:
     "Data privacy policy and data protection framework for the Dedan Kimathi University Engineering Students Association (DESA) in compliance with the Kenya Data Protection Act (2019).",
+  alternates: { canonical: "/privacy" },
 };
 
 export default function PrivacyPolicyPage() {

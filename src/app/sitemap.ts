@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://desa-dekut.co.ke";
+  const baseUrl = "https://esa-dekut.vercel.app";
   const currentDate = new Date().toISOString();
 
   return [
@@ -14,23 +14,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${baseUrl}/departments`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.95,
-    },
-    {
-      url: `${baseUrl}/resources`,
-      lastModified: currentDate,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/leadership`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.9,
     },
     {
       url: `${baseUrl}/innovations`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/resources`,
       lastModified: currentDate,
       changeFrequency: "weekly",
       priority: 0.85,
@@ -39,19 +39,49 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/roll-call`,
       lastModified: currentDate,
       changeFrequency: "weekly",
-      priority: 0.85,
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/gallery`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.8,
+      changeFrequency: "monthly",
+      priority: 0.75,
     },
     {
       url: `${baseUrl}/contact`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/register`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: currentDate,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: currentDate,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/cookies`,
+      lastModified: currentDate,
+      changeFrequency: "yearly",
+      priority: 0.3,
+    },
+    {
+      url: `${baseUrl}/refund-policy`,
+      lastModified: currentDate,
+      changeFrequency: "yearly",
+      priority: 0.3,
     },
   ];
 }

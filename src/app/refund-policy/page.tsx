@@ -4,9 +4,10 @@ import Link from "next/link";
 import { ChevronRightIcon, ShieldCheckIcon, MailIcon, MapPinIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Refund & Membership Dues Policy | DESA - DeKUT School of Engineering",
+  title: "Refund & Membership Dues Policy | DESA DeKUT",
   description:
     "Official refund, event ticket cancellation, and membership dues policy for the Dedan Kimathi University Engineering Students Association (DESA).",
+  alternates: { canonical: "/refund-policy" },
 };
 
 export default function RefundPolicyPage() {

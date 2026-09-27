@@ -1,5 +1,5 @@
 import React from "react";
-import { MapPinIcon, PhoneIcon, MailIcon, ExternalLinkIcon } from "./Icons";
+import { MapPinIcon, PhoneIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, InstagramIcon } from "./Icons";
 
 export default function TopBar() {
   return (
@@ -43,13 +43,39 @@ export default function TopBar() {
           >
             Students Portal
           </a>
-          <span className="text-slate-700">|</span>
-          <a
-            href="/innovations"
-            className="hidden sm:inline-block text-[#e5a93c] hover:text-[#f6c867] font-medium transition-colors"
-          >
-            DESA Innovation Hub
-          </a>
+          <span className="text-slate-700 hidden md:inline">|</span>
+          <div className="flex items-center gap-2 pl-1 border-l border-slate-800 md:border-l-0 md:pl-0">
+            <a
+              href="https://www.tiktok.com/@desa_dekut"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="DESA TikTok @desa_dekut"
+              className="text-slate-400 hover:text-white transition-colors p-0.5"
+              title="TikTok: @desa_dekut"
+            >
+              <TikTokIcon className="w-3.5 h-3.5" />
+            </a>
+            <a
+              href="https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="DESA on LinkedIn"
+              className="text-slate-400 hover:text-[#0a66c2] transition-colors p-0.5"
+              title="LinkedIn: DESA"
+            >
+              <LinkedInIcon className="w-3.5 h-3.5" />
+            </a>
+            <a
+              href="https://www.instagram.com/dekut_engineering_students"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="DESA Instagram dekut_engineering students association"
+              className="text-slate-400 hover:text-[#e4405f] transition-colors p-0.5"
+              title="Instagram: dekut_engineering students association"
+            >
+              <InstagramIcon className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
     </div>

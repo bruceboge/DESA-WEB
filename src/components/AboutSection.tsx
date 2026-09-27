@@ -32,6 +32,7 @@ export default function AboutSection() {
                 src="/images/dekut-campus.jpg"
                 alt="DeKUT School of Engineering Academic Complex and Mount Kenya Landscape"
                 fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
               />
               <div className="relative z-10 bg-[#071325]/90 p-5 text-white border-t border-[#e5a93c]/30 backdrop-blur-sm">

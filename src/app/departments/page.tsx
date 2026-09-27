@@ -12,9 +12,10 @@ import {
 } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Departments | DESA - DeKUT Engineering Students Association",
+  title: "Engineering Departments | DESA DeKUT",
   description:
-    "Engineering departments represented within the Dedan Kimathi University Engineering Students Association (DESA).",
+    "Explore the five engineering departments at DeKUT — Mechatronic, Mechanical, Electrical & Electronic, Civil, and Chemical — represented by DESA student cohorts and faculty.",
+  alternates: { canonical: "/departments" },
 };
 
 const departmentsList = [

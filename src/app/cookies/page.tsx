@@ -4,9 +4,10 @@ import Link from "next/link";
 import { ChevronRightIcon, ShieldCheckIcon, MailIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy | DESA - DeKUT School of Engineering",
+  title: "Cookie Policy | DESA DeKUT",
   description:
     "Explanation of cookie usage, local browser storage, and privacy controls across the Dedan Kimathi University Engineering Students Association (DESA) website.",
+  alternates: { canonical: "/cookies" },
 };
 
 export default function CookiesPage() {

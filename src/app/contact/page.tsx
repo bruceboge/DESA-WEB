@@ -12,6 +12,9 @@ import {
   ShieldCheckIcon,
   ChevronRightIcon,
   ArrowRightIcon,
+  TikTokIcon,
+  LinkedInIcon,
+  InstagramIcon,
 } from "@/components/Icons";
 
 const contactChannels = [
@@ -201,6 +204,66 @@ export default function ContactPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Social Media Channels Grid */}
+          <div className="pt-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-3">
+              Official Social Media Handles
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* TikTok */}
+              <a
+                href="https://www.tiktok.com/@desa_dekut"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3.5 rounded-xl bg-slate-900 hover:bg-black text-white border border-slate-800 hover:border-slate-600 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
+              >
+                <div className="w-9 h-9 rounded-lg bg-black border border-slate-700 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
+                  <TikTokIcon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 block font-medium">TikTok</span>
+                  <span className="text-xs font-bold text-white group-hover:text-[#e5a93c] transition-colors truncate block">
+                    desa_dekut
+                  </span>
+                </div>
+              </a>
+              {/* LinkedIn */}
+              <a
+                href="https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3.5 rounded-xl bg-[#071325] hover:bg-[#0b1c36] text-white border border-slate-800 hover:border-[#0a66c2]/60 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
+              >
+                <div className="w-9 h-9 rounded-lg bg-[#0a66c2] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
+                  <LinkedInIcon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 block font-medium">LinkedIn</span>
+                  <span className="text-xs font-bold text-white group-hover:text-[#38bdf8] transition-colors truncate block">
+                    DESA
+                  </span>
+                </div>
+              </a>
+              {/* Instagram */}
+              <a
+                href="https://www.instagram.com/dekut_engineering_students"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-3.5 rounded-xl bg-[#140b20] hover:bg-[#1a0e2a] text-white border border-slate-800 hover:border-[#e4405f]/60 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
+              >
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
+                  <InstagramIcon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] text-slate-400 block font-medium">Instagram</span>
+                  <span className="text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors truncate block">
+                    dekut_engineering students
+                  </span>
+                </div>
+              </a>
+            </div>
           </div>
         </div>
 

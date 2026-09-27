@@ -22,6 +22,7 @@ export default function Hero() {
           src="/images/dekut-campus.jpg"
           alt="Dedan Kimathi University of Technology (DeKUT) Main Campus Lush Aerial View"
           fill
+          sizes="100vw"
           priority
           className="object-cover object-center opacity-70 transform scale-105 transition-transform duration-1000 ease-out"
         />

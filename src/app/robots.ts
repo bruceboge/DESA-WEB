@@ -13,6 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
       },
     ],
-    sitemap: "https://desa-dekut.co.ke/sitemap.xml",
+    sitemap: "https://esa-dekut.vercel.app/sitemap.xml",
   };
 }

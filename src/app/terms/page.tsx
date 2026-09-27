@@ -4,9 +4,10 @@ import Link from "next/link";
 import { ChevronRightIcon, ShieldCheckIcon, MailIcon, MapPinIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
-  title: "Terms and Conditions | DESA - DeKUT School of Engineering",
+  title: "Terms & Conditions | DESA DeKUT",
   description:
     "Official Terms and Conditions governing membership, portal utilization, and academic conduct for the Dedan Kimathi University Engineering Students Association (DESA).",
+  alternates: { canonical: "/terms" },
 };
 
 export default function TermsPage() {

@@ -1,9 +1,23 @@
 import React from "react";
+import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import AboutSection from "@/components/AboutSection";
 import FocusAreas from "@/components/FocusAreas";
 import GallerySection from "@/components/GallerySection";
 import CallForMembers from "@/components/CallForMembers";
+
+export const metadata: Metadata = {
+  title: "DESA | DeKUT Engineering Students Association — Nyeri, Kenya",
+  description:
+    "Official home of DESA at Dedan Kimathi University of Technology. Uniting Mechatronic, Mechanical, Electrical, Civil & Chemical engineering students through projects, hackathons, and industry partnerships.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "DESA | DeKUT Engineering Students Association",
+    description:
+      "Student engineering community at Dedan Kimathi University of Technology, Nyeri, Kenya. Projects, hackathons, academic resources & industry links.",
+    url: "/",
+  },
+};
 
 export default function HomePage() {
   return (
