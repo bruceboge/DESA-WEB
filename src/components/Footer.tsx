@@ -55,7 +55,7 @@ export default function Footer() {
             </a>
             {/* Instagram */}
             <a
-              href="https://www.instagram.com/dekut_engineering_students"
+              href="https://www.instagram.com/dekut_engineeringstudents"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-white transition-all duration-200 group hover:border-[#e4405f]/60 hover:shadow-lg hover:-translate-y-0.5"
@@ -65,14 +65,14 @@ export default function Footer() {
               </div>
               <div className="text-left">
                 <span className="text-[10px] text-slate-400 block leading-none font-medium">Instagram</span>
-                <span className="text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors leading-tight">dekut_engineering students</span>
+                <span className="text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors leading-tight">dekut_engineeringstudents</span>
               </div>
             </a>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-slate-800">
-          
+
           {/* Col 1: Brand & Identity */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-start gap-4">
@@ -101,11 +101,6 @@ export default function Footer() {
             <p className="text-xs text-slate-400 leading-relaxed">
               The premier professional association unifying student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical engineering at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.
             </p>
-
-            <div className="pt-2 text-xs text-slate-400">
-              <span className="font-semibold text-white">Affiliations:</span> Engineers Board of Kenya (EBK) • Institution of Engineers of Kenya (IEK)
-            </div>
-
             <div className="pt-2 flex items-center gap-3">
               <span className="text-[11px] text-slate-400 font-medium">Follow:</span>
               <a
@@ -129,12 +124,12 @@ export default function Footer() {
                 <LinkedInIcon className="w-3.5 h-3.5" />
               </a>
               <a
-                href="https://www.instagram.com/dekut_engineering_students"
+                href="https://www.instagram.com/dekut_engineeringstudents"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="DESA Instagram"
                 className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-[#e4405f] text-slate-300 hover:text-white flex items-center justify-center transition-all border border-slate-700/80 hover:border-[#e4405f]"
-                title="Instagram: dekut_engineering students association"
+                title="Instagram: dekut_engineeringstudents"
               >
                 <InstagramIcon className="w-3.5 h-3.5" />
               </a>

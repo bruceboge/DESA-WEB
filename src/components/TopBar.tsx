@@ -66,12 +66,12 @@ export default function TopBar() {
               <LinkedInIcon className="w-3.5 h-3.5" />
             </a>
             <a
-              href="https://www.instagram.com/dekut_engineering_students"
+              href="https://www.instagram.com/dekut_engineeringstudents"
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="DESA Instagram dekut_engineering students association"
+              aria-label="DESA Instagram @dekut_engineeringstudents"
               className="text-slate-400 hover:text-[#e4405f] transition-colors p-0.5"
-              title="Instagram: dekut_engineering students association"
+              title="Instagram: dekut_engineeringstudents"
             >
               <InstagramIcon className="w-3.5 h-3.5" />
             </a>

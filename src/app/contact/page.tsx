@@ -248,7 +248,7 @@ export default function ContactPage() {
               </a>
               {/* Instagram */}
               <a
-                href="https://www.instagram.com/dekut_engineering_students"
+                href="https://www.instagram.com/dekut_engineeringstudents"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-3.5 rounded-xl bg-[#140b20] hover:bg-[#1a0e2a] text-white border border-slate-800 hover:border-[#e4405f]/60 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
@@ -259,7 +259,7 @@ export default function ContactPage() {
                 <div className="min-w-0">
                   <span className="text-[10px] text-slate-400 block font-medium">Instagram</span>
                   <span className="text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors truncate block">
-                    dekut_engineering students
+                    dekut_engineeringstudents
                   </span>
                 </div>
               </a>

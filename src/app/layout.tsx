@@ -128,7 +128,7 @@ export default function RootLayout({
         sameAs: [
           "https://www.tiktok.com/@desa_dekut",
           "https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5",
-          "https://www.instagram.com/dekut_engineering_students"
+          "https://www.instagram.com/dekut_engineeringstudents"
         ],
         parentOrganization: {
           "@id": "https://www.dkut.ac.ke/#university",

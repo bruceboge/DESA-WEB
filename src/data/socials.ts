@@ -23,9 +23,9 @@ export const DESA_SOCIALS: SocialLink[] = [
   },
   {
     name: "Instagram",
-    handle: "dekut_engineering students",
-    subtitle: "association",
-    url: "https://www.instagram.com/dekut_engineering_students",
-    ariaLabel: "Follow DESA on Instagram dekut_engineering students association",
+    handle: "dekut_engineeringstudents",
+    subtitle: "Official Instagram",
+    url: "https://www.instagram.com/dekut_engineeringstudents",
+    ariaLabel: "Follow DESA on Instagram @dekut_engineeringstudents",
   },
 ];
