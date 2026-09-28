@@ -36,7 +36,7 @@ export default function Navbar() {
                 src="/images/desa-official-logo.png"
                 alt="DESA - Dedan Kimathi University Engineering Students Association Logo"
                 fill
-                sizes="56px"
+                unoptimized
                 className="object-contain"
                 priority
               />

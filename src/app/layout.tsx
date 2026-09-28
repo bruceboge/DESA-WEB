@@ -49,8 +49,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/images/desa-official-logo.png",
-        width: 332,
-        height: 333,
+        width: 1024,
+        height: 1024,
         alt: "Official Logo of DESA - DeKUT Engineering Students Association",
       },
       {

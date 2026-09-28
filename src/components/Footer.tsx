@@ -81,7 +81,7 @@ export default function Footer() {
                   src="/images/desa-official-logo.png"
                   alt="DESA - DeKUT Engineering Students Association Official Logo"
                   fill
-                  sizes="80px"
+                  unoptimized
                   className="object-contain"
                 />
               </div>

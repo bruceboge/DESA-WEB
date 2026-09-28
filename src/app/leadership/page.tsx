@@ -186,12 +186,12 @@ export default function LeadershipPage() {
 
             <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
               <div className="flex items-center gap-3 mb-4">
-                <div className="relative w-12 h-12 rounded-xl bg-white p-1 border border-[#e5a93c]">
+                <div className="relative w-12 h-12 shrink-0">
                   <Image
-                    src="/images/desa-logo.jpg"
-                    alt="DESA Official Crest"
+                    src="/images/desa-official-logo.png"
+                    alt="DESA Official Logo"
                     fill
-                    sizes="48px"
+                    unoptimized
                     className="object-contain"
                   />
                 </div>
