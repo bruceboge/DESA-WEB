@@ -73,16 +73,16 @@ export default function Footer() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 pb-12 border-b border-slate-800">
           
-          {/* Col 1: Brand & Identity — Square Logo */}
+          {/* Col 1: Brand & Identity */}
           <div className="lg:col-span-4 space-y-4">
             <div className="flex items-start gap-4">
-              <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white border-2 border-[#e5a93c] shadow-lg shrink-0">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 shrink-0">
                 <Image
-                  src="/images/desa-logo.jpg"
-                  alt="DESA - DeKUT Engineering Students Association Official Crest"
+                  src="/images/desa-official-logo.png"
+                  alt="DESA - DeKUT Engineering Students Association Official Logo"
                   fill
                   sizes="80px"
-                  className="object-contain p-1"
+                  className="object-contain"
                 />
               </div>
               <div className="pt-1">

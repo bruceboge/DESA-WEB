@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import CookieConsent from "@/components/CookieConsent";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const viewport: Viewport = {
   themeColor: "#071325",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | DESA DeKUT",
   },
   description:
-    "Official portal of DESA — the Engineering Students Association at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya. Student projects, hackathons, and resources across five engineering disciplines.",
+    "Official Website of DESA — the Engineering Students Association at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya. Student projects, hackathons, and resources across five engineering disciplines.",
   keywords: [
     "DESA DeKUT",
     "Dedan Kimathi University Engineering",
@@ -47,10 +48,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/desa-logo.jpg",
-        width: 1024,
-        height: 1024,
-        alt: "Official Crest of DESA - DeKUT Engineering Students Association",
+        url: "/images/desa-official-logo.png",
+        width: 332,
+        height: 333,
+        alt: "Official Logo of DESA - DeKUT Engineering Students Association",
       },
       {
         url: "/images/dekut-campus.jpg",
@@ -65,7 +66,7 @@ export const metadata: Metadata = {
     title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
       "Official portal for student engineers at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
-    images: ["/images/desa-logo.jpg"],
+    images: ["/images/desa-official-logo.png"],
   },
   robots: {
     index: true,
@@ -79,8 +80,11 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/images/desa-logo.jpg",
-    apple: "/images/desa-logo.jpg",
+    icon: "/images/desa-official-logo.png",
+    apple: "/images/desa-official-logo.png",
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
   },
 };
 
@@ -120,7 +124,7 @@ export default function RootLayout({
         name: "Dedan Kimathi University Engineering Students Association",
         alternateName: ["DESA", "DESA DeKUT", "DeKUT Engineering Students Association"],
         url: "https://esa-dekut.vercel.app",
-        logo: "https://esa-dekut.vercel.app/images/desa-logo.jpg",
+        logo: "https://esa-dekut.vercel.app/images/desa-official-logo.png",
         sameAs: [
           "https://www.tiktok.com/@desa_dekut",
           "https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5",
@@ -173,6 +177,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]">
+        <GoogleAnalytics />
         <TopBar />
         <Navbar />
         <main className="flex-1">

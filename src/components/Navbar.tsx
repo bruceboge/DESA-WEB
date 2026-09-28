@@ -31,13 +31,13 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo & University Identity */}
           <Link href="/" className="flex items-center gap-3.5 group">
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-white border-2 border-[#e5a93c] shadow-md group-hover:scale-105 transition-transform duration-300 shrink-0">
+            <div className="relative w-12 h-12 sm:w-14 sm:h-14 group-hover:scale-105 transition-transform duration-300 shrink-0">
               <Image
-                src="/images/desa-logo.jpg"
-                alt="DESA - Dedan Kimathi University Engineering Students Association Crest"
+                src="/images/desa-official-logo.png"
+                alt="DESA - Dedan Kimathi University Engineering Students Association Logo"
                 fill
                 sizes="56px"
-                className="object-contain p-1"
+                className="object-contain"
                 priority
               />
             </div>
