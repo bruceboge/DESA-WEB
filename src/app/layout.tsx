@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import CookieConsent from "@/components/CookieConsent";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
   themeColor: "#071325",
@@ -186,6 +187,7 @@ export default function RootLayout({
         <Footer />
         <BackToTop />
         <CookieConsent />
+        <Analytics />
       </body>
     </html>
   );
