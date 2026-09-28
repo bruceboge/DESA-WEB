@@ -52,6 +52,7 @@ export default function RollCallPage() {
     yearOfStudy: "Year 1",
     sessionDate: getTodayString(),
     sessionTopic: "",
+    website: "", // Honeypot field for bot trapping
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,6 +106,7 @@ export default function RollCallPage() {
           ...prev,
           fullName: "",
           regNumber: "",
+          website: "",
         }));
       } else {
         setSubmissionError(result.error || "Unable to submit attendance. Please try again.");
@@ -193,6 +195,32 @@ export default function RollCallPage() {
               )}
 
               <form onSubmit={handleCheckIn} className="space-y-4">
+                {/* Honeypot field: hidden from real users, traps automated spam bots */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "-9999px",
+                    top: "-9999px",
+                    opacity: 0,
+                    height: 0,
+                    width: 0,
+                    overflow: "hidden",
+                    pointerEvents: "none",
+                  }}
+                  aria-hidden="true"
+                >
+                  <label htmlFor="rollcall-website">Leave this field blank</label>
+                  <input
+                    id="rollcall-website"
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    value={formData.website}
+                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  />
+                </div>
+
                 {/* Session Date Selector */}
                 <div>
                   <label htmlFor="rollcall-date" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -221,6 +249,7 @@ export default function RollCallPage() {
                   <input
                     id="rollcall-topic"
                     type="text"
+                    maxLength={120}
                     placeholder="e.g. Weekly Assembly, Robotics Workshop, General Meeting"
                     value={formData.sessionTopic}
                     onChange={(e) => setFormData({ ...formData, sessionTopic: e.target.value })}
@@ -237,7 +266,10 @@ export default function RollCallPage() {
                     id="rollcall-name"
                     type="text"
                     required
-                    placeholder="e.g. Dedan Kimathi"
+                    minLength={2}
+                    maxLength={70}
+                    autoComplete="name"
+                    placeholder="e.g. Victor Mutua"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -253,9 +285,12 @@ export default function RollCallPage() {
                     id="rollcall-reg"
                     type="text"
                     required
-                    placeholder="e.g. E020-01-0999/2030"
+                    minLength={6}
+                    maxLength={30}
+                    autoComplete="off"
+                    placeholder="e.g. C025-01-1234/2023"
                     value={formData.regNumber}
-                    onChange={(e) => setFormData({ ...formData, regNumber: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, regNumber: e.target.value.toUpperCase() })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                   />
                 </div>

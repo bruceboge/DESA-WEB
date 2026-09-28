@@ -1,4 +1,12 @@
 import { NextResponse } from "next/server";
+import {
+  checkRateLimit,
+  getClientIp,
+  isHoneypotTriggered,
+  isValidName,
+  isValidRegNumber,
+  sanitizeForSheets,
+} from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
 
@@ -28,19 +36,86 @@ export async function GET() {
 // POST: Secure write-only submission directly to the private Google Sheet
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { regNumber, fullName, department, yearOfStudy, sessionDate, sessionTopic } = body;
+    const ip = getClientIp(request);
 
-    if (!regNumber || !fullName || !department || !yearOfStudy) {
+    // 1. IP Rate Limiting: Max 12 check-ins per minute per IP (accommodates shared campus Wi-Fi while blocking automated floods)
+    const rateCheck = checkRateLimit(ip, "roll-call", 12, 60);
+    if (!rateCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: "Missing required check-in fields" },
+        {
+          success: false,
+          error: `Too many check-ins from this network. Please wait ${rateCheck.retryAfter || 60} seconds before submitting again.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateCheck.retryAfter || 60),
+          },
+        }
+      );
+    }
+
+    const body = await request.json();
+    const { regNumber, fullName, department, yearOfStudy, sessionDate, sessionTopic, website } = body;
+
+    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
+    if (isHoneypotTriggered(website)) {
+      console.warn("Spam bot trapped by roll-call honeypot. Bypassing Google Sheets.");
+      return NextResponse.json({
+        success: true,
+        entry: {
+          id: `RC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          regNumber: regNumber || "C025-01-0000/2024",
+          fullName: fullName || "Student Attendee",
+          department: department || "Engineering",
+          yearOfStudy: yearOfStudy || "Year 1",
+          sessionDate: new Date().toISOString().split("T")[0],
+          sessionTopic: "General Assembly",
+          timestamp: "12:00 PM",
+          verified: true,
+        },
+        savedToSheets: false,
+      });
+    }
+
+    // 3. Strict Input Validations
+    const nameCheck = isValidName(fullName);
+    if (!nameCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: nameCheck.reason || "Invalid full name" },
         { status: 400 }
       );
     }
 
+    const regCheck = isValidRegNumber(regNumber);
+    if (!regCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: regCheck.reason || "Invalid registration number" },
+        { status: 400 }
+      );
+    }
+
+    if (!department || typeof department !== "string" || department.trim().length > 60) {
+      return NextResponse.json(
+        { success: false, error: "Please select a valid engineering department." },
+        { status: 400 }
+      );
+    }
+
+    if (!yearOfStudy || typeof yearOfStudy !== "string" || yearOfStudy.trim().length > 30) {
+      return NextResponse.json(
+        { success: false, error: "Please select your year of study." },
+        { status: 400 }
+      );
+    }
+
+    const topic = sessionTopic && typeof sessionTopic === "string" 
+      ? sessionTopic.trim().slice(0, 120) 
+      : "General Assembly";
+
     const todayDate = new Date().toISOString().split("T")[0];
     const finalDate = sessionDate && typeof sessionDate === "string" && sessionDate.trim().length > 0
-      ? sessionDate.trim()
+      ? sessionDate.trim().slice(0, 15)
       : todayDate;
 
     const timeString = new Date().toLocaleTimeString("en-KE", {
@@ -49,14 +124,15 @@ export async function POST(request: Request) {
       hour12: true,
     });
 
+    // 4. Formula Injection Sanitization: Prevent CSV / spreadsheet formula execution in Google Sheets
     const newRecord: RollCallRecord = {
       id: `RC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      regNumber: regNumber.trim().toUpperCase(),
-      fullName: fullName.trim(),
-      department,
-      yearOfStudy,
+      regNumber: sanitizeForSheets(regNumber.trim().toUpperCase()),
+      fullName: sanitizeForSheets(fullName.trim()),
+      department: sanitizeForSheets(department.trim()),
+      yearOfStudy: sanitizeForSheets(yearOfStudy.trim()),
       sessionDate: finalDate,
-      sessionTopic: sessionTopic && sessionTopic.trim() ? sessionTopic.trim() : "General Assembly",
+      sessionTopic: sanitizeForSheets(topic),
       timestamp: timeString,
       verified: true,
     };

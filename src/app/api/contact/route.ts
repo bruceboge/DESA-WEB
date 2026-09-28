@@ -1,4 +1,13 @@
 import { NextResponse } from "next/server";
+import {
+  checkRateLimit,
+  getClientIp,
+  isHoneypotTriggered,
+  isValidName,
+  isValidEmail,
+  isSpamContent,
+  sanitizeForSheets,
+} from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
 
@@ -25,15 +34,96 @@ export async function GET() {
   );
 }
 
-// POST: Secure write-only submission to Google Sheets
+// POST: Secure write-only submission to Google Sheets with anti-spam safeguards
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, email, category, subject, message } = body;
+    const ip = getClientIp(request);
 
-    if (!name || !email || !subject || !message) {
+    // 1. IP Rate Limiting: Max 5 inquiries per minute per IP
+    const rateCheck = checkRateLimit(ip, "contact", 5, 60);
+    if (!rateCheck.allowed) {
       return NextResponse.json(
-        { success: false, error: "Missing required contact fields" },
+        {
+          success: false,
+          error: `Too many submissions from this network. Please wait ${rateCheck.retryAfter || 60} seconds before sending another message.`,
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateCheck.retryAfter || 60),
+          },
+        }
+      );
+    }
+
+    const body = await request.json();
+    const { name, email, category, subject, message, website } = body;
+
+    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
+    if (isHoneypotTriggered(website)) {
+      console.warn("Spam bot trapped by contact honeypot. Bypassing Google Sheets.");
+      return NextResponse.json({
+        success: true,
+        ticketId: `MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        savedToSheets: false,
+      });
+    }
+
+    // 3. Strict Input Validations
+    const nameCheck = isValidName(name);
+    if (!nameCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: nameCheck.reason || "Invalid full name" },
+        { status: 400 }
+      );
+    }
+
+    const emailCheck = isValidEmail(email);
+    if (!emailCheck.valid) {
+      return NextResponse.json(
+        { success: false, error: emailCheck.reason || "Invalid email address" },
+        { status: 400 }
+      );
+    }
+
+    if (!subject || typeof subject !== "string" || subject.trim().length < 3) {
+      return NextResponse.json(
+        { success: false, error: "Subject must be at least 3 characters long." },
+        { status: 400 }
+      );
+    }
+    if (subject.trim().length > 120) {
+      return NextResponse.json(
+        { success: false, error: "Subject must not exceed 120 characters." },
+        { status: 400 }
+      );
+    }
+
+    const subjectSpam = isSpamContent(subject, true);
+    if (subjectSpam.isSpam) {
+      return NextResponse.json(
+        { success: false, error: subjectSpam.reason || "Subject triggered spam filter." },
+        { status: 400 }
+      );
+    }
+
+    if (!message || typeof message !== "string" || message.trim().length < 10) {
+      return NextResponse.json(
+        { success: false, error: "Message must be at least 10 characters long." },
+        { status: 400 }
+      );
+    }
+    if (message.trim().length > 3000) {
+      return NextResponse.json(
+        { success: false, error: "Message must not exceed 3,000 characters." },
+        { status: 400 }
+      );
+    }
+
+    const messageSpam = isSpamContent(message, false);
+    if (messageSpam.isSpam) {
+      return NextResponse.json(
+        { success: false, error: messageSpam.reason || "Message content triggered spam filter." },
         { status: 400 }
       );
     }
@@ -47,15 +137,16 @@ export async function POST(request: Request) {
 
     const ticketId = `MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    // 4. Formula Injection Sanitization: Prevent CSV / spreadsheet formula execution in Google Sheets
     const newRecord: ContactMessageRecord = {
       ticketId,
       date: todayDate,
       timestamp: timeString,
-      name: name.trim(),
+      name: sanitizeForSheets(name),
       email: email.trim().toLowerCase(),
-      category: category || "General Inquiry",
-      subject: subject.trim(),
-      message: message.trim(),
+      category: sanitizeForSheets(category || "General Inquiry"),
+      subject: sanitizeForSheets(subject),
+      message: sanitizeForSheets(message),
       status: "New / Unread",
     };
 

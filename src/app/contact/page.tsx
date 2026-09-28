@@ -73,6 +73,7 @@ export default function ContactPage() {
     subject: "",
     message: "",
     consent: false,
+    website: "", // Honeypot field for bot trapping
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -120,6 +121,7 @@ export default function ContactPage() {
       subject: "",
       message: "",
       consent: false,
+      website: "",
     });
     setTicketId("");
     setErrorMsg(null);
@@ -303,6 +305,32 @@ export default function ContactPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-3.5">
+              {/* Honeypot field: hidden from real users, traps automated spam bots */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: "-9999px",
+                  top: "-9999px",
+                  opacity: 0,
+                  height: 0,
+                  width: 0,
+                  overflow: "hidden",
+                  pointerEvents: "none",
+                }}
+                aria-hidden="true"
+              >
+                <label htmlFor="contact-website">Leave this field blank</label>
+                <input
+                  id="contact-website"
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="contact-name" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -312,6 +340,9 @@ export default function ContactPage() {
                     id="contact-name"
                     type="text"
                     required
+                    minLength={2}
+                    maxLength={70}
+                    autoComplete="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Victor Mutua"
@@ -327,6 +358,8 @@ export default function ContactPage() {
                     id="contact-email"
                     type="email"
                     required
+                    maxLength={100}
+                    autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="name@students.dkut.ac.ke"
@@ -363,6 +396,8 @@ export default function ContactPage() {
                     id="contact-subject"
                     type="text"
                     required
+                    minLength={3}
+                    maxLength={120}
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     placeholder="e.g. Year 2 CAD Workshop"
@@ -372,12 +407,19 @@ export default function ContactPage() {
               </div>
 
               <div>
-                <label htmlFor="contact-message" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                  Message Details *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label htmlFor="contact-message" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                    Message Details *
+                  </label>
+                  <span className="text-[10px] text-slate-400">
+                    {formData.message.length} / 3,000
+                  </span>
+                </div>
                 <textarea
                   id="contact-message"
                   required
+                  minLength={10}
+                  maxLength={3000}
                   rows={4}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}

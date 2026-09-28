@@ -22,6 +22,7 @@ export default function RegisterPage() {
     yearOfStudy: "Year 2",
     interest: "Robotics & Automation",
     consent: false,
+    website: "", // Honeypot field for bot trapping
   });
 
   const [submitted, setSubmitted] = useState(false);
@@ -117,6 +118,32 @@ export default function RegisterPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Honeypot field: hidden from real users, traps automated spam bots */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: "-9999px",
+                      top: "-9999px",
+                      opacity: 0,
+                      height: 0,
+                      width: 0,
+                      overflow: "hidden",
+                      pointerEvents: "none",
+                    }}
+                    aria-hidden="true"
+                  >
+                    <label htmlFor="reg-website">Leave this field blank</label>
+                    <input
+                      id="reg-website"
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    />
+                  </div>
+
                   {/* Full Name */}
                   <div>
                     <label htmlFor="reg-full-name" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -126,7 +153,10 @@ export default function RegisterPage() {
                       id="reg-full-name"
                       type="text"
                       required
-                      placeholder="e.g. Dedan Kimathi"
+                      minLength={2}
+                      maxLength={70}
+                      autoComplete="name"
+                      placeholder="e.g. Victor Mutua"
                       value={formData.fullName}
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -143,9 +173,12 @@ export default function RegisterPage() {
                         id="reg-number"
                         type="text"
                         required
-                        placeholder="e.g. E024-01-0842/2030"
+                        minLength={6}
+                        maxLength={30}
+                        autoComplete="off"
+                        placeholder="e.g. C025-01-1234/2023"
                         value={formData.regNumber}
-                        onChange={(e) => setFormData({ ...formData, regNumber: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, regNumber: e.target.value.toUpperCase() })}
                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                       />
                     </div>
@@ -158,6 +191,8 @@ export default function RegisterPage() {
                         id="reg-email"
                         type="email"
                         required
+                        maxLength={100}
+                        autoComplete="email"
                         placeholder="name@students.dkut.ac.ke"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -175,7 +210,10 @@ export default function RegisterPage() {
                       id="reg-phone"
                       type="tel"
                       required
-                      placeholder="e.g. 0712345678"
+                      minLength={9}
+                      maxLength={20}
+                      autoComplete="tel"
+                      placeholder="e.g. 0712345678 or +254 712 345 678"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
