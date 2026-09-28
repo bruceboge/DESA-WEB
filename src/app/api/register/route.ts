@@ -8,6 +8,7 @@ import {
   isValidRegNumber,
   isValidPhone,
   sanitizeForSheets,
+  sendToGoogleSheetsWithRetry,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -42,14 +43,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
+    const body = await request.json();
+    const { fullName, regNumber, email, phone, department, yearOfStudy, interest, website } = body;
 
-    // 1. IP Rate Limiting: Max 5 registration attempts per minute per IP
-    const rateCheck = checkRateLimit(ip, "register", 5, 60);
+    // 1. High-Concurrency Rate Limiting:
+    // Allows up to 100 registration attempts / minute from campus Wi-Fi (e.g. computer lab cohorts),
+    // while strictly preventing duplicate submission spam by the same student (by regNumber or email).
+    const rateCheck = checkRateLimit(ip, "register", 100, 60, regNumber || email, 2);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error: `Too many registration attempts from this network. Please wait ${rateCheck.retryAfter || 60} seconds before retrying.`,
+          error: rateCheck.reason || `Too many registration attempts. Please wait ${rateCheck.retryAfter || 60} seconds before retrying.`,
         },
         {
           status: 429,
@@ -59,9 +64,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    const body = await request.json();
-    const { fullName, regNumber, email, phone, department, yearOfStudy, interest, website } = body;
 
     // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
     if (isHoneypotTriggered(website)) {
@@ -155,27 +157,10 @@ export async function POST(request: Request) {
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      try {
-        const response = await fetch(scriptUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(newRecord),
-          redirect: "follow",
-        });
-
-        if (response.ok) {
-          savedToSheets = true;
-        } else {
-          sheetError = `Google Apps Script returned HTTP ${response.status}`;
-          console.warn("Google Sheets Members Webhook returned non-200:", response.status);
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to reach Google Sheets";
-        sheetError = errorMsg;
-        console.error("Failed to forward member registration to Google Sheets:", err);
-      }
+      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent registrations
+      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      savedToSheets = syncResult.ok;
+      sheetError = syncResult.error || null;
     }
 
     return NextResponse.json({

@@ -22,39 +22,147 @@ function pruneRateLimitMap() {
 }
 
 /**
- * Check if the client IP has exceeded the allowed submissions in a rolling window.
+/**
+ * Check if a submission is within allowed velocity limits.
+ * Supports:
+ * 1. Single-identity spam loop protection (same reg number or email).
+ * 2. Shared Campus Wi-Fi NAT support (comfortably handles 100+ concurrent distinct students on the same campus IP).
+ *
  * @param ip Client IP address
  * @param route Route identifier (e.g. "contact", "register", "roll-call")
- * @param maxRequests Maximum requests allowed per window (default: 5)
+ * @param maxIpRequests Maximum burst requests allowed per IP in the window (default: 150 for campus networks)
  * @param windowSeconds Window length in seconds (default: 60)
+ * @param identifier Optional identity key (e.g. student regNumber or email) to stop single-identity spam
+ * @param maxIdentityRequests Maximum requests allowed for the same identifier in window (default: 3)
  */
 export function checkRateLimit(
   ip: string,
   route: string,
-  maxRequests = 5,
-  windowSeconds = 60
-): { allowed: boolean; remaining: number; retryAfter?: number } {
+  maxIpRequests = 150,
+  windowSeconds = 60,
+  identifier?: string,
+  maxIdentityRequests = 3
+): { allowed: boolean; remaining: number; retryAfter?: number; reason?: string } {
   pruneRateLimitMap();
-
-  const key = `${route}:${ip || "unknown"}`;
   const now = Date.now();
-  const entry = rateLimitMap.get(key);
 
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(key, {
+  // 1. If an individual identity is provided (e.g. reg number or email), check identity bucket
+  if (identifier && typeof identifier === "string" && identifier.trim().length > 0) {
+    const cleanId = identifier.trim().toUpperCase();
+    const idKey = `${route}:id:${cleanId}`;
+    const idEntry = rateLimitMap.get(idKey);
+
+    if (!idEntry || now > idEntry.resetTime) {
+      rateLimitMap.set(idKey, {
+        count: 1,
+        resetTime: now + windowSeconds * 1000,
+      });
+    } else if (idEntry.count >= maxIdentityRequests) {
+      const retryAfter = Math.ceil((idEntry.resetTime - now) / 1000);
+      return {
+        allowed: false,
+        remaining: 0,
+        retryAfter,
+        reason: `Submission limit reached for ${cleanId}. Please wait ${retryAfter}s before submitting again.`,
+      };
+    } else {
+      idEntry.count += 1;
+    }
+  }
+
+  // 2. Check the IP burst bucket (allows up to 150 concurrent distinct students from the same campus Wi-Fi)
+  const ipKey = `${route}:ip:${ip || "unknown"}`;
+  const ipEntry = rateLimitMap.get(ipKey);
+
+  if (!ipEntry || now > ipEntry.resetTime) {
+    rateLimitMap.set(ipKey, {
       count: 1,
       resetTime: now + windowSeconds * 1000,
     });
-    return { allowed: true, remaining: maxRequests - 1 };
+    return { allowed: true, remaining: maxIpRequests - 1 };
   }
 
-  if (entry.count >= maxRequests) {
-    const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-    return { allowed: false, remaining: 0, retryAfter };
+  if (ipEntry.count >= maxIpRequests) {
+    const retryAfter = Math.ceil((ipEntry.resetTime - now) / 1000);
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfter,
+      reason: `Network limit reached. Please wait ${retryAfter}s before sending again.`,
+    };
   }
 
-  entry.count += 1;
-  return { allowed: true, remaining: maxRequests - entry.count };
+  ipEntry.count += 1;
+  return { allowed: true, remaining: maxIpRequests - ipEntry.count };
+}
+
+/**
+ * Dispatch payload to Google Apps Script with automatic retry & jitter
+ * to handle up to 100+ concurrent submissions without dropping records.
+ *
+ * @param scriptUrl The Google Apps Script deployment URL
+ * @param payload Record payload to forward
+ * @param maxRetries Number of retries on transient errors (default: 2)
+ * @param timeoutMs Request timeout per attempt in milliseconds (default: 9000)
+ */
+export async function sendToGoogleSheetsWithRetry(
+  scriptUrl: string,
+  payload: unknown,
+  maxRetries = 2,
+  timeoutMs = 9000
+): Promise<{ ok: boolean; status?: number; error?: string }> {
+  let lastError: string | null = null;
+  let lastStatus: number | undefined;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      const response = await fetch(scriptUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify(payload),
+        redirect: "follow",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+      lastStatus = response.status;
+
+      if (response.ok) {
+        return { ok: true, status: response.status };
+      }
+
+      // If Google returned 429 (rate limited / concurrent limit) or 5xx (transient script error / lock timeout)
+      if (response.status === 429 || response.status >= 500) {
+        lastError = `Google Apps Script returned HTTP ${response.status}`;
+      } else {
+        // Fatal client error (e.g. 400 Bad Request, 404 Not Found), don't retry
+        return {
+          ok: false,
+          status: response.status,
+          error: `Google Apps Script returned HTTP ${response.status}`,
+        };
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        lastError = "Google Sheets request timed out (waiting for concurrent lock)";
+      } else {
+        lastError = err instanceof Error ? err.message : "Failed to reach Google Sheets";
+      }
+    }
+
+    // Apply randomized exponential backoff before retrying to stagger concurrent requests
+    if (attempt < maxRetries) {
+      const backoffMs = Math.floor(250 * Math.pow(1.5, attempt) + Math.random() * 250);
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    }
+  }
+
+  return { ok: false, status: lastStatus, error: lastError || "Failed after retries" };
 }
 
 /**

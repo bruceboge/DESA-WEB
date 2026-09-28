@@ -7,6 +7,7 @@ import {
   isValidEmail,
   isSpamContent,
   sanitizeForSheets,
+  sendToGoogleSheetsWithRetry,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -38,14 +39,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
+    const body = await request.json();
+    const { name, email, category, subject, message, website } = body;
 
-    // 1. IP Rate Limiting: Max 5 inquiries per minute per IP
-    const rateCheck = checkRateLimit(ip, "contact", 5, 60);
+    // 1. Rate Limiting:
+    // Allows up to 30 submissions / minute from a shared campus network,
+    // while strictly preventing duplicate message flooding from the same email (max 3 / minute).
+    const rateCheck = checkRateLimit(ip, "contact", 30, 60, email, 3);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error: `Too many submissions from this network. Please wait ${rateCheck.retryAfter || 60} seconds before sending another message.`,
+          error: rateCheck.reason || `Too many submissions from this network. Please wait ${rateCheck.retryAfter || 60} seconds before sending another message.`,
         },
         {
           status: 429,
@@ -55,9 +60,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    const body = await request.json();
-    const { name, email, category, subject, message, website } = body;
 
     // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
     if (isHoneypotTriggered(website)) {
@@ -155,27 +157,10 @@ export async function POST(request: Request) {
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      try {
-        const response = await fetch(scriptUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(newRecord),
-          redirect: "follow",
-        });
-
-        if (response.ok) {
-          savedToSheets = true;
-        } else {
-          sheetError = `Google Apps Script returned HTTP ${response.status}`;
-          console.warn("Google Sheets Contact Webhook returned non-200:", response.status);
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to reach Google Sheets";
-        sheetError = errorMsg;
-        console.error("Failed to forward contact message to Google Sheets:", err);
-      }
+      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent messages
+      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      savedToSheets = syncResult.ok;
+      sheetError = syncResult.error || null;
     }
 
     return NextResponse.json({

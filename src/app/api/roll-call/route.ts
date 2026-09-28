@@ -6,6 +6,7 @@ import {
   isValidName,
   isValidRegNumber,
   sanitizeForSheets,
+  sendToGoogleSheetsWithRetry,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -37,14 +38,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
+    const body = await request.json();
+    const { regNumber, fullName, department, yearOfStudy, sessionDate, sessionTopic, website } = body;
 
-    // 1. IP Rate Limiting: Max 12 check-ins per minute per IP (accommodates shared campus Wi-Fi while blocking automated floods)
-    const rateCheck = checkRateLimit(ip, "roll-call", 12, 60);
+    // 1. High-Concurrency Rate Limiting:
+    // Allows up to 150 check-ins / minute from a shared campus Wi-Fi network (Eduroam / SOE lab NAT),
+    // while strictly preventing any single student (by regNumber) from spamming more than 2 check-ins / minute.
+    const rateCheck = checkRateLimit(ip, "roll-call", 150, 60, regNumber, 2);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error: `Too many check-ins from this network. Please wait ${rateCheck.retryAfter || 60} seconds before submitting again.`,
+          error: rateCheck.reason || `Too many check-ins. Please wait ${rateCheck.retryAfter || 60} seconds before submitting again.`,
         },
         {
           status: 429,
@@ -54,9 +59,6 @@ export async function POST(request: Request) {
         }
       );
     }
-
-    const body = await request.json();
-    const { regNumber, fullName, department, yearOfStudy, sessionDate, sessionTopic, website } = body;
 
     // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
     if (isHoneypotTriggered(website)) {
@@ -142,27 +144,10 @@ export async function POST(request: Request) {
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      try {
-        const response = await fetch(scriptUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8",
-          },
-          body: JSON.stringify(newRecord),
-          redirect: "follow",
-        });
-
-        if (response.ok) {
-          savedToSheets = true;
-        } else {
-          sheetError = `Google Apps Script returned HTTP ${response.status}`;
-          console.warn("Google Sheets Webhook returned non-200:", response.status);
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to reach Google Sheets";
-        sheetError = errorMsg;
-        console.error("Failed to forward check-in to Google Sheets:", err);
-      }
+      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent sign-ins
+      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      savedToSheets = syncResult.ok;
+      sheetError = syncResult.error || null;
     }
 
     // Return only the current attendee's own receipt, never reading any other student's data
