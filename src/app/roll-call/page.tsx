@@ -299,7 +299,7 @@ export default function RollCallPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="rollcall-dept" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Department <span className="text-red-500">*</span>
+                      Department / Course <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="rollcall-dept"
@@ -403,16 +403,10 @@ export default function RollCallPage() {
                 <div className="p-3.5 rounded-xl bg-[#0a5c36]/5 border border-[#0a5c36]/20 text-xs text-slate-700 mb-5 flex items-start gap-2">
                   <ShieldCheckIcon className="w-4 h-4 text-[#0a5c36] shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    This receipt confirms your attendance is saved into the Secretariat&apos;s restricted Google Sheet. Take a screenshot for your personal records if required.
+                    This receipt confirms your attendance is recorded. Take a screenshot for your personal records if required.
                   </p>
                 </div>
 
-                <button
-                  onClick={handleResetReceipt}
-                  className="w-full bg-[#071325] hover:bg-[#0c1a32] text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition-colors cursor-pointer"
-                >
-                  Sign In Another Student
-                </button>
               </div>
             ) : (
               /* Privacy & Verification Information Panel */
@@ -437,14 +431,14 @@ export default function RollCallPage() {
                       <span className="font-bold text-[#071325] block mb-1">
                         1. Confidential Direct Ingestion
                       </span>
-                      Your check-in is logged directly into the Secretariat&apos;s secured Google Sheet. Student names, registration numbers, and timestamps are strictly kept private and are never broadcast or publicly exposed to other site visitors.
+                      Your check-in is logged directly into the Secretariat&apos;s secured register. Student names, registration numbers, and timestamps are strictly kept private and are never broadcast or publicly exposed to other site visitors.
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                       <span className="font-bold text-[#071325] block mb-1">
-                        2. 75% Attendance Requirement
+                        2. Up To 75% Attendance Requirement
                       </span>
-                      Members must achieve a minimum of 75% verified session attendance to qualify for DESA leadership nominations, subsidized industrial tours, and official recommendation letters for industrial attachment applications.
+                      Members must achieve a minimum of 75% verified session attendance to qualify for DESA leadership nominations, subsidized industrial tours, and official recommendations.
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
