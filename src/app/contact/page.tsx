@@ -9,9 +9,7 @@ import {
   ClockIcon,
   SendIcon,
   CheckCircleIcon,
-  ShieldCheckIcon,
   ChevronRightIcon,
-  ArrowRightIcon,
   TikTokIcon,
   LinkedInIcon,
   InstagramIcon,
@@ -105,7 +103,7 @@ export default function ContactPage() {
       } else {
         setErrorMsg(result.error || "Failed to dispatch message. Please try again.");
       }
-    } catch (err: any) {
+    } catch {
       // Graceful offline fallback
       setTicketId(`MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
       setSubmitted(true);

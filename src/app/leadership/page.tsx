@@ -3,16 +3,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { Metadata } from "next";
 import {
-  UsersIcon,
   ShieldCheckIcon,
-  AwardIcon,
   MailIcon,
   ChevronRightIcon,
-  ExternalLinkIcon,
-  CpuIcon,
-  BookOpenIcon,
-  CalendarIcon,
-  GraduationCapIcon,
 } from "@/components/Icons";
 
 export const metadata: Metadata = {

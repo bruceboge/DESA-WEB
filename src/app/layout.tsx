@@ -169,14 +169,14 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]">
+      <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]" suppressHydrationWarning>
         <GoogleAnalytics />
         <TopBar />
         <Navbar />

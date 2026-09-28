@@ -1,7 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRightIcon, ShieldCheckIcon, MailIcon } from "@/components/Icons";
+import { ChevronRightIcon, MailIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
   title: "Cookie Policy | DESA DeKUT",

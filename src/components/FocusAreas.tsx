@@ -8,7 +8,6 @@ import {
   CalendarIcon,
   AwardIcon,
   CheckCircleIcon,
-  ArrowRightIcon,
   BookOpenIcon,
   CogIcon,
 } from "./Icons";

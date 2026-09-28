@@ -8,8 +8,6 @@ import {
   DownloadIcon,
   ShieldCheckIcon,
   ChevronRightIcon,
-  ArrowRightIcon,
-  CheckCircleIcon,
   BookOpenIcon,
 } from "@/components/Icons";
 

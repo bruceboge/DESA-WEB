@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,9 +8,6 @@ import {
   ChevronLeftIcon,
   CloseIcon,
   MapPinIcon,
-  CalendarIcon,
-  AwardIcon,
-  CpuIcon,
 } from "@/components/Icons";
 
 interface GalleryItem {
@@ -136,23 +133,23 @@ export default function GalleryPage() {
     ? filteredItems.findIndex((item) => item.id === selectedPhoto.id)
     : -1;
 
-  const goToPrev = () => {
+  const goToPrev = useCallback(() => {
     if (filteredItems.length === 0) return;
     if (currentIndex > 0) {
       setSelectedPhoto(filteredItems[currentIndex - 1]);
     } else {
       setSelectedPhoto(filteredItems[filteredItems.length - 1]);
     }
-  };
+  }, [currentIndex, filteredItems]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     if (filteredItems.length === 0) return;
     if (currentIndex < filteredItems.length - 1) {
       setSelectedPhoto(filteredItems[currentIndex + 1]);
     } else {
       setSelectedPhoto(filteredItems[0]);
     }
-  };
+  }, [currentIndex, filteredItems]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -168,7 +165,7 @@ export default function GalleryPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedPhoto, currentIndex, filteredItems]);
+  }, [selectedPhoto, goToNext, goToPrev]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">

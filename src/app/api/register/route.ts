@@ -86,8 +86,9 @@ export async function POST(request: Request) {
           sheetError = `Google Apps Script returned HTTP ${response.status}`;
           console.warn("Google Sheets Members Webhook returned non-200:", response.status);
         }
-      } catch (err: any) {
-        sheetError = err?.message || "Failed to reach Google Sheets";
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Failed to reach Google Sheets";
+        sheetError = errorMsg;
         console.error("Failed to forward member registration to Google Sheets:", err);
       }
     }
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
       savedToSheets,
       sheetError,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: "Failed to process member registration" },
       { status: 500 }

@@ -80,8 +80,9 @@ export async function POST(request: Request) {
           sheetError = `Google Apps Script returned HTTP ${response.status}`;
           console.warn("Google Sheets Contact Webhook returned non-200:", response.status);
         }
-      } catch (err: any) {
-        sheetError = err?.message || "Failed to reach Google Sheets";
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Failed to reach Google Sheets";
+        sheetError = errorMsg;
         console.error("Failed to forward contact message to Google Sheets:", err);
       }
     }
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
       savedToSheets,
       sheetError,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: "Failed to process contact submission" },
       { status: 500 }

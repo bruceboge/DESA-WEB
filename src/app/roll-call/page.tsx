@@ -6,11 +6,8 @@ import {
   UsersIcon,
   ShieldCheckIcon,
   CheckCircleIcon,
-  CalendarIcon,
   ChevronRightIcon,
   AwardIcon,
-  BuildingIcon,
-  GraduationCapIcon,
 } from "@/components/Icons";
 
 interface SubmittedReceipt {
@@ -32,6 +29,7 @@ const engineeringDepartments = [
   "Mechatronic Engineering",
   "Mechanical Engineering",
   "Electrical & Electronic Engineering",
+  "Telecommunication & Information Engineering",
   "Civil Engineering",
   "Chemical Engineering",
   "Guest / Other Faculty",
@@ -111,7 +109,7 @@ export default function RollCallPage() {
       } else {
         setSubmissionError(result.error || "Unable to submit attendance. Please try again.");
       }
-    } catch (err: any) {
+    } catch {
       setSubmissionError("Network error. Please check your connection and retry.");
     } finally {
       setIsSubmitting(false);
@@ -146,7 +144,7 @@ export default function RollCallPage() {
                 DESA Member Roll Call Portal
               </h1>
               <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl text-justify">
-                Record your verified in-person attendance for any technical workshop, general meeting, or engineering session. Your submission is securely and confidentially piped directly into the Secretariat&apos;s active register.
+                Record your verified in-person attendance for any technical workshop, general meeting, or engineering session. Your submission is secure & confidential.
               </p>
             </div>
 
@@ -159,7 +157,7 @@ export default function RollCallPage() {
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                To protect student data privacy, attendee records are <strong>never published or exposed publicly.</strong> All entries are written directly to the private DESA Secretariat ledger.
+                <strong>We value your privacy</strong>, all entries remain private.
               </p>
             </div>
           </div>
@@ -182,7 +180,7 @@ export default function RollCallPage() {
                     Member Session Check-In
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Fill in your details below to log your verified attendance.
+                    Fill in your details below to log your attendance.
                   </p>
                 </div>
               </div>

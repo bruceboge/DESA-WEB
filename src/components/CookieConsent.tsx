@@ -1,30 +1,36 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ShieldCheckIcon } from "./Icons";
 
-export default function CookieConsent() {
-  const [mounted, setMounted] = useState(false);
-  const [consentStatus, setConsentStatus] = useState<string | null>("granted");
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
 
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("desa_cookie_consent");
-    setConsentStatus(saved);
-  }, []);
+function getSnapshot() {
+  return localStorage.getItem("desa_cookie_consent");
+}
+
+function getServerSnapshot() {
+  return "granted";
+}
+
+export default function CookieConsent() {
+  const consentStatus = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const handleAcceptAll = () => {
     localStorage.setItem("desa_cookie_consent", "all");
-    setConsentStatus("all");
+    window.dispatchEvent(new Event("storage"));
   };
 
   const handleAcceptEssential = () => {
     localStorage.setItem("desa_cookie_consent", "essential");
-    setConsentStatus("essential");
+    window.dispatchEvent(new Event("storage"));
   };
 
-  if (!mounted || consentStatus) return null;
+  if (consentStatus) return null;
 
   return (
     <div
@@ -41,7 +47,7 @@ export default function CookieConsent() {
             <h4 className="text-sm font-bold text-white mb-1">
               Data Privacy & Cookie Consent Notice
             </h4>
-            <p className="text-xs text-slate-300 leading-relaxed text-justify">
+            <p className="text-xs text-slate-300 leading-relaxed text-left">
               The DESA website uses strictly necessary cookies and local storage tokens to maintain academic roll-call sessions and essential portal functionality. We do not use third-party advertising or commercial profiling cookies. By clicking &quot;Accept All&quot;, you consent to functional storage in accordance with the Kenya Data Protection Act (2019). Review our{" "}
               <Link href="/privacy" className="text-[#e5a93c] underline hover:text-[#f6c867]">
                 Privacy Policy

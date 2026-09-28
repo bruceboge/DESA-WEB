@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import {
   ShieldCheckIcon,
@@ -56,7 +55,7 @@ export default function RegisterPage() {
       } else {
         setErrorMsg(result.error || "Failed to submit registration. Please try again.");
       }
-    } catch (err: any) {
+    } catch {
       // Graceful offline fallback
       const fallbackId = `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`;
       const today = new Date().toLocaleDateString("en-GB", {
@@ -71,20 +70,6 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleReset = () => {
-    setFormData({
-      fullName: "",
-      regNumber: "",
-      email: "",
-      phone: "",
-      department: "Mechatronic Engineering",
-      yearOfStudy: "Year 2",
-      interest: "Robotics & Automation",
-      consent: false,
-    });
-    setSubmitted(false);
   };
 
   return (
@@ -264,7 +249,7 @@ export default function RegisterPage() {
                   <div className="p-3 rounded-xl bg-[#e5a93c]/15 border border-[#e5a93c]/30 text-xs text-slate-800 flex items-center justify-between">
                     <div>
                       <span className="font-bold text-[#071325] block">Membership Contribution:</span>
-                      <span className="text-[11px] text-slate-600">Non-refundable registration fee / Annual subscription</span>
+                      <span className="text-[11px] text-slate-600">Registration fee / Annual subscription</span>
                     </div>
                     <span className="font-mono font-bold text-sm text-[#071325] bg-white px-2.5 py-1 rounded border border-[#e5a93c]/40 shrink-0">
                       Ksh 200 / yr
@@ -323,7 +308,7 @@ export default function RegisterPage() {
                     Registration Successful!
                   </h3>
                   <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
-                    Welcome to the Dedan Kimathi University Engineering Students Association. Your student membership record is now active.
+                    Welcome to the DeKUT Engineering Students Association. Your membership is now Active. DESA officials will contact you for further Guidance.
                   </p>
                 </div>
 
@@ -377,7 +362,7 @@ export default function RegisterPage() {
 
                   <div className="mt-5 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-400">
                     <span>Dedan Kimathi University of Technology</span>
-                    <span className="text-[#e5a93c]">EBK & IEK Affiliated</span>
+                    <span className="text-[#e5a93c]"></span>
                   </div>
                 </div>
 
@@ -389,12 +374,7 @@ export default function RegisterPage() {
                   >
                     Return to Homepage
                   </Link>
-                  <button
-                    onClick={handleReset}
-                    className="bg-slate-100 hover:bg-slate-200 text-[#071325] font-semibold px-6 py-2.5 rounded-xl text-xs transition-colors"
-                  >
-                    Register Another Student
-                  </button>
+
                 </div>
               </div>
             )}
@@ -408,10 +388,10 @@ export default function RegisterPage() {
               </span>
 
               {[
-                { icon: GraduationCapIcon, text: "Access to departmental academic past papers and peer tutorial sessions" },
-                { icon: AwardIcon, text: "Priority registration for the annual DeKUT Engineering Week project fair" },
-                { icon: UsersIcon, text: "Eligibility for industrial plant field tours with KenGen, Kenya Power, and partners" },
-                { icon: ShieldCheckIcon, text: "Guidance on EBK graduate engineer registration and IEK student membership" },
+                { icon: GraduationCapIcon, text: "Access to  academic and peer tutorial sessions" },
+                { icon: AwardIcon, text: "Priority on DESA Events and Activities" },
+                { icon: UsersIcon, text: "Access to DESA resources and facilities" },
+                { icon: ShieldCheckIcon, text: "Guidance on Professional body registrations" },
               ].map((b, i) => {
                 const Icon = b.icon;
                 return (
@@ -428,7 +408,7 @@ export default function RegisterPage() {
             <div className="bg-[#071325] rounded-2xl p-5 text-white text-xs space-y-2 border border-[#e5a93c]/30">
               <span className="text-[11px] font-bold uppercase text-[#e5a93c] block">Need Assistance?</span>
               <p className="text-slate-300 text-[11px] leading-relaxed">
-                If you encounter any registration issues or require cohort guidance, message the Secretariat:
+                If you encounter any registration issues or require guidance, message the Secretariat:
               </p>
               <a
                 href="mailto:engineeringstudentsassociation@dkut.ac.ke"
