@@ -6,7 +6,10 @@ import {
   isValidName,
   isValidRegNumber,
   sanitizeForSheets,
-  sendToGoogleSheetsWithRetry,
+  sendToGoogleSheets,
+  isDuplicateSubmission,
+  getNairobiDate,
+  getNairobiTime,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
           fullName: fullName || "Student Attendee",
           department: department || "Engineering",
           yearOfStudy: yearOfStudy || "Year 1",
-          sessionDate: new Date().toISOString().split("T")[0],
+          sessionDate: getNairobiDate(),
           sessionTopic: "General Assembly",
           timestamp: "12:00 PM",
           verified: true,
@@ -115,16 +118,12 @@ export async function POST(request: Request) {
       ? sessionTopic.trim().slice(0, 120) 
       : "General Assembly";
 
-    const todayDate = new Date().toISOString().split("T")[0];
+    const todayDate = getNairobiDate();
     const finalDate = sessionDate && typeof sessionDate === "string" && sessionDate.trim().length > 0
       ? sessionDate.trim().slice(0, 15)
       : todayDate;
 
-    const timeString = new Date().toLocaleTimeString("en-KE", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const timeString = getNairobiTime();
 
     // 4. Formula Injection Sanitization: Prevent CSV / spreadsheet formula execution in Google Sheets
     const newRecord: RollCallRecord = {
@@ -139,13 +138,24 @@ export async function POST(request: Request) {
       verified: true,
     };
 
+    // Prevent double-logging if identical regNumber was submitted in the last 15 seconds
+    const dedupeKey = `rc:${regNumber.trim().toUpperCase()}:${finalDate}`;
+    if (isDuplicateSubmission(dedupeKey, 15000)) {
+      console.log(`Duplicate roll-call check-in prevented for ${dedupeKey}`);
+      return NextResponse.json({
+        success: true,
+        entry: newRecord,
+        savedToSheets: true,
+      });
+    }
+
     const scriptUrl = process.env.GOOGLE_SHEETS_ROLL_CALL_URL;
     let savedToSheets = false;
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent sign-ins
-      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
+      const syncResult = await sendToGoogleSheets(scriptUrl, newRecord, 30000);
       savedToSheets = syncResult.ok;
       sheetError = syncResult.error || null;
     }

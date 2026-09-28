@@ -33,6 +33,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.consent) return;
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -59,11 +60,12 @@ export default function RegisterPage() {
     } catch {
       // Graceful offline fallback
       const fallbackId = `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`;
-      const today = new Date().toLocaleDateString("en-GB", {
+      const today = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Nairobi",
         day: "numeric",
         month: "short",
         year: "numeric",
-      });
+      }).format(new Date());
       setMemberId(fallbackId);
       setIssuedDate(today);
       setSubmitted(true);

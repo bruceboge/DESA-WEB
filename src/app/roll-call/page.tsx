@@ -23,7 +23,13 @@ interface SubmittedReceipt {
   savedToSheets: boolean;
 }
 
-const getTodayString = () => new Date().toISOString().split("T")[0];
+const getTodayString = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Nairobi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 
 const engineeringDepartments = [
   "Mechatronic Engineering",
@@ -61,17 +67,18 @@ export default function RollCallPage() {
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!formData.fullName.trim() || !formData.regNumber.trim()) return;
 
     setIsSubmitting(true);
     setSubmissionError(null);
 
-    const now = new Date();
-    const timeFormatted = now.toLocaleTimeString("en-KE", {
+    const timeFormatted = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Africa/Nairobi",
       hour: "2-digit",
       minute: "2-digit",
       hour12: true,
-    });
+    }).format(new Date());
 
     const fallbackTopic = formData.sessionTopic.trim() || "General Assembly";
 
@@ -116,11 +123,6 @@ export default function RollCallPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleResetReceipt = () => {
-    setLastReceipt(null);
-    setSubmissionError(null);
   };
 
   return (

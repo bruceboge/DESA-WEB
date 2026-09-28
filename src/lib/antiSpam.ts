@@ -96,74 +96,96 @@ export function checkRateLimit(
   return { allowed: true, remaining: maxIpRequests - ipEntry.count };
 }
 
+// In-memory deduplication cache: keeps track of recently processed IDs to prevent duplicate row writes
+const recentSubmissions = new Map<string, number>();
+
 /**
- * Dispatch payload to Google Apps Script with automatic retry & jitter
- * to handle up to 100+ concurrent submissions without dropping records.
- *
- * @param scriptUrl The Google Apps Script deployment URL
- * @param payload Record payload to forward
- * @param maxRetries Number of retries on transient errors (default: 2)
- * @param timeoutMs Request timeout per attempt in milliseconds (default: 9000)
+ * Check if a submission is a rapid duplicate (e.g. user double-clicked submit,
+ * or browser re-transmitted the POST).
+ * @param key Unique key for the submission (e.g. "C025-01-1234/2023:2026-09-28")
+ * @param windowMs Time window in milliseconds (default: 15 seconds)
  */
-export async function sendToGoogleSheetsWithRetry(
-  scriptUrl: string,
-  payload: unknown,
-  maxRetries = 2,
-  timeoutMs = 9000
-): Promise<{ ok: boolean; status?: number; error?: string }> {
-  let lastError: string | null = null;
-  let lastStatus: number | undefined;
+export function isDuplicateSubmission(key: string, windowMs = 15000): boolean {
+  if (!key) return false;
+  const now = Date.now();
+  const existingTime = recentSubmissions.get(key);
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+  if (existingTime && now - existingTime < windowMs) {
+    return true;
+  }
 
-      const response = await fetch(scriptUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify(payload),
-        redirect: "follow",
-        signal: controller.signal,
-      });
+  recentSubmissions.set(key, now);
 
-      clearTimeout(timer);
-      lastStatus = response.status;
-
-      if (response.ok) {
-        return { ok: true, status: response.status };
+  // Periodically clean entries older than 30s
+  if (recentSubmissions.size > 200) {
+    for (const [k, timestamp] of recentSubmissions.entries()) {
+      if (now - timestamp > 30000) {
+        recentSubmissions.delete(k);
       }
-
-      // If Google returned 429 (rate limited / concurrent limit) or 5xx (transient script error / lock timeout)
-      if (response.status === 429 || response.status >= 500) {
-        lastError = `Google Apps Script returned HTTP ${response.status}`;
-      } else {
-        // Fatal client error (e.g. 400 Bad Request, 404 Not Found), don't retry
-        return {
-          ok: false,
-          status: response.status,
-          error: `Google Apps Script returned HTTP ${response.status}`,
-        };
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        lastError = "Google Sheets request timed out (waiting for concurrent lock)";
-      } else {
-        lastError = err instanceof Error ? err.message : "Failed to reach Google Sheets";
-      }
-    }
-
-    // Apply randomized exponential backoff before retrying to stagger concurrent requests
-    if (attempt < maxRetries) {
-      const backoffMs = Math.floor(250 * Math.pow(1.5, attempt) + Math.random() * 250);
-      await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
   }
 
-  return { ok: false, status: lastStatus, error: lastError || "Failed after retries" };
+  return false;
 }
+
+/**
+ * Dispatch payload to Google Apps Script cleanly ONCE.
+ *
+ * IMPORTANT: Because Google Apps Script appends rows to a spreadsheet,
+ * row insertion is NOT idempotent. Retrying a request that has already been dispatched
+ * to Google Apps Script causes duplicate rows to be logged if Google's server takes longer
+ * than a short timeout.
+ *
+ * We use a realistic 30-second timeout to allow Google Apps Script to cold-start,
+ * acquire its lock, and write the row without being cut off prematurely.
+ *
+ * @param scriptUrl The Google Apps Script deployment URL
+ * @param payload Record payload to forward
+ * @param timeoutMs Request timeout in milliseconds (default: 30000)
+ */
+export async function sendToGoogleSheets(
+  scriptUrl: string,
+  payload: unknown,
+  timeoutMs = 30000
+): Promise<{ ok: boolean; status?: number; error?: string }> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    const response = await fetch(scriptUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify(payload),
+      redirect: "follow",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
+    if (response.ok) {
+      return { ok: true, status: response.status };
+    }
+
+    return {
+      ok: false,
+      status: response.status,
+      error: `Google Apps Script returned HTTP ${response.status}`,
+    };
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return { ok: false, error: "Google Sheets request timed out" };
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Failed to reach Google Sheets",
+    };
+  }
+}
+
+// Backward-compatible alias
+export const sendToGoogleSheetsWithRetry = sendToGoogleSheets;
 
 /**
  * Get client IP from standard Next.js request headers
@@ -396,4 +418,42 @@ export function isSpamContent(text: string, isSubject = false): { isSpam: boolea
   }
 
   return { isSpam: false };
+}
+
+/**
+ * Return the current date formatted in Kenya/Nairobi time (Africa/Nairobi - UTC+3)
+ * @returns "YYYY-MM-DD" e.g. "2026-09-28"
+ */
+export function getNairobiDate(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Nairobi",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/**
+ * Return the current time formatted in Kenya/Nairobi time (Africa/Nairobi - UTC+3)
+ * @returns "hh:mm AM/PM" e.g. "07:25 PM"
+ */
+export function getNairobiTime(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Nairobi",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
+}
+
+/**
+ * Return human-readable date in Nairobi time (e.g. "28 Sep 2026")
+ */
+export function getNairobiHumanDate(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Nairobi",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }

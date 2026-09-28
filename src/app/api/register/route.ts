@@ -8,7 +8,11 @@ import {
   isValidRegNumber,
   isValidPhone,
   sanitizeForSheets,
-  sendToGoogleSheetsWithRetry,
+  sendToGoogleSheets,
+  isDuplicateSubmission,
+  getNairobiDate,
+  getNairobiTime,
+  getNairobiHumanDate,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -71,11 +75,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         memberId: `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`,
-        issuedDate: new Date().toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        }),
+        issuedDate: getNairobiHumanDate(),
         savedToSheets: false,
       });
     }
@@ -127,12 +127,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const todayDate = new Date().toISOString().split("T")[0];
-    const timeString = new Date().toLocaleTimeString("en-KE", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const todayDate = getNairobiDate();
+    const timeString = getNairobiTime();
 
     const memberId = `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -152,13 +148,26 @@ export async function POST(request: Request) {
       status: "Active Registered Member",
     };
 
+    // Prevent duplicate registrations if identical regNumber was submitted in the last 15 seconds
+    const dedupeKey = `reg:${regNumber.trim().toUpperCase()}`;
+    if (isDuplicateSubmission(dedupeKey, 15000)) {
+      console.log(`Duplicate registration prevented for ${dedupeKey}`);
+      return NextResponse.json({
+        success: true,
+        memberId,
+        issuedDate: getNairobiHumanDate(),
+        entry: newRecord,
+        savedToSheets: true,
+      });
+    }
+
     const scriptUrl = process.env.GOOGLE_SHEETS_MEMBERS_URL;
     let savedToSheets = false;
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent registrations
-      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
+      const syncResult = await sendToGoogleSheets(scriptUrl, newRecord, 30000);
       savedToSheets = syncResult.ok;
       sheetError = syncResult.error || null;
     }
@@ -166,11 +175,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       memberId,
-      issuedDate: new Date().toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
+      issuedDate: getNairobiHumanDate(),
       entry: newRecord,
       savedToSheets,
       sheetError,

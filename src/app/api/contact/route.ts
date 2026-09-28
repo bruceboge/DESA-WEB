@@ -7,7 +7,10 @@ import {
   isValidEmail,
   isSpamContent,
   sanitizeForSheets,
-  sendToGoogleSheetsWithRetry,
+  sendToGoogleSheets,
+  isDuplicateSubmission,
+  getNairobiDate,
+  getNairobiTime,
 } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -130,12 +133,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const todayDate = new Date().toISOString().split("T")[0];
-    const timeString = new Date().toLocaleTimeString("en-KE", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const todayDate = getNairobiDate();
+    const timeString = getNairobiTime();
 
     const ticketId = `MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -152,13 +151,25 @@ export async function POST(request: Request) {
       status: "New / Unread",
     };
 
+    // Prevent duplicate messages if identical email and subject were submitted in the last 15 seconds
+    const dedupeKey = `msg:${email.trim().toLowerCase()}:${subject.trim().slice(0, 40)}`;
+    if (isDuplicateSubmission(dedupeKey, 15000)) {
+      console.log(`Duplicate contact inquiry prevented for ${dedupeKey}`);
+      return NextResponse.json({
+        success: true,
+        ticketId,
+        entry: newRecord,
+        savedToSheets: true,
+      });
+    }
+
     const scriptUrl = process.env.GOOGLE_SHEETS_CONTACT_URL;
     let savedToSheets = false;
     let sheetError: string | null = null;
 
     if (scriptUrl) {
-      // Dispatches with automatic retry & jitter to ensure zero drops during peak concurrent messages
-      const syncResult = await sendToGoogleSheetsWithRetry(scriptUrl, newRecord, 2, 9000);
+      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
+      const syncResult = await sendToGoogleSheets(scriptUrl, newRecord, 30000);
       savedToSheets = syncResult.ok;
       sheetError = syncResult.error || null;
     }

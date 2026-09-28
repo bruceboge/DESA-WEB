@@ -19,6 +19,9 @@
  */
 
 function doPost(e) {
+  var lock = LockService.getScriptLock();
+  var hasLock = lock.tryLock(30000);
+
   try {
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
     var contents = e.postData.contents;
@@ -47,6 +50,20 @@ function doPost(e) {
       sheet.setFrozenRows(1);
     }
 
+    // Deduplication check: Avoid multiple logging if the same Record ID is re-transmitted
+    var lastRow = sheet.getLastRow();
+    if (lastRow > 1 && data.id) {
+      var numRowsToCheck = Math.min(20, lastRow - 1);
+      var recentValues = sheet.getRange(lastRow - numRowsToCheck + 1, 1, numRowsToCheck, 1).getValues();
+      for (var i = 0; i < recentValues.length; i++) {
+        if (String(recentValues[i][0]) === String(data.id)) {
+          return ContentService
+            .createTextOutput(JSON.stringify({ status: "success", message: "Check-in already recorded" }))
+            .setMimeType(ContentService.MimeType.JSON);
+        }
+      }
+    }
+
     // Append attendee check-in row
     sheet.appendRow([
       data.id || ("RC-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000)),
@@ -67,6 +84,10 @@ function doPost(e) {
     return ContentService
       .createTextOutput(JSON.stringify({ status: "error", error: error.toString() }))
       .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    if (hasLock) {
+      lock.releaseLock();
+    }
   }
 }
 
