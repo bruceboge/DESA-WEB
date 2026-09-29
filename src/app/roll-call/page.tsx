@@ -50,7 +50,7 @@ export default function RollCallPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     regNumber: "",
-    department: engineeringPrograms[0],
+    department: engineeringPrograms[0] as string,
     yearOfStudy: "Year 1",
     sessionDate: getTodayString(),
     sessionTopic: "",

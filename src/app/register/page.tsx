@@ -19,7 +19,7 @@ export default function RegisterPage() {
     regNumber: "",
     email: "",
     phone: "",
-    department: engineeringPrograms[0],
+    department: engineeringPrograms[0] as string,
     yearOfStudy: "Year 2",
     interest: "Robotics & Automation",
     consent: false,
