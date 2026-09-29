@@ -100,9 +100,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!department || typeof department !== "string" || department.trim().length > 60) {
+    if (!department || typeof department !== "string" || department.trim().length > 100) {
       return NextResponse.json(
-        { success: false, error: "Please select a valid engineering department." },
+        { success: false, error: "Please select a valid engineering program." },
         { status: 400 }
       );
     }

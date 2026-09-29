@@ -9,6 +9,7 @@ import {
   ChevronRightIcon,
   AwardIcon,
 } from "@/components/Icons";
+import { engineeringPrograms } from "@/data/programs";
 
 interface SubmittedReceipt {
   id: string;
@@ -31,14 +32,9 @@ const getTodayString = () =>
     day: "2-digit",
   }).format(new Date());
 
-const engineeringDepartments = [
-  "Mechatronic Engineering",
-  "Mechanical Engineering",
-  "Electrical & Electronic Engineering",
-  "Telecommunication & Information Engineering",
-  "Civil Engineering",
-  "Chemical Engineering",
-  "Guest / Other Faculty",
+const rollCallPrograms = [
+  ...engineeringPrograms,
+  "Other / Guest Scholar",
 ];
 
 const yearLevels = [
@@ -54,7 +50,7 @@ export default function RollCallPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     regNumber: "",
-    department: "Mechatronic Engineering",
+    department: engineeringPrograms[0],
     yearOfStudy: "Year 1",
     sessionDate: getTodayString(),
     sessionTopic: "",
@@ -297,21 +293,21 @@ export default function RollCallPage() {
                   />
                 </div>
 
-                {/* Department & Year of Study */}
+                {/* Academic Program & Year of Study */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="rollcall-dept" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Department / Course <span className="text-red-500">*</span>
+                    <label htmlFor="rollcall-program" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                      Academic Program <span className="text-red-500">*</span>
                     </label>
                     <select
-                      id="rollcall-dept"
+                      id="rollcall-program"
                       value={formData.department}
                       onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     >
-                      {engineeringDepartments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
+                      {rollCallPrograms.map((prog) => (
+                        <option key={prog} value={prog}>
+                          {prog}
                         </option>
                       ))}
                     </select>
@@ -381,7 +377,7 @@ export default function RollCallPage() {
                     <span className="font-mono font-bold text-[#071325]">{lastReceipt.regNumber}</span>
                   </div>
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                    <span className="text-slate-500 font-medium">Department</span>
+                    <span className="text-slate-500 font-medium">Program</span>
                     <span className="font-semibold text-[#071325]">{lastReceipt.department}</span>
                   </div>
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">

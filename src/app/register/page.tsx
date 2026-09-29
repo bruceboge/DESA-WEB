@@ -11,6 +11,7 @@ import {
   UsersIcon,
   GraduationCapIcon,
 } from "@/components/Icons";
+import { engineeringPrograms } from "@/data/programs";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -18,7 +19,7 @@ export default function RegisterPage() {
     regNumber: "",
     email: "",
     phone: "",
-    department: "Mechatronic Engineering",
+    department: engineeringPrograms[0],
     yearOfStudy: "Year 2",
     interest: "Robotics & Automation",
     consent: false,
@@ -222,23 +223,23 @@ export default function RegisterPage() {
                     />
                   </div>
 
-                  {/* Department & Year of Study */}
+                  {/* Academic Program & Year of Study */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label htmlFor="reg-department" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                        Department <span className="text-red-500">*</span>
+                      <label htmlFor="reg-program" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                        Academic Program <span className="text-red-500">*</span>
                       </label>
                       <select
-                        id="reg-department"
+                        id="reg-program"
                         value={formData.department}
                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                         className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                       >
-                        <option value="Mechatronic Engineering">Mechatronic Engineering</option>
-                        <option value="Mechanical Engineering">Mechanical Engineering</option>
-                        <option value="Electrical & Electronic">Electrical & Electronic Engineering</option>
-                        <option value="Civil Engineering">Civil Engineering</option>
-                        <option value="Chemical Engineering">Chemical Engineering</option>
+                        {engineeringPrograms.map((prog) => (
+                          <option key={prog} value={prog}>
+                            {prog}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -385,7 +386,7 @@ export default function RegisterPage() {
 
                     <div className="grid grid-cols-2 gap-3 pt-1">
                       <div>
-                        <span className="text-slate-400 text-[10px] block uppercase font-medium">Department</span>
+                        <span className="text-slate-400 text-[10px] block uppercase font-medium">Program</span>
                         <span className="text-slate-200">{formData.department}</span>
                       </div>
                       <div>

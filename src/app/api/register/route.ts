@@ -115,7 +115,7 @@ export async function POST(request: Request) {
 
     if (!department || typeof department !== "string") {
       return NextResponse.json(
-        { success: false, error: "Please select your engineering department." },
+        { success: false, error: "Please select your engineering program." },
         { status: 400 }
       );
     }
