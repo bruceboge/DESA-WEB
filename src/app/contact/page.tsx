@@ -24,30 +24,6 @@ const contactChannels = [
     actionLabel: "Email Us",
     actionHref: "mailto:engineeringstudentsassociation@dkut.ac.ke",
   },
-  {
-    icon: MapPinIcon,
-    title: "Campus Location",
-    detail: "School of Engineering Complex, DeKUT Main Campus",
-    subtext: "Private Bag - 10143 Dedan Kimathi, Nyeri, Kenya",
-    actionLabel: "View Directions",
-    actionHref: "https://www.dkut.ac.ke",
-  },
-  {
-    icon: PhoneIcon,
-    title: "Telephone Desk",
-    detail: "+254 (0) 709 202 942",
-    subtext: "School of Engineering direct departmental telephone line",
-    actionLabel: "Call Desk",
-    actionHref: "tel:+254709202942",
-  },
-  {
-    icon: ClockIcon,
-    title: "Secretariat Hours",
-    detail: "Monday – Friday: 8:00 AM – 5:00 PM",
-    subtext: "Closed on weekends and official university public holidays",
-    actionLabel: "Active Term",
-    actionHref: "#",
-  },
 ];
 
 const faqs = [
@@ -100,14 +76,13 @@ export default function ContactPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        setTicketId(result.ticketId);
+        setTicketId(result.ticketId || "");
         setSubmitted(true);
       } else {
         setErrorMsg(result.error || "Failed to dispatch message. Please try again.");
       }
     } catch {
       // Graceful offline fallback
-      setTicketId(`MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
       setSubmitted(true);
     } finally {
       setIsSubmitting(false);
@@ -268,15 +243,14 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Contact Form */}
+        {/* Contact & Support Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
           <div className="mb-6">
-
             <h2 className="text-lg sm:text-xl font-bold text-[#071325]">
               Send a Message to the Secretariat
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Inquiries are routed to the relevant executive officer or cohort lead.
+              Inquiries are routed to the relevant executive officer.
             </p>
           </div>
 
@@ -461,18 +435,6 @@ export default function ContactPage() {
             </form>
           )}
         </div>
-
-        {/* Quick Campus Note */}
-        <div className="p-4 rounded-xl bg-[#071325] text-white text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-          <div>
-            <span className="text-[10px] font-bold uppercase text-[#e5a93c] block">Campus Visitor Protocol</span>
-            <p className="text-slate-300 text-xs mt-0.5 leading-relaxed">
-              External visitors should check in at DeKUT Main Gate 1 for School of Engineering clearance.
-            </p>
-          </div>
-          <span className="text-[11px] text-slate-400 shrink-0 font-medium">DeKUT Main Campus • Nyeri</span>
-        </div>
-
         {/* Packed FAQ List (No big bulky blocks) */}
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-3">

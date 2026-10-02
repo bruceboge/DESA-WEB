@@ -1,0 +1,52 @@
+[
+  {
+    "id": "gal-masquerade-2026",
+    "title": "DESA Masquerade Dinner 2026: Structures That Stand, Standards That Endure",
+    "category": "Annual Galas & Dinners",
+    "department": "School of Engineering",
+    "location": "Golden Gates Hotel, Nyeri",
+    "date": "20 November 2026",
+    "description": "Flagship annual engineering gala celebrating academic and industry excellence under the theme 'Structures That Stand, Standards That Endure'. Dress code: Slits & Suits.",
+    "image": "/images/events/masquerade-dinner.png"
+  },
+  {
+    "id": "gal-game-night-2026",
+    "title": "Level Up Game Night: Bring Your A-Game",
+    "category": "Campus Events & Socials",
+    "department": "All Engineering Departments",
+    "location": "Room A3, School of Engineering (SOE)",
+    "date": "Wednesday, 30th Sept 2026",
+    "description": "DESA engineering cohort game night featuring Charades, Poker, Mafia, Go Fish, Kenya@50, Chess, UNO, and card strategy games for mental recharge.",
+    "image": "/images/events/game-night.png"
+  },
+  {
+    "id": "gal-beyond-classroom-2026",
+    "title": "Engineering, Beyond The Classroom: Joint DESA × IEEE WIE Session",
+    "category": "Technical Sessions & Mentorship",
+    "department": "All Engineering Disciplines",
+    "location": "Room A2, School of Engineering (SOE)",
+    "date": "Wednesday, 23rd September 2026",
+    "description": "Empowering joint session by DESA and IEEE Women in Engineering (WIE) DeKUT Affinity Group focusing on opportunities, the engineering toolkit, and student wellbeing for Suicide Prevention Month.",
+    "image": "/images/events/engineering-beyond-classroom.png"
+  },
+  {
+    "id": "gal-dekut-campus",
+    "title": "DeKUT School of Engineering Complex",
+    "category": "Campus & Labs",
+    "department": "School of Engineering",
+    "location": "DeKUT Main Campus, Nyeri",
+    "date": "DeKUT Campus Grounds",
+    "description": "The academic hub and specialized laboratories unifying Mechatronics, Mechanical, Electrical, Civil, and Chemical engineering departments at Dedan Kimathi University of Technology.",
+    "image": "/images/dekut-campus.jpg"
+  },
+  {
+    "id": "gal-desa-identity",
+    "title": "DESA Official Seal & University Identity",
+    "category": "Association Identity",
+    "department": "DESA Secretariat",
+    "location": "School of Engineering Complex, DeKUT",
+    "date": "Official Chapter Insignia",
+    "description": "Official seal and branding of the Dedan Kimathi University Engineering Students Association, representing solidarity, innovation, and engineering leadership.",
+    "image": "/images/desa-official-logo.png"
+  }
+]

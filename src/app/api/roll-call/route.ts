@@ -149,15 +149,25 @@ export async function POST(request: Request) {
       });
     }
 
-    const scriptUrl = process.env.GOOGLE_SHEETS_ROLL_CALL_URL;
+    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_ROLL_CALL_URL;
     let savedToSheets = false;
     let sheetError: string | null = null;
 
     if (scriptUrl) {
+      const sheetsPayload = {
+        action: "rollCall",
+        secret: process.env.APPS_SCRIPT_SECRET || "",
+        ...newRecord,
+      };
       // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
-      const syncResult = await sendToGoogleSheets(scriptUrl, newRecord, 30000);
+      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
       savedToSheets = syncResult.ok;
       sheetError = syncResult.error || null;
+      if (!syncResult.ok) {
+        console.error("Google Sheets roll-call sync error:", syncResult.error, "Status:", syncResult.status);
+      }
+    } else {
+      console.warn("No Google Sheets URL configured for roll-call (APPS_SCRIPT_URL or GOOGLE_SHEETS_ROLL_CALL_URL missing).");
     }
 
     // Return only the current attendee's own receipt, never reading any other student's data

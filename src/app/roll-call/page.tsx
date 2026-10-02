@@ -7,7 +7,6 @@ import {
   ShieldCheckIcon,
   CheckCircleIcon,
   ChevronRightIcon,
-  AwardIcon,
 } from "@/components/Icons";
 import { engineeringPrograms } from "@/data/programs";
 
@@ -132,7 +131,7 @@ export default function RollCallPage() {
               Home
             </Link>
             <ChevronRightIcon className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-[#e5a93c] font-semibold">Roll Call & Session Sign-In</span>
+            <span className="text-[#e5a93c] font-semibold">Roll Call</span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -141,10 +140,10 @@ export default function RollCallPage() {
                 Official Assembly & Meeting Attendance
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-                DESA Member Roll Call Portal
+                Roll Call Portal
               </h1>
               <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl text-justify">
-                Record your verified in-person attendance for any technical workshop, general meeting, or engineering session. Your submission is secure & confidential.
+                Record your verified in-person attendance for any technical workshop, general meeting, or engineering session.
               </p>
             </div>
 
@@ -166,10 +165,10 @@ export default function RollCallPage() {
 
       {/* Main Interactive Sign-In Section */}
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className={`grid grid-cols-1 ${lastReceipt ? "lg:grid-cols-12" : "max-w-2xl mx-auto"} gap-8`}>
 
-          {/* Left Column: Sign-in Form */}
-          <div className="lg:col-span-6 space-y-6">
+          {/* Sign-in Form */}
+          <div className={lastReceipt ? "lg:col-span-6 space-y-6" : "w-full space-y-6"}>
             <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm">
               <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
                 <div className="w-10 h-10 rounded-xl bg-[#071325] text-[#e5a93c] flex items-center justify-center shrink-0">
@@ -177,7 +176,7 @@ export default function RollCallPage() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-[#071325]">
-                    Member Session Check-In
+                    Session Check-In
                   </h2>
                   <p className="text-xs text-slate-500">
                     Fill in your details below to log your attendance.
@@ -267,7 +266,7 @@ export default function RollCallPage() {
                     minLength={2}
                     maxLength={70}
                     autoComplete="name"
-                    placeholder="e.g. Victor Mutua"
+                    placeholder="Dedan Kimathi"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -286,7 +285,7 @@ export default function RollCallPage() {
                     minLength={6}
                     maxLength={30}
                     autoComplete="off"
-                    placeholder="e.g. C025-01-1234/2023"
+                    placeholder="e.g. E020-01-1234/2023"
                     value={formData.regNumber}
                     onChange={(e) => setFormData({ ...formData, regNumber: e.target.value.toUpperCase() })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -297,7 +296,7 @@ export default function RollCallPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="rollcall-program" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Academic Program <span className="text-red-500">*</span>
+                      Program <span className="text-red-500">*</span>
                     </label>
                     <select
                       id="rollcall-program"
@@ -344,10 +343,10 @@ export default function RollCallPage() {
             </div>
           </div>
 
-          {/* Right Column: Private Verification & Official Receipt */}
-          <div className="lg:col-span-6 space-y-6">
-            {lastReceipt ? (
-              /* Verified Digital Attendance Receipt */
+          {/* Right Column: Verified Digital Attendance Receipt */}
+          {lastReceipt && (
+            <div className="lg:col-span-6 space-y-6">
+              {/* Verified Digital Attendance Receipt */}
               <div className="bg-white rounded-2xl border-2 border-[#0a5c36] p-6 sm:p-7 shadow-lg relative overflow-hidden animate-fadeIn">
                 <div className="absolute top-0 right-0 bg-[#0a5c36] text-white text-[10px] font-extrabold uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-sm">
                   Verified Check-In
@@ -404,69 +403,9 @@ export default function RollCallPage() {
                     This receipt confirms your attendance is recorded. Take a screenshot for your personal records if required.
                   </p>
                 </div>
-
               </div>
-            ) : (
-              /* Privacy & Verification Information Panel */
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm">
-                  <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-100">
-                    <div className="w-10 h-10 rounded-xl bg-[#071325] text-[#e5a93c] flex items-center justify-center shrink-0">
-                      <ShieldCheckIcon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-[#071325]">
-                        Attendance Verification & Privacy Standards
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        Official Secretariat Record Management
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 text-xs text-slate-600 leading-relaxed">
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="font-bold text-[#071325] block mb-1">
-                        1. Confidential Direct Ingestion
-                      </span>
-                      Your check-in is logged directly into the Secretariat&apos;s secured register. Student names, registration numbers, and timestamps are strictly kept private and are never broadcast or publicly exposed to other site visitors.
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="font-bold text-[#071325] block mb-1">
-                        2. Up To 75% Attendance Requirement
-                      </span>
-                      Members must achieve a minimum of 75% verified session attendance to qualify for DESA leadership nominations, subsidized industrial tours, and official recommendations.
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                      <span className="font-bold text-[#071325] block mb-1">
-                        3. Integrity & Physical Presence
-                      </span>
-                      Sign-in is valid only for students physically present during the designated assembly or workshop.
-                    </div>
-                  </div>
-                </div>
-
-                {/* Secretariat Contact Box */}
-                <div className="p-5 rounded-2xl bg-[#071325] text-white border border-[#e5a93c]/20 shadow-sm text-xs">
-                  <div className="flex items-center gap-2 mb-2 text-[#e5a93c] font-bold uppercase tracking-wider text-[11px]">
-                    <AwardIcon className="w-4 h-4" />
-                    <span>DESA Secretariat Administration</span>
-                  </div>
-                  <p className="text-slate-300 leading-relaxed mb-3 text-justify">
-                    For attendance queries, official certification requests, or session verification reports, contact the DESA Secretariat via the official association email:
-                  </p>
-                  <a
-                    href="mailto:engineeringstudentsassociation@dkut.ac.ke"
-                    className="inline-block text-[#e5a93c] font-mono font-semibold hover:underline"
-                  >
-                    engineeringstudentsassociation@dkut.ac.ke
-                  </a>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

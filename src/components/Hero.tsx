@@ -14,44 +14,44 @@ import {
   FlaskIcon,
 } from "./Icons";
 
-  const disciplines = [
-    {
-      icon: CpuIcon,
-      title: "Mechatronics Hub",
-      subtitle: "Robotics & Automation",
-      href: "/departments",
-    },
-    {
-      icon: CogIcon,
-      title: "Mechanical Labs",
-      subtitle: "Advanced CAD & Rigs",
-      href: "/departments",
-    },
-    {
-      icon: ZapIcon,
-      title: "Electrical & Telecom",
-      subtitle: "Power & Systems",
-      href: "/departments",
-    },
-    {
-      icon: BuildingIcon,
-      title: "Civil Infrastructure",
-      subtitle: "Structural & Materials",
-      href: "/departments",
-    },
-    {
-      icon: FlaskIcon,
-      title: "Chemical & Process",
-      subtitle: "Process Engineering",
-      href: "/departments",
-    },
-    {
-      icon: ShieldCheckIcon,
-      title: "EBK & IEK Chapter",
-      subtitle: "Professional Pathway",
-      href: "/leadership",
-    },
-  ];
+const disciplines = [
+  {
+    icon: CpuIcon,
+    title: "Mechatronics Hub",
+    subtitle: "Robotics & Automation",
+    href: "/innovations",
+  },
+  {
+    icon: CogIcon,
+    title: "Mechanical Labs",
+    subtitle: "Advanced CAD & Rigs",
+    href: "/innovations",
+  },
+  {
+    icon: ZapIcon,
+    title: "Electrical & Telecom",
+    subtitle: "Power & Systems",
+    href: "/innovations",
+  },
+  {
+    icon: BuildingIcon,
+    title: "Civil Infrastructure",
+    subtitle: "Structural & Materials",
+    href: "/innovations",
+  },
+  {
+    icon: FlaskIcon,
+    title: "Chemical & Process",
+    subtitle: "Process Engineering",
+    href: "/innovations",
+  },
+  {
+    icon: ShieldCheckIcon,
+    title: "EBK & IEK Chapter",
+    subtitle: "Professional Pathway",
+    href: "/about",
+  },
+];
 
 export default function Hero() {
   return (
@@ -93,21 +93,21 @@ export default function Hero() {
               Welcome to the official page of the <strong className="text-white font-semibold">DeKUT Engineering Students Association (DESA)</strong> at <strong className="text-white font-semibold">Dedan Kimathi University of Technology (DeKUT)</strong>. We nurture visionary student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical disciplines—bridging world-class academic rigour with industrial mastery.
             </p>
 
-            {/* Action Buttons */}
+            {/* Action Buttons: Dual Command Center CTAs */}
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
-                href="/register"
+                href="/news-events"
                 className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-sm font-bold px-6 py-3.5 rounded-xl shadow transition-colors flex items-center gap-2 cursor-pointer"
               >
-                <span>Join DESA</span>
+                <span>Explore Events</span>
                 <ArrowRightIcon className="w-4 h-4" />
               </Link>
 
               <Link
-                href="/contact"
+                href="/membership#lookup"
                 className="bg-[#0c1a32] hover:bg-[#142646] text-white text-sm font-semibold px-6 py-3.5 rounded-xl border border-slate-700 hover:border-[#e5a93c]/50 transition-colors shadow flex items-center gap-2"
               >
-                <span>Contact us</span>
+                <span>Check Membership</span>
               </Link>
             </div>
 
@@ -166,11 +166,11 @@ export default function Hero() {
               <ul className="space-y-2.5 text-xs text-slate-300">
                 <li className="flex items-start gap-2.5">
                   <span className="w-4 h-4 rounded-full bg-[#e5a93c]/15 text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">✓</span>
-                  <span className="leading-snug"><strong className="text-white font-semibold">Student Engineering Mastery:</strong> Specialized robotics rigs, CAD workshops, peer tutorial circles, and capstone design mentorship.</span>
+                  <span className="leading-snug"><strong className="text-white font-semibold">Engineering Mastery:</strong> Specialized robotics rigs, CAD workshops, peer tutorial circles, and capstone design mentorship.</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <span className="w-4 h-4 rounded-full bg-[#e5a93c]/15 text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">✓</span>
-                  <span className="leading-snug"><strong className="text-white font-semibold">Industry Preference:</strong> Consistently top-ranked by major engineering employers (KenGen, Kenya Power, BAT, and multinational tech firms).</span>
+                  <span className="leading-snug"><strong className="text-white font-semibold">Industry Preference:</strong> Consistently top-ranked by major engineering employers.</span>
                 </li>
               </ul>
 
@@ -200,11 +200,9 @@ export default function Hero() {
                 <Link
                   key={idx}
                   href={item.href}
-                  className={`group flex items-center gap-2.5 lg:px-3 ${
-                    idx === 0 ? "lg:pl-0" : ""
-                  } ${
-                    idx === disciplines.length - 1 ? "lg:pr-0" : ""
-                  } transition-colors`}
+                  className={`group flex items-center gap-2.5 lg:px-3 ${idx === 0 ? "lg:pl-0" : ""
+                    } ${idx === disciplines.length - 1 ? "lg:pr-0" : ""
+                    } transition-colors`}
                 >
                   <div className="w-8 h-8 rounded-lg bg-[#0c1a32] text-[#e5a93c] border border-[#e5a93c]/20 group-hover:border-[#e5a93c]/50 flex items-center justify-center shrink-0 transition-colors">
                     <Icon className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />

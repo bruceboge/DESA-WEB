@@ -432,7 +432,7 @@ export default function LeadershipPage() {
             </div>
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
               <Link
-                href="/register"
+                href="/membership#register"
                 className="bg-[#e5a93c] hover:bg-[#f6c867] text-[#071325] font-bold text-xs sm:text-sm px-6 py-3 rounded-xl shadow-lg transition-all text-center"
               >
                 Register as an Active Member

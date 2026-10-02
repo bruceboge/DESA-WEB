@@ -12,9 +12,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1.0,
     },
     {
-      url: `${baseUrl}/departments`,
+      url: `${baseUrl}/about`,
       lastModified: currentDate,
       changeFrequency: "monthly",
+      priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/membership`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/innovations`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/innovations/submit`,
+      lastModified: currentDate,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${baseUrl}/news-events`,
+      lastModified: currentDate,
+      changeFrequency: "weekly",
       priority: 0.9,
     },
     {
@@ -24,16 +48,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/innovations`,
+      url: `${baseUrl}/departments`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
+      changeFrequency: "monthly",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/resources`,
+      url: `${baseUrl}/gallery`,
       lastModified: currentDate,
-      changeFrequency: "weekly",
-      priority: 0.85,
+      changeFrequency: "monthly",
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/roll-call`,
@@ -42,19 +66,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/gallery`,
-      lastModified: currentDate,
-      changeFrequency: "monthly",
-      priority: 0.75,
-    },
-    {
       url: `${baseUrl}/contact`,
-      lastModified: currentDate,
-      changeFrequency: "monthly",
-      priority: 0.85,
-    },
-    {
-      url: `${baseUrl}/register`,
       lastModified: currentDate,
       changeFrequency: "monthly",
       priority: 0.85,

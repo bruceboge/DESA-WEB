@@ -1,0 +1,37 @@
+[
+  {
+    "title": "HUMAN ACTIVITY DETECTION USING WIFI SIGNALS",
+    "author": "BRUCE BOGE",
+    "regNumber": "E020-01-0942/2023",
+    "department": "BSc Electrical and Electronic Engineering",
+    "category": "SIGNALS AND MACHINE LEARNING",
+    "summary": "HUMAN ACTIVITY DETECTION USING WIFI and ESP32",
+    "content": "BORROWING THE CONCEPT OF RUVIEW PROJECT IN GITHUB\nRuView is an open-source spatial intelligence platform that turns ordinary WiFi signals into a real-time sensing system. By using standard WiFi and low-cost microcontrollers like the $9 ESP32, it can detect human presence, track movement, and even measure vital signs—all without cameras or microphones.   \n\nHere is a breakdown of how the technology actually works:\n\n1. The Physics: Radio Wave ScatteringEvery time a WiFi router is turned on, it fills the surrounding space with radio waves. These waves don't just travel in a straight line; they bounce off walls, furniture, and people. Because the human body is mostly water, it naturally absorbs, reflects, and scatters these radio waves. When a person moves, breathes, or even sits perfectly still, they alter the way these waves travel through the room.   \n\n2. The Core Metric: Channel State Information (CSI)Modern WiFi transmits data across multiple different frequencies (called subcarriers) simultaneously. When a signal travels from a transmitter (like your router) to a receiver (like an ESP32), RuView analyzes Channel State Information (CSI).   While a basic WiFi signal indicator (RSSI) only tells you how strong a connection is, CSI is much more detailed. It captures the amplitude and phase shifts of the radio waves across dozens of subcarriers. By analyzing the \"shape\" of these microscopic signal disturbances, RuView can map exactly what is happening in the physical space.   \n\n3. The Hardware: The ESP32 MeshInstead of relying on expensive radar equipment, RuView uses low-cost ESP32 boards acting as receivers.   A single ESP32 node can tell if a room is occupied by detecting general signal disturbances.When you set up a mesh of 3 to 6 ESP32 nodes, they communicate with each other to create hundreds of \"virtual subcarriers\" from multiple viewing angles.   By comparing how the exact same WiFi signal reaches each different node, the system uses geometry and multipath propagation (how radio bends around objects) to pinpoint exactly where someone is standing in 3D space.   \n\n4. AI and Signal ProcessingThe raw CSI data looks like chaotic noise. RuView uses advanced signal processing (like Hampel filters and spectrograms) paired with an on-board AI model to make sense of the data. The AI is trained to recognize the specific \"RF fingerprints\" of different human actions.   \n\nBecause of this, RuView can infer complex semantic states, such as:Vitals: Breathing rate (6–30 BPM) and heart rate (40–120 BPM) by detecting the microscopic chest movements of a person sitting or sleeping.   \n\nActivity: Identifying if someone is walking, sitting, falling, or getting out of bed.   Room Context: Flagging states like \"meeting-in-progress,\" \"bathroom-occupied,\" or \"possible-distress\".   \n\nWhy This Approach Matters\nBecause RuView relies entirely on radio physics, it completely bypasses the limitations of traditional smart home sensors:\nThrough-Wall Sensing: Radio waves pass through drywall, furniture, and even rubble, allowing the system to monitor spaces without a direct line of sight.   \n\nTotal Privacy: It captures zero optical or acoustic data. There are no lenses or microphones, meaning it can be safely used in bathrooms, bedrooms, and private offices.   \n\nNo Blind Spots: It works perfectly in pitch-black darkness, thick smoke, or fog.",
+    "highlights": [
+      "90% ACCURACY",
+      "HUMAN BREATHING/ HEARTBEAT DETECTION"
+    ],
+    "imageUrl": "",
+    "externalLink": "",
+    "id": "art-1790956863483",
+    "date": "Oct 2026",
+    "status": "Published"
+  },
+  {
+    "id": "art-masquerade-theme-2026",
+    "title": "Structures That Stand, Standards That Endure: The 2026 Engineering Theme",
+    "author": "DESA Editorial Board",
+    "regNumber": "DKUT/SOE/2026",
+    "department": "School of Engineering",
+    "category": "Engineering Leadership",
+    "date": "Sep 2026",
+    "summary": "A technical perspective on building resilient infrastructure, strict adherence to EBK and KEBS standards, and engineering integrity across Kenyan industry.",
+    "content": "Engineering in the 21st century demands an uncompromised commitment to both structural durability and ethical rigor. As part of our 2026 flagship focus, DESA unites students across all five engineering disciplines to examine local engineering challenges from Mount Kenya drainage systems to industrial automation in manufacturing facilities.\n\n### The Pillars of Engineering Rigor\n- Strict alignment with the Engineers Board of Kenya (EBK) Code of Conduct\n- Inter-departmental synergy across Mechatronic, Mechanical, Electrical, Civil, and Chemical disciplines\n- Prioritizing sustainable, locally manufactured materials in engineering prototypes\n\nEngineering leadership begins in the classroom and laboratory, and is tested through the standards we uphold.",
+    "highlights": [
+      "Alignment with Engineers Board of Kenya (EBK) code of ethics",
+      "Inter-disciplinary collaboration across five engineering departments",
+      "Focus on sustainable, locally sourced materials in engineering builds"
+    ],
+    "status": "Published"
+  }
+]

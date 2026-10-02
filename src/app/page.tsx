@@ -1,27 +1,28 @@
 import React from "react";
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
-import AboutSection from "@/components/AboutSection";
-import FocusAreas from "@/components/FocusAreas";
-import GallerySection from "@/components/GallerySection";
-import CallForMembers from "@/components/CallForMembers";
+import LivePulseTicker from "@/components/LivePulseTicker";
+import ThreePillars from "@/components/ThreePillars";
+import LatestDispatches from "@/components/LatestDispatches";
+import CommandCtaBanner from "@/components/CommandCtaBanner";
+import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
-  title: "DESA | DeKUT Engineering Students Association — Nyeri, Kenya",
+  title: "DESA | Dedan Kimathi University Engineering Students Association — Nyeri, Kenya",
   description:
-    "Official home of DESA at Dedan Kimathi University of Technology. Uniting Mechatronic, Mechanical, Electrical, Civil & Chemical engineering students through projects, hackathons, and industry partnerships.",
+    "Official home of DESA at Dedan Kimathi University of Technology. Uniting Mechatronic, Mechanical, Electrical, Civil & Chemical engineering students.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "DESA | DeKUT Engineering Students Association",
+    title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
-      "Student engineering community at Dedan Kimathi University of Technology, Nyeri, Kenya. Projects, hackathons, academic resources & industry links.",
+      "Student engineering community at Dedan Kimathi University of Technology, Nyeri, Kenya. Technical articles, student blog, hackathons.",
     url: "https://esa-dekut.vercel.app",
     siteName: "DESA - DeKUT Engineering Students Association",
     locale: "en_KE",
     type: "website",
     images: [
       {
-        url: "/images/desa-logo.jpg",
+        url: "/images/desa-official-logo.png",
         width: 1024,
         height: 1024,
         alt: "Official Logo of DESA - DeKUT Engineering Students Association",
@@ -30,30 +31,34 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "DESA | DeKUT Engineering Students Association",
+    title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
       "Official portal for student engineers at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
-    images: ["/images/desa-logo.jpg"],
+    images: ["/images/desa-official-logo.png"],
   },
 };
 
 export default function HomePage() {
+  const posts = getAllPosts();
+  const upcomingEvents = posts.filter((p) => p.type === "event" && !p.isPast);
+  const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+
   return (
     <>
-      {/* Hero Section introducing DESA & DeKUT School of Engineering */}
+      {/* 1. Hero with Dual Command Buttons (Explore Events & Check Membership) */}
       <Hero />
 
-      {/* Association Overview & Faculty Patronage */}
-      <AboutSection />
+      {/* 2. Live Pulse Ticker: Next Event, Student Innovations Blog, Secretariat Notice */}
+      <LivePulseTicker nextEvent={nextEvent} />
 
-      {/* Objectives of the Association */}
-      <FocusAreas />
+      {/* 3. Why DESA: The 3 Pillars (Innovate, Network, Lead) */}
+      <ThreePillars />
 
-      {/* Laboratory & Campus Archives Teaser */}
-      <GallerySection />
+      {/* 4. Latest Dispatches: 2 Newest Upcoming Events + 1 Concluded Recap */}
+      <LatestDispatches posts={posts} />
 
-      {/* Call for Members Registration Section */}
-      <CallForMembers />
+      {/* 5. One Closing CTA Banner → /membership */}
+      <CommandCtaBanner />
     </>
   );
 }

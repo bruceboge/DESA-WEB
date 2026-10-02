@@ -118,7 +118,7 @@ export default function DepartmentsPage() {
           </p>
           <div className="flex justify-center gap-3">
             <Link
-              href="/register"
+              href="/membership#register"
               className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold px-5 py-2.5 rounded-lg shadow transition-colors inline-flex items-center gap-1.5"
             >
               <span>Join DESA</span>

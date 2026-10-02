@@ -85,7 +85,7 @@ export default function CookiesPage() {
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 bg-slate-200 px-2 py-0.5 rounded">Optional</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed text-justify">
-                  Measures aggregated platform visits, popular academic vault resources, and browser responsiveness to optimize website performance. No third-party behavioral profiling or cross-site tracking takes place.
+                  Measures aggregated platform visits, popular innovation articles, events, and browser responsiveness to optimize website performance. No third-party behavioral profiling or cross-site tracking takes place.
                 </p>
               </div>
             </div>

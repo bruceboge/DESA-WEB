@@ -17,10 +17,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://esa-dekut.vercel.app"),
   title: {
     default: "DESA | Dedan Kimathi University Engineering Students Association",
-    template: "%s | DESA DeKUT",
+    template: "%s",
   },
   description:
-    "Official Website of DESA — the Engineering Students Association at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya. Student projects, hackathons, and resources across five engineering disciplines.",
+    "Official Website of DESA — the Engineering Students Association at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya. Student innovations, technical blogs, galas, hackathons, and membership services across five engineering disciplines.",
   keywords: [
     "DESA DeKUT",
     "Dedan Kimathi University Engineering",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
-      "Official portal for student engineers at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
+      "Official website for student engineers at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
     images: ["/images/desa-official-logo.png"],
   },
   robots: {

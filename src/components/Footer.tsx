@@ -16,11 +16,9 @@ export default function Footer() {
               Official DESA Social Channels
             </span>
             <h3 className="text-base sm:text-lg font-bold text-white mt-0.5">
-              Connect with DeKUT Engineering Students Association
+              Connect with DeKUT Engineering Students Association on Socials
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Stay updated with workshops, hackathons, engineering projects, and campus leadership.
-            </p>
+
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {/* TikTok */}
@@ -146,28 +144,28 @@ export default function Footer() {
                 <Link href="/" className="hover:text-[#e5a93c] transition-colors">Home</Link>
               </li>
               <li>
+                <Link href="/about" className="hover:text-[#e5a93c] transition-colors">About DESA</Link>
+              </li>
+              <li>
                 <Link href="/leadership" className="hover:text-[#e5a93c] transition-colors">Leadership & Committee</Link>
               </li>
               <li>
-                <Link href="/departments" className="hover:text-[#e5a93c] transition-colors">Departments</Link>
+                <Link href="/innovations" className="hover:text-[#e5a93c] transition-colors">Engineering Blog & Articles</Link>
               </li>
               <li>
-                <Link href="/innovations" className="hover:text-[#e5a93c] transition-colors">Innovations & Labs</Link>
+                <Link href="/news-events" className="hover:text-[#e5a93c] transition-colors">News & Events</Link>
               </li>
               <li>
-                <Link href="/resources" className="hover:text-[#e5a93c] transition-colors">Academic Vault</Link>
+                <Link href="/gallery" className="hover:text-[#e5a93c] transition-colors">Campus Gallery</Link>
               </li>
               <li>
-                <Link href="/roll-call" className="hover:text-[#e5a93c] transition-colors">Roll Call & Attendance</Link>
+                <Link href="/membership" className="hover:text-[#e5a93c] transition-colors font-semibold text-[#e5a93c]">Membership Hub</Link>
               </li>
               <li>
-                <Link href="/gallery" className="hover:text-[#e5a93c] transition-colors">Gallery</Link>
+                <Link href="/roll-call" className="hover:text-[#e5a93c] transition-colors">Roll Call Check-In</Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-[#e5a93c] transition-colors">Contact Secretariat</Link>
-              </li>
-              <li>
-                <Link href="/register" className="hover:text-[#e5a93c] transition-colors font-semibold text-[#e5a93c]">Join DESA</Link>
+                <Link href="/contact" className="hover:text-[#e5a93c] transition-colors">Contact & Support</Link>
               </li>
             </ul>
           </div>
