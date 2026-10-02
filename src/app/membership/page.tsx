@@ -398,7 +398,7 @@ export default function MembershipHubPage() {
                     onClick={() => setActiveTab("dues")}
                     className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold px-4 py-2 rounded-lg transition-colors cursor-pointer"
                   >
-                    View Annual Dues Instructions
+                    View Payment Instructions
                   </button>
                 </div>
               </div>
