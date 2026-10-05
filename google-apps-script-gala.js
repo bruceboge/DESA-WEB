@@ -4,57 +4,39 @@
  * =====================================================================
  * 
  * Target Sheet Columns (matching the Gala Form):
- * 1.  Name                  - Full name of the attendee
+ * 1.  Name                  - Full name of attendee
  * 2.  Reg Number            - Student Registration Number (e.g. E020-01-1234/2023)
- * 3.  Year of Study         - Academic level (Year 1, Year 2, Year 3, Year 4, Year 5, Alumni/Staff)
+ * 3.  Year of Study         - Academic level (Year 1 to 5, Alumni/Staff)
  * 4.  CONTACT               - Phone number / WhatsApp contact
  * 5.  COURSE                - Engineering program or manual course entered
- * 6.  MEMBERSHIP            - DESA Membership Status (e.g. "DESA Member (E020-...)" or "Non-Member / Guest")
+ * 6.  MEMBERSHIP            - DESA Membership Status (DESA Member / Non-Member)
  * 7.  DIETARY               - Food allergies / special dietary requirements
  * 8.  Presentation Showcase - Summary status ("YES: [Category] - Desc" or "No")
- * 9.  Presentation Category - Category if showcasing on stage (e.g. Music, Poetry, Dance, Innovation)
+ * 9.  Presentation Category - Category if showcasing on stage
  * 10. Presentation Details  - Description of talent / presentation
- * 11. Payment Commitment    - Reservation status (Deposit: Ksh 500 / Full: Ksh 1,300 Lipa Polepole)
+ * 11. Payment Commitment    - Reservation status (Deposit: Ksh 500 / Full: Ksh 1,300)
  * 12. Date                  - Registration date (YYYY-MM-DD, Africa/Nairobi)
  * 13. RegTime               - Registration time (hh:mm a, Africa/Nairobi)
  * 
  * ─────────────────────────────────────────────────────────────────────
- * SETUP INSTRUCTIONS (Takes ~2 minutes):
+ * HOW TO UPDATE YOUR EXISTING GOOGLE SHEET (Takes 30 seconds):
  * ─────────────────────────────────────────────────────────────────────
- * 1. Open your Google Sheet for Gala Registrations.
- *    (e.g. "DESA Annual Gala 2026 - Master Registry")
- * 
- * 2. In Google Sheets, click:
+ * 1. In Google Sheets, click:
  *    Extensions > Apps Script
  * 
- * 3. Replace all code in Code.gs with this script.
+ * 2. Replace all code in Code.gs with this entire script and click Save (💾).
  * 
- * 4. Set the Security Secret:
- *    - Click Project Settings (the gear ⚙️ icon on the left sidebar).
- *    - Scroll to "Script Properties" and click "Add script property".
- *    - Property: GALA_SCRIPT_SECRET
- *    - Value: (e.g. "desa-gala-secret-2026")
- *    - Click "Save script properties".
- *    *Note: This must match the GALA_SCRIPT_SECRET in your .env.local file.*
+ * 3. RUN ONE-CLICK SETUP:
+ *    In the toolbar at the top of Apps Script, select "setupGalaHeaders" 
+ *    from the dropdown next to "Debug" and click "▶ Run".
+ *    -> Check your Google Sheet: All 13 columns are instantly formatted!
  * 
- * 5. Deploy as Web App:
- *    - Click "Deploy" (top right) > "New deployment" 
- *      (or "Manage deployments" > Edit > New version if updating).
- *    - Select type: "Web app".
- *    - Description: "DESA Gala Registration API - Updated Schema"
- *    - Execute as: "Me" (your email)
- *    - Who has access: "Anyone" (allows the website backend to POST)
+ * 4. UPDATE WEB APP DEPLOYMENT (Crucial!):
+ *    - Click "Deploy" (top right) > "Manage deployments".
+ *    - Click the ✏️ Edit icon next to your active deployment.
+ *    - Change "Version" to: "New version".
  *    - Click "Deploy".
- *    - Authorize access when prompted.
- * 
- * 6. Copy the Web App URL:
- *    - Copy the generated URL (it ends in /exec).
- *    - In your project's .env.local file, ensure:
- *        GALA_SCRIPT_URL="https://script.google.com/macros/s/.../exec"
- *        GALA_SCRIPT_SECRET="desa-gala-secret-2026"
- * 
- * Done! When attendees submit the Gala form, their full details will append
- * with all form fields automatically organized in your Google Sheet.
+ *    *(If you don't select "New version", Google keeps running the old 6-column script!)*
  * =====================================================================
  */
 
@@ -102,13 +84,123 @@ function normalizeKey(str) {
 }
 
 /**
- * GET Handler - Health check & diagnostic status
+ * Automatically adds a "🏆 DESA Gala" menu to Google Sheets toolbar upon opening
+ */
+function onOpen() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu("🏆 DESA Gala")
+      .addItem("✨ Format & Update Columns (13 Columns)", "setupGalaHeaders")
+      .addToUi();
+  } catch (e) {
+    // onOpen may be called in non-UI context, safe to ignore
+  }
+}
+
+/**
+ * ONE-CLICK SETUP FUNCTION
+ * Run this function directly inside Apps Script editor:
+ * Select "setupGalaHeaders" in the dropdown and click "▶ Run".
+ * It will instantly format and set the 13 columns on your active sheet!
+ */
+function setupGalaHeaders() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = getGalaSheet(ss);
+
+  var lastRow = sheet.getLastRow();
+  var lastCol = sheet.getLastColumn();
+
+  // If there is existing data under the old 6 columns, migrate rows gracefully
+  if (lastRow > 1 && lastCol > 0) {
+    var oldHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var oldNorms = oldHeaders.map(normalizeKey);
+
+    // Read all data rows
+    var numDataRows = lastRow - 1;
+    var oldData = sheet.getRange(2, 1, numDataRows, lastCol).getValues();
+
+    // Map each existing row into the new 13-column schema
+    var newData = [];
+    for (var r = 0; r < oldData.length; r++) {
+      var oldRow = oldData[r];
+      var newRow = [];
+
+      for (var c = 0; c < GALA_HEADERS.length; c++) {
+        var canonicalNorm = normalizeKey(GALA_HEADERS[c]);
+        var matchedVal = "";
+
+        for (var o = 0; o < oldNorms.length; o++) {
+          if (oldNorms[o] === canonicalNorm ||
+              (canonicalNorm === "regnumber" && (oldNorms[o] === "regno" || oldNorms[o] === "registration")) ||
+              (canonicalNorm === "yearofstudy" && oldNorms[o] === "year") ||
+              (canonicalNorm === "presentationshowcase" && oldNorms[o] === "presentation") ||
+              (canonicalNorm === "paymentcommitment" && (oldNorms[o] === "paymentstatus" || oldNorms[o] === "seatreservation"))) {
+            matchedVal = oldRow[o];
+            break;
+          }
+        }
+
+        // Fill sensible defaults for new columns on migrated rows
+        if (!matchedVal) {
+          if (canonicalNorm === "dietary") matchedVal = "Standard / None";
+          else if (canonicalNorm === "presentationshowcase") matchedVal = "No";
+          else if (canonicalNorm === "presentationcategory") matchedVal = "-";
+          else if (canonicalNorm === "presentationdetails") matchedVal = "-";
+          else if (canonicalNorm === "paymentcommitment") matchedVal = "Deposit: Ksh 500 (Early Bird: Ksh 1,300)";
+        }
+
+        newRow.push(matchedVal);
+      }
+      newData.push(newRow);
+    }
+
+    // Clear old sheet contents and write new schema
+    sheet.clearContents();
+    sheet.getRange(1, 1, 1, GALA_HEADERS.length).setValues([GALA_HEADERS]);
+    sheet.getRange(2, 1, newData.length, GALA_HEADERS.length).setValues(newData);
+
+  } else {
+    // Fresh sheet or row 1 only: simply write the 13 headers
+    if (lastCol > 0) {
+      sheet.getRange(1, 1, 1, Math.max(lastCol, GALA_HEADERS.length)).clearContent();
+    }
+    sheet.getRange(1, 1, 1, GALA_HEADERS.length).setValues([GALA_HEADERS]);
+  }
+
+  // Apply styling and widths
+  styleHeaderRange(sheet, 1, 1, 1, GALA_HEADERS.length);
+  sheet.setRowHeight(1, 38);
+  sheet.setFrozenRows(1);
+
+  for (var i = 0; i < GALA_HEADERS.length; i++) {
+    var norm = normalizeKey(GALA_HEADERS[i]);
+    var width = COLUMN_WIDTHS[norm] || 180;
+    sheet.setColumnWidth(i + 1, width);
+  }
+
+  Logger.log("✅ Successfully updated sheet '" + sheet.getName() + "' to 13 Gala columns!");
+  return "Successfully updated sheet to 13 Gala columns!";
+}
+
+/**
+ * GET Handler - Health check & diagnostic status & setup trigger
  */
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "status";
   var ss = SpreadsheetApp.getActiveSpreadsheet();
 
   try {
+    // URL-triggered setup (e.g. ?action=setup)
+    if (action === "setup" || action === "updateHeaders") {
+      var msg = setupGalaHeaders();
+      return jsonResponse({
+        status: "success",
+        message: msg,
+        columns: GALA_HEADERS,
+        timestamp: new Date().toISOString()
+      }, 200);
+    }
+
     var sheet = getGalaSheet(ss);
     var totalRows = Math.max(0, sheet.getLastRow() - 1);
 
@@ -117,15 +209,10 @@ function doGet(e) {
       var membersCount = 0;
       var presentationCount = 0;
 
-      // Scan rows
       for (var i = 0; i < data.length; i++) {
         var rowText = data[i].join(" ").toLowerCase();
-        if (rowText.indexOf("desa member") !== -1) {
-          membersCount++;
-        }
-        if (rowText.indexOf("yes:") !== -1 || rowText.indexOf("showcase") !== -1) {
-          presentationCount++;
-        }
+        if (rowText.indexOf("desa member") !== -1) membersCount++;
+        if (rowText.indexOf("yes:") !== -1 || rowText.indexOf("showcase") !== -1) presentationCount++;
       }
 
       return jsonResponse({
@@ -198,7 +285,7 @@ function doPost(e) {
       }
     }
 
-    // 2. Resolve target sheet and ensure all columns exist
+    // 2. Resolve target sheet and ensure all 13 columns exist
     var sheet = getGalaSheet(ss);
     var activeHeaders = ensureCompleteHeaders(sheet);
 
@@ -380,21 +467,35 @@ function doPost(e) {
 }
 
 /**
- * Finds or creates the Gala sheet
+ * Finds or creates the Gala sheet.
+ * Intelligently targets the user's current sheet whether it's named
+ * "GalaRegistrations", "Gala", "Sheet1", or active sheet.
  */
 function getGalaSheet(ss) {
-  var sheetName = "GalaRegistrations";
-  var sheet = ss.getSheetByName(sheetName);
+  // 1. Look for sheet named "GalaRegistrations"
+  var sheet = ss.getSheetByName("GalaRegistrations");
+  if (sheet) return sheet;
 
-  if (!sheet) {
-    if (ss.getSheets().length === 1 && ss.getSheets()[0].getLastRow() === 0) {
-      sheet = ss.getSheets()[0];
-      sheet.setName(sheetName);
-    } else {
-      sheet = ss.insertSheet(sheetName);
+  // 2. Look for sheets with "gala" in the title
+  var allSheets = ss.getSheets();
+  for (var i = 0; i < allSheets.length; i++) {
+    if (allSheets[i].getName().toLowerCase().indexOf("gala") !== -1) {
+      return allSheets[i];
     }
   }
 
+  // 3. Look for sheet whose row 1 contains "name" and "contact"
+  for (var j = 0; j < allSheets.length; j++) {
+    if (allSheets[j].getLastRow() > 0) {
+      var row1 = allSheets[j].getRange(1, 1, 1, Math.min(10, allSheets[j].getLastColumn())).getValues()[0].join(" ").toLowerCase();
+      if (row1.indexOf("name") !== -1 && (row1.indexOf("contact") !== -1 || row1.indexOf("course") !== -1)) {
+        return allSheets[j];
+      }
+    }
+  }
+
+  // 4. Fallback to active sheet or first sheet
+  sheet = ss.getActiveSheet() || allSheets[0];
   return sheet;
 }
 
