@@ -217,19 +217,26 @@ function doPost(e) {
       payload = JSON.parse(e.postData.contents);
     }
 
-    // 1. Shared Secret Verification (protects against direct script url abuse)
+    // 1. Shared Secret Verification (supports SHARED_SECRET or GALA_SCRIPT_SECRET)
+    var galaSecret = SCRIPT_PROPERTIES.getProperty("GALA_SCRIPT_SECRET") || "";
     var expectedSecret = SCRIPT_PROPERTIES.getProperty("SHARED_SECRET") || "";
-    if (expectedSecret) {
-      var providedSecret = payload.secret || (e.parameter && e.parameter.secret) || "";
-      if (providedSecret !== expectedSecret) {
-        return jsonResponse({ status: "error", error: "Unauthorized: Invalid shared secret" }, 401);
+    var providedSecret = payload.secret || payload.GALA_SCRIPT_SECRET || (e.parameter && (e.parameter.secret || e.parameter.GALA_SCRIPT_SECRET)) || "";
+
+    if (galaSecret || expectedSecret) {
+      var isAuthorized = false;
+      if (expectedSecret && providedSecret === expectedSecret) isAuthorized = true;
+      if (galaSecret && providedSecret === galaSecret) isAuthorized = true;
+      if (!isAuthorized) {
+        return jsonResponse({ status: "error", error: "Unauthorized: Invalid shared or gala secret" }, 401);
       }
     }
 
     // Action detection with fallback auto-detection based on payload fields
     var action = payload.action || "";
     if (!action) {
-      if (payload.sessionTopic || (payload.id && String(payload.id).indexOf("RC-") === 0)) {
+      if (payload.gala || payload.MEMBERSHIP || payload.membership && payload.course) {
+        action = "gala";
+      } else if (payload.sessionTopic || (payload.id && String(payload.id).indexOf("RC-") === 0)) {
         action = "rollCall";
       } else if (payload.ticketId || payload.message || payload.category) {
         action = "createTicket";
@@ -367,6 +374,105 @@ function doPost(e) {
         status: "success",
         submissionId: subId,
         message: "Innovation submitted successfully for editorial review."
+      });
+    }
+
+    // ─────────────────────────────────────────
+    // Action E: Annual Engineering Gala Registration
+    // ─────────────────────────────────────────
+    if (action === "gala" || action === "galaRegistration" || action === "gala-register") {
+      var galaHeaders = [
+        "Name",
+        "Reg Number",
+        "Year of Study",
+        "CONTACT",
+        "COURSE",
+        "MEMBERSHIP",
+        "DIETARY",
+        "Presentation Showcase",
+        "Presentation Category",
+        "Presentation Details",
+        "Payment Commitment",
+        "Date",
+        "RegTime"
+      ];
+      var galaSheet = getOrCreateSheet(ss, "GalaRegistrations", galaHeaders);
+
+      var galaName = String(payload.name || payload.Name || payload.fullName || "").trim();
+      var galaRegNo = String(payload.regNumber || payload.regNo || payload.REG_NO || payload["Reg Number"] || payload.ticketCode || "").trim().toUpperCase();
+      var galaYear = String(payload.yearOfStudy || payload.year || payload.YEAR || payload["Year of Study"] || "").trim();
+      var galaContact = String(payload.contact || payload.CONTACT || payload.phone || "").trim();
+      var galaCourse = String(payload.course || payload.COURSE || payload.department || "").trim();
+      var galaMembership = String(payload.membership || payload.MEMBERSHIP || "Non-Member / Guest").trim();
+      var galaDietary = String(payload.dietary || payload.DIETARY || payload.dietaryNotes || "Standard / None").trim();
+
+      var hasPresentation = Boolean(
+        payload.hasPresentation === true ||
+        payload.hasPresentation === "true" ||
+        payload.hasPresentation === "Yes" ||
+        (payload.presentation && String(payload.presentation).toLowerCase().indexOf("yes") === 0)
+      );
+      var galaPresCat = String(payload.presentationCategory || payload.PRESENTATION_CATEGORY || (hasPresentation ? "Talent / Presentation" : "-")).trim();
+      var galaPresDesc = String(payload.presentationDesc || payload.PRESENTATION_DESC || (hasPresentation ? "Pending Coordination" : "-")).trim();
+      var galaPresSummary = "";
+      if (payload.presentation || payload.PRESENTATION || payload["Presentation Showcase"]) {
+        galaPresSummary = String(payload.presentation || payload.PRESENTATION || payload["Presentation Showcase"]).trim();
+      } else if (hasPresentation) {
+        galaPresSummary = "YES: [" + galaPresCat + "] - " + galaPresDesc;
+      } else {
+        galaPresSummary = "No";
+      }
+
+      var galaPaymentStatus = String(payload.paymentStatus || payload.PAYMENT_STATUS || payload.SEAT_RESERVATION || "Deposit: Ksh 500 (Early Bird: Ksh 1,300)").trim();
+      var galaDate = String(payload.date || payload.Date || todayDate).trim();
+      var galaRegTime = String(payload.regTime || payload.RegTime || todayTime).trim();
+
+      var galaEmail = String(payload.email || "").trim();
+      if (galaEmail && galaContact.indexOf(galaEmail) === -1) {
+        galaContact = galaContact ? (galaContact + " | " + galaEmail) : galaEmail;
+      }
+
+      if (!galaName) {
+        return jsonResponse({ status: "error", error: "Missing required field: Name" }, 400);
+      }
+      if (!galaContact) {
+        return jsonResponse({ status: "error", error: "Missing required field: CONTACT" }, 400);
+      }
+
+      galaSheet.appendRow([
+        galaName,
+        galaRegNo,
+        galaYear,
+        galaContact,
+        galaCourse || "Engineering General",
+        galaMembership,
+        galaDietary,
+        galaPresSummary,
+        galaPresCat,
+        galaPresDesc,
+        galaPaymentStatus,
+        galaDate,
+        galaRegTime
+      ]);
+
+      return jsonResponse({
+        status: "success",
+        message: "Gala registration recorded successfully",
+        entry: {
+          Name: galaName,
+          "Reg Number": galaRegNo,
+          "Year of Study": galaYear,
+          CONTACT: galaContact,
+          COURSE: galaCourse,
+          MEMBERSHIP: galaMembership,
+          DIETARY: galaDietary,
+          "Presentation Showcase": galaPresSummary,
+          "Presentation Category": galaPresCat,
+          "Presentation Details": galaPresDesc,
+          "Payment Commitment": galaPaymentStatus,
+          Date: galaDate,
+          RegTime: galaRegTime
+        }
       });
     }
 

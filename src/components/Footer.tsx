@@ -165,6 +165,9 @@ export default function Footer() {
                 <Link href="/roll-call" className="hover:text-[#e5a93c] transition-colors">Roll Call Check-In</Link>
               </li>
               <li>
+                <Link href="/gala" className="hover:text-[#e5a93c] transition-colors text-amber-400 font-semibold">Gala Registration</Link>
+              </li>
+              <li>
                 <Link href="/contact" className="hover:text-[#e5a93c] transition-colors">Contact & Support</Link>
               </li>
             </ul>
