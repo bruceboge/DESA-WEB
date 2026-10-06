@@ -228,66 +228,70 @@ export async function POST(request: Request) {
         action: "gala",
         secret: galaSecret,
         GALA_SCRIPT_SECRET: galaSecret,
-        ticketCode: sanitizedRegNumber,
 
-        // Canonical form fields
-        Name: sanitizedName,
+        // Core fields matching Gala form exactly
+        timestamp: `${todayDate} ${todayTime}`,
+        date: todayDate,
+        time: todayTime,
+        regTime: todayTime,
         name: sanitizedName,
         fullName: sanitizedName,
+        Name: sanitizedName,
 
-        "Reg Number": sanitizedRegNumber,
-        REG_NO: sanitizedRegNumber,
         regNumber: sanitizedRegNumber,
         regNo: sanitizedRegNumber,
+        REG_NO: sanitizedRegNumber,
+        "Reg Number": sanitizedRegNumber,
 
-        "Year of Study": sanitizedYear,
-        YEAR: sanitizedYear,
         yearOfStudy: sanitizedYear,
         year: sanitizedYear,
+        YEAR: sanitizedYear,
+        "Year of Study": sanitizedYear,
 
-        CONTACT: sanitizedContact,
         contact: sanitizedContact,
         phone: sanitizedContact,
+        CONTACT: sanitizedContact,
+        "Phone / WhatsApp": sanitizedContact,
 
-        COURSE: sanitizedCourse,
         course: sanitizedCourse,
+        COURSE: sanitizedCourse,
         department: sanitizedCourse,
+        "Course / Program": sanitizedCourse,
 
-        MEMBERSHIP: sanitizedMembership,
         membership: sanitizedMembership,
+        MEMBERSHIP: sanitizedMembership,
+        "DESA Membership": sanitizedMembership,
 
-        DIETARY: sanitizedDietary,
-        dietary: sanitizedDietary,
-        dietaryNotes: sanitizedDietary,
+        // Dietary specifications
+        dietary: sanitizedDietary || "Standard / None",
+        DIETARY: sanitizedDietary || "Standard / None",
+        diet: sanitizedDietary || "Standard / None",
+        "Dietary Requirements": sanitizedDietary || "Standard / None",
+        "Dietary Notes": sanitizedDietary || "Standard / None",
 
-        "Presentation Showcase": presentationSummary,
-        PRESENTATION: presentationSummary,
-        presentation: presentationSummary,
+        // Presentation & Talent details
         hasPresentation: rawHasPresentation ? "Yes" : "No",
+        "Has Presentation": rawHasPresentation ? "Yes" : "No",
 
-        "Presentation Category": sanitizeForSheets(rawPresentationCat) || (rawHasPresentation ? "Talent / Presentation" : "-"),
-        PRESENTATION_CATEGORY: sanitizeForSheets(rawPresentationCat) || (rawHasPresentation ? "Talent / Presentation" : "-"),
-        presentationCategory: sanitizeForSheets(rawPresentationCat) || (rawHasPresentation ? "Talent / Presentation" : "-"),
+        presentationCategory: rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
+        PRESENTATION_CATEGORY: rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
+        "Presentation Category": rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
 
-        "Presentation Details": sanitizeForSheets(rawPresentationDesc) || (rawHasPresentation ? "Pending Coordination" : "-"),
-        PRESENTATION_DESC: sanitizeForSheets(rawPresentationDesc) || (rawHasPresentation ? "Pending Coordination" : "-"),
-        presentationDesc: sanitizeForSheets(rawPresentationDesc) || (rawHasPresentation ? "Pending Coordination" : "-"),
+        presentationDesc: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
+        presentationDetails: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
+        PRESENTATION_DESC: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
+        "Presentation Details": rawHasPresentation ? (rawPresentationDesc || "-") : "None",
 
-        "Payment Commitment": "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
-        PAYMENT_STATUS: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
+        presentation: rawHasPresentation ? `${rawPresentationCat}: ${rawPresentationDesc}` : "No",
+        PRESENTATION: rawHasPresentation ? `${rawPresentationCat}: ${rawPresentationDesc}` : "No",
+
         paymentStatus: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
+        PAYMENT_STATUS: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
         SEAT_RESERVATION: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
-
-        Date: todayDate,
-        date: todayDate,
-
-        RegTime: todayTime,
-        regTime: todayTime,
-        timestamp: todayTime,
+        "Payment Commitment": "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
 
         email: rawEmail,
         mpesaRef: sanitizedMpesa,
-        MPESA_REF: sanitizedMpesa,
       };
 
       const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
