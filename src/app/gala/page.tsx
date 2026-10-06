@@ -23,9 +23,6 @@ interface GalaSubmittedReceipt {
   regTime: string;
   membership: string;
   dietary: string;
-  hasPresentation: boolean;
-  presentationCategory?: string;
-  presentationDesc?: string;
 }
 
 const galaCourseOptions = [
@@ -46,15 +43,7 @@ const yearLevels = [
   "Postgraduate / Alumni / Staff",
 ];
 
-const presentationCategories = [
-  "Musical Performance (Vocal / Instrument)",
-  "Spoken Word / Poetry",
-  "Comedy / Stand-up",
-  "Dance Performance",
-  "Engineering Project / Innovation Showcase",
-  "Keynote / Motivational Speech",
-  "Other Special Talent",
-];
+
 
 export default function GalaRegistrationPage() {
   const [formData, setFormData] = useState({
@@ -67,9 +56,6 @@ export default function GalaRegistrationPage() {
     customCourse: "",
     isDesaMember: true,
     dietary: "",
-    hasPresentation: false,
-    presentationCategory: presentationCategories[0],
-    presentationDesc: "",
     website: "", // Honeypot field
   });
 
@@ -113,10 +99,6 @@ export default function GalaRegistrationPage() {
       return;
     }
 
-    if (formData.hasPresentation && !formData.presentationDesc.trim()) {
-      setErrorMessage("Please provide a brief description of the  presentation or talent you wish to showcase.");
-      return;
-    }
 
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -136,9 +118,9 @@ export default function GalaRegistrationPage() {
           course: effectiveCourse,
           membership: membershipString,
           dietary: formData.dietary.trim() || "Standard / None",
-          hasPresentation: formData.hasPresentation,
-          presentationCategory: formData.hasPresentation ? formData.presentationCategory : "",
-          presentationDesc: formData.hasPresentation ? formData.presentationDesc.trim() : "",
+          hasPresentation: false,
+          presentationCategory: "",
+          presentationDesc: "",
           website: formData.website,
         }),
       });
@@ -159,9 +141,6 @@ export default function GalaRegistrationPage() {
         regTime: data.entry.regTime,
         membership: data.entry.membership,
         dietary: data.entry.dietary || formData.dietary.trim() || "Standard / None",
-        hasPresentation: formData.hasPresentation,
-        presentationCategory: formData.hasPresentation ? formData.presentationCategory : undefined,
-        presentationDesc: formData.hasPresentation ? formData.presentationDesc : undefined,
       });
 
       window.scrollTo({ top: 120, behavior: "smooth" });
@@ -185,9 +164,6 @@ export default function GalaRegistrationPage() {
       customCourse: "",
       isDesaMember: true,
       dietary: "",
-      hasPresentation: false,
-      presentationCategory: presentationCategories[0],
-      presentationDesc: "",
       website: "",
     });
   };
@@ -364,21 +340,7 @@ export default function GalaRegistrationPage() {
                 <span className="font-bold text-[#071325]">{successReceipt.membership}</span>
               </div>
 
-              {successReceipt.hasPresentation && (
-                <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200 space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block">
-                    Presentation / Talent Showcase Registered
-                  </span>
-                  <span className="font-semibold text-amber-950 block text-xs">
-                    {successReceipt.presentationCategory}
-                  </span>
-                  {successReceipt.presentationDesc && (
-                    <p className="text-[11px] text-amber-800 italic">
-                      &ldquo;{successReceipt.presentationDesc}&rdquo;
-                    </p>
-                  )}
-                </div>
-              )}
+
             </div>
 
             {/* PAYMENT DETAILS BLOCK - DISPLAYED AFTER REGISTRATION */}
@@ -410,15 +372,6 @@ export default function GalaRegistrationPage() {
                     </span>
                     <span className="text-xs text-slate-300 ml-2 font-semibold">
                       (Karen Kyalo)
-                    </span>
-                  </div>
-
-                  <div className="sm:text-right">
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-wider">
-                      Payment Reference (Reg No)
-                    </span>
-                    <span className="font-mono text-sm font-bold text-[#e5a93c] bg-slate-800 px-2.5 py-1 rounded-md inline-block">
-                      {successReceipt.regNumber}
                     </span>
                   </div>
                 </div>
@@ -768,87 +721,7 @@ export default function GalaRegistrationPage() {
                 </div>
               </div>
 
-              {/* ---------------- SECTION 3: TALENT & PRESENTATION SHOWCASE (DISTINCT SECTION) ---------------- */}
-              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/40 p-5 sm:p-6 space-y-4 transition-all">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-[#b87a14] text-white flex items-center justify-center shrink-0 font-bold text-sm shadow-sm mt-0.5">
-                    ★
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#b87a14] block">
-                      Stage Performances & Presentations
-                    </span>
-                    <h3 className="text-sm sm:text-base font-bold text-[#071325]">
-                      Gala Presentation & Talent Showcase (Optional)
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Have a presentation, speech, or showcasing a talent on stage?
-                    </p>
-                  </div>
-                </div>
-
-                {/* Checkbox Toggle */}
-                <label className="flex items-center gap-3 p-3 bg-white rounded-xl border border-amber-200 cursor-pointer hover:border-amber-400 transition-colors shadow-xs">
-                  <input
-                    type="checkbox"
-                    checked={formData.hasPresentation}
-                    onChange={(e) =>
-                      setFormData({ ...formData, hasPresentation: e.target.checked })
-                    }
-                    className="w-4 h-4 rounded text-[#b87a14] focus:ring-[#e5a93c] border-slate-300 cursor-pointer"
-                  />
-                  <span className="text-xs sm:text-sm font-semibold text-[#071325]">
-                    Yes, I will be having a presentation or showcasing a talent at the Gala
-                  </span>
-                </label>
-
-                {/* Conditional Fields When Checked */}
-                {formData.hasPresentation && (
-                  <div className="space-y-4 pt-2 animate-fadeIn">
-                    <div>
-                      <label htmlFor="presentationCategory" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                        Presentation Category <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="presentationCategory"
-                        value={formData.presentationCategory}
-                        onChange={(e) =>
-                          setFormData({ ...formData, presentationCategory: e.target.value })
-                        }
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                      >
-                        {presentationCategories.map((cat) => (
-                          <option key={cat} value={cat}>
-                            {cat}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="presentationDesc" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                        Description of Presentation / Talent <span className="text-red-500">*</span>
-                      </label>
-                      <textarea
-                        id="presentationDesc"
-                        required={formData.hasPresentation}
-                        rows={3}
-                        placeholder="Provide details about your presentation or performance.."
-                        value={formData.presentationDesc}
-                        onChange={(e) =>
-                          setFormData({ ...formData, presentationDesc: e.target.value })
-                        }
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c] leading-relaxed"
-                      />
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        Our Gala entertainment and organizing team will contact you to coordinate stage logistics.
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ---------------- SECTION 4: SUBMIT SEAT RESERVATION ---------------- */}
+              {/* ---------------- SECTION 3: SUBMIT SEAT RESERVATION ---------------- */}
               <div className="space-y-4 pt-2">
                 <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
