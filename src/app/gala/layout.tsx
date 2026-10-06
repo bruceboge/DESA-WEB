@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 const siteUrl = "https://esa-dekut.vercel.app";
-const galaOgImage = "/images/events/masquerade-dinner.png";
+const galaOgImage = "/images/events/masquerade-dinner.jpg";
 
 export const metadata: Metadata = {
   title: "Gala Seat Reservation | DESA - DeKUT Engineering Students Association",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
         width: 682,
         height: 1024,
         alt: "DESA Annual Engineering Gala 2026 - Masquerade Dinner Poster",
-        type: "image/png",
+        type: "image/jpeg",
       },
     ],
   },
