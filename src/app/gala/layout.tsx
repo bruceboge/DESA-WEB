@@ -1,12 +1,13 @@
 import { Metadata } from "next";
 
 const siteUrl = "https://esa-dekut.vercel.app";
-const galaOgImage = "./images/events/masquerade-dinner.jpg";
+const galaOgImage = `${siteUrl}/images/events/masquerade-dinner.jpg`;
 
 export const metadata: Metadata = {
-  title: "Gala Seat Reservation |  - DeKUT Engineering Students Association",
+  metadataBase: new URL(siteUrl),
+  title: "Gala Seat Reservation | DESA - DeKUT Engineering Students Association",
   description:
-    "Official Seat Reservation for the DESA Annual Engineering Gala 2026: Masquerade Dinner. Theme: 'Structures That Stand, Standards That Endure'. Golden Gates Hotel, Nyeri • 20 Nov 2026 • Lipa polepole with.",
+    "Official Seat Reservation for the DESA Annual Engineering Gala 2026: Masquerade Dinner. Theme: 'Structures That Stand, Standards That Endure'. Golden Gates Hotel, Nyeri • 20 Nov 2026 • Lipa polepole allowed.",
   alternates: {
     canonical: "/gala",
   },
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "DESA Annual Engineering Gala 2026 | Seat Reservation",
     description:
-      "Engineering Masquerade Dinner • Golden Gates Hotel, Nyeri • 20 Nov 2026. Reserve your table seat now — Lipa polepole with Ksh 500 deposit.",
+      "Engineering Masquerade Dinner • Golden Gates Hotel, Nyeri • 20 Nov 2026. Reserve your table seat now — Lipa polepole allowed.",
     url: `${siteUrl}/gala`,
     siteName: "DESA - Dedan Kimathi University Engineering Students Association",
     type: "website",
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
         url: galaOgImage,
         width: 682,
         height: 1024,
-        alt: "DESA Annual Engineering Gala 2026 - Masquerade Dinner Poster",
+        alt: "DESA Annual Engineering Gala 2026 - Masquerade Dinner",
         type: "image/jpeg",
       },
     ],
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "DESA Annual Engineering Gala 2026 | Seat Reservation",
     description:
-      "Engineering Masquerade Dinner • 20 Nov 2026 at Golden Gates Hotel, Nyeri. Lipa polepole with Ksh 500 deposit.",
+      "Engineering Masquerade Dinner • 20 Nov 2026 at Golden Gates Hotel, Nyeri. Lipa polepole allowed.",
     images: [galaOgImage],
     creator: "@desa_dekut",
   },
