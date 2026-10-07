@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "DESA | Dedan Kimathi University Engineering Students Association",
     description:
-      "Pioneering engineering minds and technological innovation at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya. Official student chapter affiliated with EBK and IEK.",
+      "Pioneering engineering minds and technological innovation at Dedan Kimathi University of Technology (DeKUT), Nyeri, Kenya.",
     url: "https://esa-dekut.vercel.app",
     siteName: "DESA - DeKUT Engineering Students Association",
     locale: "en_KE",

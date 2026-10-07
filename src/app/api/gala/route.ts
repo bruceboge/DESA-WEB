@@ -22,6 +22,8 @@ export interface GalaRegistrationRecord {
   membership: string;
   regNumber: string;
   yearOfStudy?: string;
+  attendeeType?: string;
+  paymentPledge?: string;
   dietary?: string;
   hasPresentation?: boolean;
   presentationCategory?: string;
@@ -39,19 +41,15 @@ export async function GET() {
     status: "active",
     service: "DESA Gala Seat Reservation API",
     columns: [
-      "Name",
+      "Timestamp",
+      "Full Name",
+      "Attendee Type",
       "Reg Number",
       "Year of Study",
-      "CONTACT",
-      "COURSE",
-      "MEMBERSHIP",
-      "DIETARY",
-      "Presentation Showcase",
-      "Presentation Category",
-      "Presentation Details",
-      "Payment Commitment",
-      "Date",
-      "RegTime"
+      "Phone / WhatsApp",
+      "Course / Program",
+      "Payment Pledge",
+      "Dietary Requirements",
     ],
     configured: {
       hasDedicatedGalaUrl: hasGalaUrl,
@@ -70,6 +68,7 @@ export async function POST(request: Request) {
     const {
       name,
       fullName,
+      attendeeType,
       contact,
       phone,
       email,
@@ -78,6 +77,7 @@ export async function POST(request: Request) {
       membership,
       regNumber,
       yearOfStudy,
+      paymentPledge,
       dietary,
       dietaryDetails,
       hasPresentation,
@@ -88,12 +88,14 @@ export async function POST(request: Request) {
     } = body;
 
     const rawName = (name || fullName || "").trim();
+    const rawAttendeeType = (attendeeType || "DeKUT Student").trim();
     let rawContact = (contact || phone || "").trim();
     const rawEmail = (email || "").trim().toLowerCase();
-    const rawCourse = (course || department || "").trim();
-    const rawMembership = (membership || "Student Pass").trim();
-    const rawRegNumber = (regNumber || "").trim().toUpperCase();
-    const rawYear = (yearOfStudy || "").trim();
+    const rawCourse = (course || department || "N/A").trim();
+    const rawMembership = (membership || "Non-Member / Guest").trim();
+    const rawRegNumber = (regNumber || "N/A").trim().toUpperCase();
+    const rawYear = (yearOfStudy || "N/A").trim();
+    const rawPaymentPledge = (paymentPledge || "Lipa pole pole allowed").trim();
     const rawDietary = (dietary || "Standard").trim();
     const rawDietaryDetails = (dietaryDetails || "").trim();
     const rawHasPresentation = Boolean(hasPresentation);
@@ -140,21 +142,7 @@ export async function POST(request: Request) {
 
     if (!rawContact && !rawEmail) {
       return NextResponse.json(
-        { success: false, error: "Please provide a valid phone or email contact." },
-        { status: 400 }
-      );
-    }
-
-    if (!rawCourse) {
-      return NextResponse.json(
-        { success: false, error: "Please select your course or department discipline." },
-        { status: 400 }
-      );
-    }
-
-    if (rawHasPresentation && !rawPresentationDesc) {
-      return NextResponse.json(
-        { success: false, error: "Please provide a brief description of your presentation or talent." },
+        { success: false, error: "Please provide a valid phone or WhatsApp contact." },
         { status: 400 }
       );
     }
@@ -180,11 +168,13 @@ export async function POST(request: Request) {
 
     // 4. Formula injection sanitization
     const sanitizedName = sanitizeForSheets(rawName);
+    const sanitizedAttendeeType = sanitizeForSheets(rawAttendeeType);
     const sanitizedContact = sanitizeForSheets(rawContact);
     const sanitizedCourse = sanitizeForSheets(rawCourse);
     const sanitizedMembership = sanitizeForSheets(rawMembership);
     const sanitizedRegNumber = sanitizeForSheets(rawRegNumber);
     const sanitizedYear = sanitizeForSheets(rawYear);
+    const sanitizedPaymentPledge = sanitizeForSheets(rawPaymentPledge);
     const sanitizedDietary = sanitizeForSheets(combinedDietary);
     const sanitizedPresentation = sanitizeForSheets(presentationSummary);
     const sanitizedMpesa = sanitizeForSheets(rawMpesaRef);
@@ -198,6 +188,8 @@ export async function POST(request: Request) {
       membership: sanitizedMembership,
       regNumber: sanitizedRegNumber,
       yearOfStudy: sanitizedYear,
+      attendeeType: sanitizedAttendeeType,
+      paymentPledge: sanitizedPaymentPledge,
       dietary: sanitizedDietary,
       hasPresentation: rawHasPresentation,
       presentationCategory: sanitizeForSheets(rawPresentationCat),
@@ -238,6 +230,10 @@ export async function POST(request: Request) {
         fullName: sanitizedName,
         Name: sanitizedName,
 
+        attendeeType: sanitizedAttendeeType,
+        "Attendee Type": sanitizedAttendeeType,
+        ATTENDEE_TYPE: sanitizedAttendeeType,
+
         regNumber: sanitizedRegNumber,
         regNo: sanitizedRegNumber,
         REG_NO: sanitizedRegNumber,
@@ -262,33 +258,18 @@ export async function POST(request: Request) {
         MEMBERSHIP: sanitizedMembership,
         "DESA Membership": sanitizedMembership,
 
+        paymentPledge: sanitizedPaymentPledge,
+        "Payment Pledge": sanitizedPaymentPledge,
+        paymentStatus: sanitizedPaymentPledge,
+        PAYMENT_STATUS: sanitizedPaymentPledge,
+        "Payment Commitment": sanitizedPaymentPledge,
+
         // Dietary specifications
         dietary: sanitizedDietary || "Standard / None",
         DIETARY: sanitizedDietary || "Standard / None",
         diet: sanitizedDietary || "Standard / None",
         "Dietary Requirements": sanitizedDietary || "Standard / None",
         "Dietary Notes": sanitizedDietary || "Standard / None",
-
-        // Presentation & Talent details
-        hasPresentation: rawHasPresentation ? "Yes" : "No",
-        "Has Presentation": rawHasPresentation ? "Yes" : "No",
-
-        presentationCategory: rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
-        PRESENTATION_CATEGORY: rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
-        "Presentation Category": rawHasPresentation ? (rawPresentationCat || "Talent / Presentation") : "None",
-
-        presentationDesc: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
-        presentationDetails: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
-        PRESENTATION_DESC: rawHasPresentation ? (rawPresentationDesc || "-") : "None",
-        "Presentation Details": rawHasPresentation ? (rawPresentationDesc || "-") : "None",
-
-        presentation: rawHasPresentation ? `${rawPresentationCat}: ${rawPresentationDesc}` : "No",
-        PRESENTATION: rawHasPresentation ? `${rawPresentationCat}: ${rawPresentationDesc}` : "No",
-
-        paymentStatus: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
-        PAYMENT_STATUS: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
-        SEAT_RESERVATION: "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
-        "Payment Commitment": "Deposit: Ksh 500 (Early Bird: Ksh 1,300)",
 
         email: rawEmail,
         mpesaRef: sanitizedMpesa,

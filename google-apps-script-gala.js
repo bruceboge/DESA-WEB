@@ -3,19 +3,16 @@
  * DESA GALA REGISTRATION - GOOGLE APPS SCRIPT
  * =====================================================================
  * 
- * 12 Columns in Exact Order:
- * 1.  Timestamp              (Date & Time: YYYY-MM-DD hh:mm a)
- * 2.  Full Name              (Attendee Name)
- * 3.  Reg Number             (Student Registration Number)
- * 4.  Year of Study          (Year 1 - 5, Alumni / Staff)
- * 5.  Phone / WhatsApp       (Contact Number)
- * 6.  Course / Program       (Engineering Discipline)
- * 7.  DESA Membership        (DESA Member [RegNo] / Non-Member)
- * 8.  Dietary Requirements   (Allergies / Special Dietary Needs)
- * 9.  Has Presentation       (Yes / No)
- * 10. Presentation Category  (Music, Dance, Comedy, Innovation, etc.)
- * 11. Presentation Details   (Description of performance/talent)
- * 12. Payment Commitment     (Deposit: Ksh 500 / Full: Ksh 1,300)
+ * 9 Columns in Exact Order:
+ * 1. Timestamp              (Date & Time: YYYY-MM-DD hh:mm a)
+ * 2. Full Name              (Attendee Name)
+ * 3. Attendee Type          (DeKUT Student / Alumni / Staff / Guest)
+ * 4. Reg Number             (Student Registration Number or N/A)
+ * 5. Year of Study          (Year 1 - 5 or N/A)
+ * 6. Phone / WhatsApp       (Contact Number)
+ * 7. Course / Program       (Engineering Discipline or N/A)
+ * 8. Payment Pledge         (Lipa pole pole pledge / Completion timeframe)
+ * 9. Dietary Requirements   (Allergies / Special Dietary Needs)
  * 
  * ─────────────────────────────────────────────────────────────────────
  * 2-STEP SETUP (Takes 30 seconds):
@@ -25,7 +22,7 @@
  * 
  * Step 2: In the toolbar dropdown next to "Debug", select "setupSheet" 
  *         and click "▶ Run".
- *         -> Switch to your Google Sheet: All 12 columns are ready!
+ *         -> Switch to your Google Sheet: All 9 columns are ready!
  * 
  * Step 3: Deploy:
  *         Click "Deploy" > "Manage deployments" > ✏️ Edit > Version: "New version" > "Deploy".
@@ -36,23 +33,20 @@
 var GALA_HEADERS = [
   "Timestamp",
   "Full Name",
+  "Attendee Type",
   "Reg Number",
   "Year of Study",
   "Phone / WhatsApp",
   "Course / Program",
-  "DESA Membership",
-  "Dietary Requirements",
-  "Has Presentation",
-  "Presentation Category",
-  "Presentation Details",
-  "Payment Commitment"
+  "Payment Pledge",
+  "Dietary Requirements"
 ];
 
-var COLUMN_WIDTHS = [160, 200, 160, 120, 160, 220, 180, 200, 130, 200, 260, 180];
+var COLUMN_WIDTHS = [160, 200, 150, 160, 120, 160, 220, 240, 200];
 
 /**
  * Run this function once from Apps Script (select 'setupSheet' and click 'Run').
- * It formats Row 1 with all 12 columns in Midnight Navy & Gold.
+ * It formats Row 1 with all 9 columns in Midnight Navy & Gold.
  */
 function setupSheet() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -79,7 +73,7 @@ function setupSheet() {
     sheet.setColumnWidth(i + 1, COLUMN_WIDTHS[i]);
   }
 
-  Logger.log("✅ Sheet configured with 12 Gala columns successfully!");
+  Logger.log("✅ Sheet configured with 9 Gala columns successfully!");
 }
 
 /**
@@ -113,11 +107,12 @@ function doPost(e) {
     // 1. EXTRACT DATA WITH DIRECT FALLBACKS
     var timestamp = String(payload.timestamp || (defaultDate + " " + defaultTime)).trim();
     var name = String(payload.name || payload.fullName || payload.Name || "").trim();
-    var regNumber = String(payload.regNumber || payload.regNo || payload.REG_NO || payload["Reg Number"] || "").trim().toUpperCase();
-    var yearOfStudy = String(payload.yearOfStudy || payload.year || payload.YEAR || payload["Year of Study"] || "").trim();
+    var attendeeType = String(payload.attendeeType || payload.ATTENDEE_TYPE || payload["Attendee Type"] || "DeKUT Student").trim();
+    var regNumber = String(payload.regNumber || payload.regNo || payload.REG_NO || payload["Reg Number"] || "N/A").trim().toUpperCase();
+    var yearOfStudy = String(payload.yearOfStudy || payload.year || payload.YEAR || payload["Year of Study"] || "N/A").trim();
     var contact = String(payload.contact || payload.phone || payload.CONTACT || "").trim();
-    var course = String(payload.course || payload.COURSE || payload.department || "").trim();
-    var membership = String(payload.membership || payload.MEMBERSHIP || "Non-Member / Guest").trim();
+    var course = String(payload.course || payload.COURSE || payload.department || "N/A").trim();
+    var paymentPledge = String(payload.paymentPledge || payload.payment || payload.paymentStatus || payload["Payment Pledge"] || "Lipa pole pole").trim();
 
     // Dietary requirements (always captured)
     var dietary = String(
@@ -129,31 +124,6 @@ function doPost(e) {
       "Standard / None"
     ).trim();
 
-    // Presentation & talent details (always captured)
-    var hasPres = (
-      payload.hasPresentation === true ||
-      payload.hasPresentation === "true" ||
-      payload.hasPresentation === "Yes" ||
-      (payload.presentation && String(payload.presentation).toLowerCase().indexOf("yes") === 0)
-    );
-    var hasPresStr = hasPres ? "Yes" : "No";
-
-    var presCategory = hasPres
-      ? String(payload.presentationCategory || payload.PRESENTATION_CATEGORY || payload["Presentation Category"] || "Talent / Presentation").trim()
-      : "None";
-
-    var presDetails = hasPres
-      ? String(payload.presentationDesc || payload.presentationDetails || payload.PRESENTATION_DESC || payload["Presentation Details"] || payload.presentation || "-").trim()
-      : "None";
-
-    var payment = String(
-      payload.paymentStatus ||
-      payload.PAYMENT_STATUS ||
-      payload.SEAT_RESERVATION ||
-      payload["Payment Commitment"] ||
-      "Deposit: Ksh 500 (Early Bird: Ksh 1,300)"
-    ).trim();
-
     if (!name) {
       name = "Attendee " + defaultTime;
     }
@@ -161,20 +131,17 @@ function doPost(e) {
       contact = "-";
     }
 
-    // 2. DIRECT 12-COLUMN APPEND
+    // 2. DIRECT 9-COLUMN APPEND
     sheet.appendRow([
       timestamp,
       name,
+      attendeeType,
       regNumber,
       yearOfStudy,
       contact,
       course,
-      membership,
-      dietary,
-      hasPresStr,
-      presCategory,
-      presDetails,
-      payment
+      paymentPledge,
+      dietary
     ]);
 
     var lastRow = sheet.getLastRow();
@@ -186,16 +153,13 @@ function doPost(e) {
       data: {
         timestamp: timestamp,
         name: name,
+        attendeeType: attendeeType,
         regNumber: regNumber,
         yearOfStudy: yearOfStudy,
         contact: contact,
         course: course,
-        membership: membership,
-        dietary: dietary,
-        hasPresentation: hasPresStr,
-        presentationCategory: presCategory,
-        presentationDetails: presDetails,
-        payment: payment
+        paymentPledge: paymentPledge,
+        dietary: dietary
       }
     })).setMimeType(ContentService.MimeType.JSON);
 
@@ -216,7 +180,7 @@ function doGet(e) {
     setupSheet();
     return ContentService.createTextOutput(JSON.stringify({
       status: "success",
-      message: "Sheet reset with 12 Gala columns"
+      message: "Sheet reset with 9 Gala columns"
     })).setMimeType(ContentService.MimeType.JSON);
   }
 

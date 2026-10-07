@@ -1,12 +1,12 @@
 import { Metadata } from "next";
 
 const siteUrl = "https://esa-dekut.vercel.app";
-const galaOgImage = "/images/events/masquerade-dinner.jpg";
+const galaOgImage = "./images/events/masquerade-dinner.jpg";
 
 export const metadata: Metadata = {
-  title: "Gala Seat Reservation | DESA - DeKUT Engineering Students Association",
+  title: "Gala Seat Reservation |  - DeKUT Engineering Students Association",
   description:
-    "Official Seat Reservation for the DESA Annual Engineering Gala 2026: Masquerade Dinner. Theme: 'Structures That Stand, Standards That Endure'. Golden Gates Hotel, Nyeri • 20 Nov 2026 • Lipa polepole with Ksh 500 commitment deposit.",
+    "Official Seat Reservation for the DESA Annual Engineering Gala 2026: Masquerade Dinner. Theme: 'Structures That Stand, Standards That Endure'. Golden Gates Hotel, Nyeri • 20 Nov 2026 • Lipa polepole with.",
   alternates: {
     canonical: "/gala",
   },
