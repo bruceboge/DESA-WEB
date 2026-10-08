@@ -277,7 +277,7 @@ export default function Footer() {
                   Engineering Digest & Updates
                 </span>
                 <p className="text-[11px] text-slate-400 leading-tight">
-                  Get updates on galas, hackathons & attachments.
+                  Get updates
                 </p>
                 <div className="flex">
                   <input

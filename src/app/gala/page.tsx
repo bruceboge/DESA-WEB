@@ -533,20 +533,20 @@ export default function GalaRegistrationPage() {
                                 ...prev,
                                 isOtherReg: next,
                                 regNumber: next
-                                  ? (prev.regNumber && prev.regNumber !== "OTHER" && !prev.regNumber.startsWith("E0") ? prev.regNumber : "OTHER")
-                                  : (prev.regNumber === "OTHER" ? "" : prev.regNumber),
+                                  ? (prev.regNumber && prev.regNumber !== "" && !prev.regNumber.startsWith("E0") ? prev.regNumber : "")
+                                  : (prev.regNumber === "" ? "" : prev.regNumber),
                               }));
                             }}
                             className="text-xs font-semibold text-[#b87a14] hover:underline cursor-pointer"
                           >
-                            {formData.isOtherReg ? "← DeKUT Reg No" : "Not DeKUT? (Other)"}
+                            {formData.isOtherReg ? "← DeKUT?" : "Not from DeKUT?"}
                           </button>
                         </div>
                         <input
                           id="regNumber"
                           type="text"
                           required
-                          placeholder={formData.isOtherReg ? "e.g. OTHER or External Reg No / Campus" : "e.g. E020-01-1234/2023"}
+                          placeholder={formData.isOtherReg ? "Campus Details" : "e.g. E020-01-1234/2023"}
                           value={formData.regNumber}
                           onChange={(e) =>
                             setFormData({ ...formData, regNumber: e.target.value.toUpperCase() })
@@ -556,16 +556,16 @@ export default function GalaRegistrationPage() {
                         <div className="flex items-center justify-between mt-1 text-[10px]">
                           <span className="text-slate-400">
                             {formData.isOtherReg
-                              ? "External student: Enter 'OTHER' or your campus / reg no"
+                              ? "External student: Enter 'OTHER' or your campus"
                               : "Required for seat allocation tag & student verification"}
                           </span>
                           {!formData.isOtherReg ? (
                             <button
                               type="button"
-                              onClick={() => setFormData((prev) => ({ ...prev, isOtherReg: true, regNumber: "OTHER" }))}
+                              onClick={() => setFormData((prev) => ({ ...prev, isOtherReg: true, regNumber: "" }))}
                               className="text-[#b87a14] hover:underline font-medium shrink-0 ml-1 cursor-pointer"
                             >
-                              Select &ldquo;Other&rdquo;
+
                             </button>
                           ) : (
                             <button
@@ -573,7 +573,7 @@ export default function GalaRegistrationPage() {
                               onClick={() => setFormData((prev) => ({ ...prev, regNumber: "OTHER" }))}
                               className="text-[#b87a14] hover:underline font-medium shrink-0 ml-1 cursor-pointer"
                             >
-                              Reset to &ldquo;OTHER&rdquo;
+
                             </button>
                           )}
                         </div>
@@ -610,12 +610,12 @@ export default function GalaRegistrationPage() {
                               className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                             />
                             <span className="text-[10px] text-slate-400 mt-0.5 block">
-                              Optional: specify or leave blank for &ldquo;Other&rdquo;
+                              Optional: specify or leave blank
                             </span>
                           </div>
                         ) : (
                           <span className="text-[10px] text-slate-400 mt-1 block">
-                            Select your current academic stage or &ldquo;Other&rdquo;
+                            Current academic stage
                           </span>
                         )}
                       </div>
