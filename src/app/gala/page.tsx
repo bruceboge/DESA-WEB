@@ -34,6 +34,7 @@ const yearLevels = [
   "Year 3",
   "Year 4",
   "Year 5",
+  "Other",
 ];
 
 // WhatsApp Group Link for registered attendees (replace placeholder with your actual link)
@@ -44,7 +45,9 @@ export default function GalaRegistrationPage() {
     name: "",
     attendeeType: "dekut_student" as AttendeeType,
     regNumber: "",
+    isOtherReg: false,
     yearOfStudy: yearLevels[1], // Default Year 2
+    customYearOfStudy: "",
     contact: "",
     course: engineeringPrograms[0] as string,
     isCustomCourse: false,
@@ -74,10 +77,10 @@ export default function GalaRegistrationPage() {
       return;
     }
 
-    // Only validate student-specific fields for DeKUT students
+    // Only validate student-specific fields for students (DeKUT & external)
     if (isDeKUTStudent) {
       if (!formData.regNumber.trim()) {
-        setErrorMessage("Please enter your Student Registration Number.");
+        setErrorMessage("Please enter your Student Registration Number (or select/enter 'OTHER' if from another university).");
         return;
       }
 
@@ -117,7 +120,11 @@ export default function GalaRegistrationPage() {
         body: JSON.stringify({
           name: formData.name.trim(),
           regNumber: isDeKUTStudent ? formData.regNumber.trim().toUpperCase() : "N/A",
-          yearOfStudy: isDeKUTStudent ? formData.yearOfStudy : "N/A",
+          yearOfStudy: isDeKUTStudent
+            ? (formData.yearOfStudy === "Other"
+              ? (formData.customYearOfStudy.trim() ? `Other (${formData.customYearOfStudy.trim()})` : "Other")
+              : formData.yearOfStudy)
+            : "N/A",
           contact: formData.contact.trim(),
           email: "",
           course: effectiveCourse,
@@ -154,7 +161,9 @@ export default function GalaRegistrationPage() {
       name: "",
       attendeeType: "dekut_student",
       regNumber: "",
+      isOtherReg: false,
       yearOfStudy: yearLevels[1],
+      customYearOfStudy: "",
       contact: "",
       course: engineeringPrograms[0] as string,
       isCustomCourse: false,
@@ -502,39 +511,83 @@ export default function GalaRegistrationPage() {
                   </span>
                 </div>
 
-                {/* DeKUT Student-only fields: Reg Number, Year of Study, Program */}
+                {/* Student fields: Reg Number, Year of Study, Program (DeKUT & External) */}
                 {isDeKUTStudent && (
                   <div className="space-y-4 animate-fadeIn border-l-4 border-[#e5a93c]/40 pl-4">
                     <span className="text-[11px] text-[#b87a14] font-bold uppercase tracking-wider">
-                      Student Details (DeKUT Students Only)
+                      Student Details (DeKUT &amp; External Students)
                     </span>
 
                     {/* Reg Number & Year of Study */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <div>
-                        <label htmlFor="regNumber" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                          Student Reg No <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label htmlFor="regNumber" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                            Student Reg No <span className="text-red-500">*</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = !formData.isOtherReg;
+                              setFormData((prev) => ({
+                                ...prev,
+                                isOtherReg: next,
+                                regNumber: next
+                                  ? (prev.regNumber && prev.regNumber !== "OTHER" && !prev.regNumber.startsWith("E0") ? prev.regNumber : "OTHER")
+                                  : (prev.regNumber === "OTHER" ? "" : prev.regNumber),
+                              }));
+                            }}
+                            className="text-xs font-semibold text-[#b87a14] hover:underline cursor-pointer"
+                          >
+                            {formData.isOtherReg ? "← DeKUT Reg No" : "Not DeKUT? (Other)"}
+                          </button>
+                        </div>
                         <input
                           id="regNumber"
                           type="text"
                           required
-                          placeholder="e.g. E020-01-1234/2023"
+                          placeholder={formData.isOtherReg ? "e.g. OTHER or External Reg No / Campus" : "e.g. E020-01-1234/2023"}
                           value={formData.regNumber}
                           onChange={(e) =>
                             setFormData({ ...formData, regNumber: e.target.value.toUpperCase() })
                           }
                           className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                         />
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          Required for seat allocation tag &amp; student verification
-                        </span>
+                        <div className="flex items-center justify-between mt-1 text-[10px]">
+                          <span className="text-slate-400">
+                            {formData.isOtherReg
+                              ? "External student: Enter 'OTHER' or your campus / reg no"
+                              : "Required for seat allocation tag & student verification"}
+                          </span>
+                          {!formData.isOtherReg ? (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, isOtherReg: true, regNumber: "OTHER" }))}
+                              className="text-[#b87a14] hover:underline font-medium shrink-0 ml-1 cursor-pointer"
+                            >
+                              Select &ldquo;Other&rdquo;
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setFormData((prev) => ({ ...prev, regNumber: "OTHER" }))}
+                              className="text-[#b87a14] hover:underline font-medium shrink-0 ml-1 cursor-pointer"
+                            >
+                              Reset to &ldquo;OTHER&rdquo;
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div>
-                        <label htmlFor="yearOfStudy" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                          Year of Study <span className="text-red-500">*</span>
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label htmlFor="yearOfStudy" className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                            Year of Study <span className="text-red-500">*</span>
+                          </label>
+                          {formData.yearOfStudy === "Other" && (
+                            <span className="text-[10px] text-[#b87a14] font-semibold">Other / External</span>
+                          )}
+                        </div>
                         <select
                           id="yearOfStudy"
                           value={formData.yearOfStudy}
@@ -547,9 +600,24 @@ export default function GalaRegistrationPage() {
                             </option>
                           ))}
                         </select>
-                        <span className="text-[10px] text-slate-400 mt-1 block">
-                          Select your current academic stage
-                        </span>
+                        {formData.yearOfStudy === "Other" ? (
+                          <div className="mt-2 animate-fadeIn">
+                            <input
+                              type="text"
+                              placeholder="Specify stage (e.g. Masters, Diploma, External) - optional"
+                              value={formData.customYearOfStudy}
+                              onChange={(e) => setFormData({ ...formData, customYearOfStudy: e.target.value })}
+                              className="w-full px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                            />
+                            <span className="text-[10px] text-slate-400 mt-0.5 block">
+                              Optional: specify or leave blank for &ldquo;Other&rdquo;
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 mt-1 block">
+                            Select your current academic stage or &ldquo;Other&rdquo;
+                          </span>
+                        )}
                       </div>
                     </div>
 

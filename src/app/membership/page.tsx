@@ -449,7 +449,7 @@ export default function MembershipHubPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Engineering Department *
+                      Engineering Program *
                     </label>
                     <select
                       value={regForm.department}
