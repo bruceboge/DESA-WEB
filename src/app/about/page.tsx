@@ -1,13 +1,9 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import {
   ShieldCheckIcon,
-  AwardIcon,
   ChevronRightIcon,
-  UsersIcon,
-  ArrowRightIcon,
 } from "@/components/Icons";
 
 export const metadata: Metadata = {
@@ -69,16 +65,6 @@ export default function AboutPage() {
               </h1>
               <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
                 DESA is the official, student association representing all undergraduate and diploma engineering students at DeKUT, fostering technological innovation, representation, and industrial career readiness.
-              </p>
-            </div>
-
-            <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-[#e5a93c] text-xs font-bold uppercase tracking-wider mb-2">
-                <ShieldCheckIcon className="w-4 h-4" />
-                <span>EBK & IEK Accreditation</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Operating under the School of Engineering, DESA programs are harmonized with the Engineers Board of Kenya (EBK) and the Institution of Engineers of Kenya (IEK) student development charter.
               </p>
             </div>
           </div>

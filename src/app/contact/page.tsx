@@ -3,10 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  MapPinIcon,
-  PhoneIcon,
   MailIcon,
-  ClockIcon,
   SendIcon,
   CheckCircleIcon,
   ChevronRightIcon,

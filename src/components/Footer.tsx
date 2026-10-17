@@ -100,7 +100,7 @@ export default function Footer() {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-md">
-              The premier professional association unifying student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical engineering at DeKUT, Nyeri, Kenya.
+              The premier professional association unifying student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical engineering at DeKUT.
             </p>
 
             <div className="pt-1 flex items-center gap-2.5">
@@ -254,12 +254,6 @@ export default function Footer() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <PhoneIcon className="w-3.5 h-3.5 text-[#e5a93c] shrink-0" />
-                    <a href="tel:+254709202942" className="text-[11px] hover:text-[#e5a93c] transition-colors">
-                      +254 (0) 709 202 942
-                    </a>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <MailIcon className="w-3.5 h-3.5 text-[#e5a93c] shrink-0" />
                     <a
                       href="mailto:engineeringstudentsassociation@dkut.ac.ke"
@@ -270,31 +264,6 @@ export default function Footer() {
                   </div>
                 </div>
               </div>
-
-              {/* Newsletter Subscription */}
-              <div className="space-y-2 pt-1 sm:pt-0">
-                <span className="text-[11px] font-bold text-slate-300 block">
-                  Engineering Digest & Updates
-                </span>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Get updates
-                </p>
-                <div className="flex">
-                  <input
-                    type="email"
-                    placeholder="Enter email..."
-                    className="bg-slate-900 border border-slate-700 text-xs px-2.5 py-1.5 rounded-l-lg focus:outline-none focus:border-[#e5a93c] text-white flex-1 min-w-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => alert("Thank you for subscribing to the DESA Engineering Digest!")}
-                    className="bg-[#e5a93c] hover:bg-[#f6c867] text-[#071325] px-3 rounded-r-lg font-bold text-xs transition-colors flex items-center justify-center shrink-0 cursor-pointer"
-                    aria-label="Subscribe"
-                  >
-                    <ArrowRightIcon className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -303,7 +272,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Compliance Links */}
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 border-t border-slate-800/80 mt-2">
           <div>
-            © {new Date().getFullYear()} Dedan Kimathi University Engineering Students Association (DESA). School of Engineering, DeKUT.
+            © {new Date().getFullYear()} Dedan Kimathi University Engineering Students Association (DESA).
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
             <Link href="/privacy" className="text-slate-400 hover:text-[#e5a93c] transition-colors">Privacy Policy</Link>

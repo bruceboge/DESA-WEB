@@ -17,7 +17,7 @@ export interface Post {
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
 
-function parseFrontmatter(fileContent: string): { data: Record<string, any>; content: string } {
+function parseFrontmatter(fileContent: string): { data: Record<string, string>; content: string } {
   const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
   const match = frontmatterRegex.exec(fileContent);
 
@@ -27,7 +27,7 @@ function parseFrontmatter(fileContent: string): { data: Record<string, any>; con
 
   const rawYaml = match[1];
   const content = match[2].trim();
-  const data: Record<string, any> = {};
+  const data: Record<string, string> = {};
 
   rawYaml.split(/\r?\n/).forEach((line) => {
     const colonIndex = line.indexOf(":");
@@ -106,11 +106,24 @@ export function getAllPosts(): Post[] {
       const items = JSON.parse(raw);
       if (Array.isArray(items)) {
         const today = new Date().toISOString().split("T")[0];
-        dynamicPosts = items.map((item: any) => ({
+        interface RawDynamicItem {
+          slug: string;
+          title?: string;
+          date?: string;
+          type?: string;
+          location?: string;
+          eventDate?: string;
+          coverImage?: string;
+          excerpt?: string;
+          content?: string;
+          recapPhotos?: string[];
+          isPast?: boolean;
+        }
+        dynamicPosts = (items as RawDynamicItem[]).map((item) => ({
           slug: item.slug,
           title: item.title || "Untitled Announcement",
           date: item.date || today,
-          type: item.type === "event" ? "event" : "news",
+          type: item.type === "event" ? ("event" as const) : ("news" as const),
           location: item.location || undefined,
           eventDate: item.eventDate || undefined,
           coverImage: item.coverImage || "/images/hero-concept.jpg",

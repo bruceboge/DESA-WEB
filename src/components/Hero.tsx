@@ -9,8 +9,6 @@ import {
   ZapIcon,
   BuildingIcon,
   AwardIcon,
-  CheckCircleIcon,
-  ChevronRightIcon,
   FlaskIcon,
 } from "./Icons";
 
@@ -149,41 +147,6 @@ export default function Hero() {
               <p className="text-xs text-slate-300 leading-relaxed text-left">
                 Dedan Kimathi University of Technology (DeKUT) is recognized by the <strong className="text-white font-medium">Engineers Board of Kenya (EBK)</strong> as a premier national benchmark in engineering education—famed for 100% accredited programs, hands-on lab training, and high-demand graduates.
               </p>
-            </div>
-
-            {/* Secondary Proof Card: The DeKUT Engineering Advantage */}
-            <div className="bg-[#071325]/90 rounded-2xl p-5 sm:p-6 border border-slate-800/90 shadow-md">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#e5a93c] flex items-center gap-1.5">
-                  <CheckCircleIcon className="w-4 h-4 text-[#e5a93c]" />
-                  <span>The DeKUT Engineering Edge</span>
-                </span>
-                <span className="text-[10px] text-slate-400 font-semibold bg-slate-800/90 px-2.5 py-0.5 rounded-full border border-slate-700/60">
-                  SOE DeKUT
-                </span>
-              </div>
-
-              <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-[#e5a93c]/15 text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">✓</span>
-                  <span className="leading-snug"><strong className="text-white font-semibold">Engineering Mastery:</strong> Specialized robotics rigs, CAD workshops, peer tutorial circles, and capstone design mentorship.</span>
-                </li>
-                <li className="flex items-start gap-2.5">
-                  <span className="w-4 h-4 rounded-full bg-[#e5a93c]/15 text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">✓</span>
-                  <span className="leading-snug"><strong className="text-white font-semibold">Industry Preference:</strong> Consistently top-ranked by major engineering employers.</span>
-                </li>
-              </ul>
-
-              <div className="mt-4 pt-3.5 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <span className="text-slate-400 italic text-[11px]">&quot;Better Life Through Technology&quot;</span>
-                <Link
-                  href="/departments"
-                  className="text-[#e5a93c] hover:text-[#d48b12] font-semibold inline-flex items-center gap-1 transition-colors"
-                >
-                  <span>Explore Programs</span>
-                  <ChevronRightIcon className="w-3.5 h-3.5" />
-                </Link>
-              </div>
             </div>
           </div>
 

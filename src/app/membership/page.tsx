@@ -46,18 +46,25 @@ export default function MembershipHubPage() {
     phone: "",
     website: "", // Honeypot
   });
+  type TabKey = "lookup" | "register" | "dues" | "roll-call" | "services";
   const [isRegistering, setIsRegistering] = useState(false);
-  const [registerSuccess, setRegisterSuccess] = useState<any | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState<{ memberId: string } | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
   // Check URL hash for direct tab switching
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "");
+    const handleHash = () => {
+      const hash = window.location.hash.replace("#", "") as TabKey;
       if (hash === "lookup" || hash === "register" || hash === "dues" || hash === "roll-call" || hash === "services") {
-        setActiveTab(hash as any);
+        setActiveTab(hash);
       }
-    }
+    };
+    const timer = setTimeout(handleHash, 0);
+    window.addEventListener("hashchange", handleHash);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("hashchange", handleHash);
+    };
   }, []);
 
   const handleLookup = async (e: React.FormEvent) => {
@@ -135,13 +142,13 @@ export default function MembershipHubPage() {
           </nav>
 
           <span className="text-xs font-bold uppercase tracking-wider text-[#e5a93c] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
-            Unified Student Services
+            Unified Membership Services
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
             DESA Membership Hub
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Join the association, verify your membership, pay dues, and get latest updates.
+            Join the association, verify your membership, pay dues, and access DESA services.
           </p>
 
           {/* Tab Navigation */}

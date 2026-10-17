@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
 import { checkRateLimit, getClientIp } from "@/lib/antiSpam";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +10,13 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/png",
 ]);
 
-const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024; // 4.5 MB limit (WebP images are typically ~150-300KB)
+const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024; // 4.5 MB limit
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const ip = getClientIp(request);
 
-    // 1. Origin & Referer Verification (Prevents unauthorized external sites from abusing your Blob)
+    // 1. Origin & Referer Verification
     const origin = request.headers.get("origin") || "";
     const referer = request.headers.get("referer") || "";
     const host = request.headers.get("host") || "";
@@ -38,8 +37,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // 2. Rate Limiting (Max 10 image uploads per minute per IP to prevent storage exhaustion)
-    const rateCheck = checkRateLimit(ip, "blob-upload", 10, 60);
+    // 2. Rate Limiting
+    const rateCheck = checkRateLimit(ip, "image-upload", 15, 60);
     if (!rateCheck.allowed) {
       return NextResponse.json(
         {
@@ -62,7 +61,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // 4. Strict File Type Validation (Only images, NO executable scripts, SVGs with JS, or binaries)
+    // 4. Strict File Type Validation
     if (!ALLOWED_MIME_TYPES.has(file.type)) {
       return NextResponse.json(
         {
@@ -73,11 +72,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    // 5. File Size Verification (Prevents storage bloat)
+    // 5. File Size Verification
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return NextResponse.json(
         {
-          error: `Image size exceeds the 4.5MB threshold (${(file.size / (1024 * 1024)).toFixed(1)}MB). Please ensure client WebP compression is active.`,
+          error: `Image size exceeds 4.5MB threshold (${(file.size / (1024 * 1024)).toFixed(1)}MB). Please ensure client WebP compression is active.`,
         },
         { status: 413 }
       );
@@ -91,25 +90,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const safeFilename = `uploads/desa-${Date.now()}-${sanitizedBase || "img"}.webp`;
 
-    const token = process.env.BLOB_READ_WRITE_TOKEN;
-
-    // Production Vercel Blob Upload
-    if (token) {
-      const blob = await put(safeFilename, file, {
-        access: "public",
-        addRandomSuffix: true,
-        token,
-      });
-
-      return NextResponse.json({
-        url: blob.url,
-        downloadUrl: blob.downloadUrl,
-        pathname: blob.pathname,
-        contentType: blob.contentType,
-      });
-    }
-
-    // Local dev fallback when token is not yet configured in .env.local
+    // Process to base64 Data URL
     const buffer = await file.arrayBuffer();
     const base64 = Buffer.from(buffer).toString("base64");
     const mime = file.type || "image/webp";
@@ -118,15 +99,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({
       url: dataUrl,
       pathname: safeFilename,
-      isLocalFallback: true,
-      notice:
-        "Image converted locally. Add BLOB_READ_WRITE_TOKEN to .env.local for live Vercel Blob cloud storage.",
+      success: true,
     });
-  } catch (err: any) {
-    console.error("Vercel Blob upload error:", err);
-    return NextResponse.json(
-      { error: err.message || "Failed to process image upload" },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to process image upload";
+    console.error("Image upload processing error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -36,8 +36,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true, photo: newPhoto });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to add photo" }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to add photo";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -60,7 +61,8 @@ export async function DELETE(request: Request) {
 
     await deleteGalleryPhoto(id);
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to delete photo" }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to delete photo";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

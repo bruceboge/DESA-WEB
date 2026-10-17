@@ -8,7 +8,6 @@ import {
   CheckCircleIcon,
   AlertCircleIcon,
   UploadIcon,
-  FileTextIcon,
   ExternalLinkIcon,
   ShieldCheckIcon,
 } from "@/components/Icons";
@@ -47,7 +46,6 @@ export default function SubmitArticlePage() {
   const [isCustomCategory, setIsCustomCategory] = useState(false);
 
   // Image upload state
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [compressionStats, setCompressionStats] = useState<{
     originalSize: string;
@@ -65,7 +63,7 @@ export default function SubmitArticlePage() {
     date: string;
   } | null>(null);
 
-  // Handle image selection, convert to WebP client-side, upload to Vercel Blob
+  // Handle image selection, convert to WebP client-side, upload
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,7 +78,6 @@ export default function SubmitArticlePage() {
         maxWidth: 1600,
       });
 
-      setImageFile(webpResult.file);
       setImagePreview(webpResult.previewUrl);
       setCompressionStats({
         originalSize: formatBytes(webpResult.originalSize),
@@ -88,7 +85,7 @@ export default function SubmitArticlePage() {
         reductionPercentage: webpResult.reductionPercentage,
       });
 
-      // 2. Upload WebP to Vercel Blob endpoint
+      // 2. Upload WebP to upload endpoint
       const bodyFormData = new FormData();
       bodyFormData.append("file", webpResult.file);
 
@@ -107,7 +104,7 @@ export default function SubmitArticlePage() {
       } else {
         setImageUploadNotice("Preview saved locally. Will be hosted upon approval.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("WebP conversion or upload error:", err);
       setImageUploadNotice("Could not compress image. Please ensure it is a valid PNG or JPEG.");
     } finally {

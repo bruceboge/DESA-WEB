@@ -39,6 +39,7 @@ function parseInline(text: string): React.ReactNode[] {
       const src = match[3];
       elements.push(
         <span key={`img-${match.index}`} className="block my-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt={alt || "Article Illustration"}

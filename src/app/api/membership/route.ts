@@ -109,14 +109,20 @@ export async function GET(request: Request) {
       }
     } catch (fetchErr) {
       clearTimeout(timeoutId);
-      console.warn("Lookup to Apps Script failed, returning friendly fallback:", fetchErr);
+      console.warn("Lookup to Apps Script failed:", fetchErr);
+      return NextResponse.json(
+        {
+          found: false,
+          error: "Membership lookup is temporarily unavailable. Please retry in a few moments.",
+        },
+        { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } }
+      );
     }
 
-    // Fallback: If Apps Script hasn't been upgraded yet or was unreachable
     return NextResponse.json(
       {
         found: false,
-        message: "No registered record found yet for this registration number. Please register using the form below.",
+        message: "No registered record found with this registration number. Please register using the form below.",
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } }
     );

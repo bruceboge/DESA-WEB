@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { put } from "@vercel/blob";
 
 export interface BlogArticle {
   id: string;
@@ -50,7 +49,7 @@ const LOCAL_DATA_DIR = path.join(process.cwd(), "content", "data");
 const TMP_DATA_DIR = path.join(os.tmpdir(), "desa_data");
 
 // In-memory cache for fast, seamless reads across serverless invocations
-const memoryCache: Record<string, any> = {};
+const memoryCache: Record<string, unknown> = {};
 
 function getWritableDir(): string {
   try {
@@ -201,21 +200,6 @@ function writeJsonFile<T>(filename: string, data: T) {
   }
 }
 
-// Sync to Vercel Blob if token is available
-async function syncBlob(pathname: string, data: any) {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return;
-  try {
-    await put(pathname, JSON.stringify(data, null, 2), {
-      access: "public",
-      contentType: "application/json",
-      token,
-      addRandomSuffix: false,
-    });
-  } catch (err) {
-    console.warn(`Could not sync ${pathname} to Vercel Blob:`, err);
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────
 // 1. Articles / Blog Data API

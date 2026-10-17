@@ -6,15 +6,10 @@ import Image from "next/image";
 import { BlogArticle } from "@/lib/dataStore";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
-  CalendarIcon,
   SearchIcon,
   CloseIcon,
   CheckCircleIcon,
   ArrowRightIcon,
-  CpuIcon,
-  ZapIcon,
-  FlaskIcon,
-  BuildingIcon,
   ExternalLinkIcon,
   FileTextIcon,
 } from "./Icons";

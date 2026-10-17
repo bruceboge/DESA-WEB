@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       message:
         "Your article has been submitted for editorial review. Once reviewed by the Secretariat, it will be published to the DESA Engineering Blog.",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Article submission error:", err);
     return NextResponse.json(
       { error: "Failed to submit article. Please check your network and retry." },

@@ -271,11 +271,13 @@ export async function POST(request: Request) {
         "Dietary Requirements": sanitizedDietary || "Standard / None",
         "Dietary Notes": sanitizedDietary || "Standard / None",
 
+        presentation: sanitizedPresentation,
+        "Presentation Showcase": sanitizedPresentation,
         email: rawEmail,
         mpesaRef: sanitizedMpesa,
       };
 
-      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
+      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 10000);
       savedToSheets = syncResult.ok;
       sheetError = syncResult.error || null;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { convertImageToWebP } from "@/lib/imageOptimization";
 
 interface RichArticleEditorProps {
@@ -47,13 +47,15 @@ export default function RichArticleEditor({
     setHistoryIndex((prev) => prev + 1);
   };
 
-  // Sync external changes
-  useEffect(() => {
+  // Sync external changes during render without cascading useEffect renders
+  const [prevPropValue, setPrevPropValue] = useState(value);
+  if (value !== prevPropValue) {
+    setPrevPropValue(value);
     if (value !== history[historyIndex]) {
       setHistory((prev) => [...prev.slice(0, historyIndex + 1), value]);
       setHistoryIndex((prev) => prev + 1);
     }
-  }, [value]);
+  }
 
   // Statistics
   const stats = useMemo(() => {

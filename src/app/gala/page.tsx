@@ -37,8 +37,8 @@ const yearLevels = [
   "Other",
 ];
 
-// WhatsApp Group Link for registered attendees (replace placeholder with your actual link)
-const GALA_WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/YOUR_GALA_GROUP_INVITE_LINK_HERE";
+// WhatsApp Group Link for registered attendees
+const GALA_WHATSAPP_GROUP_URL = "https://chat.whatsapp.com/Elq6KZMF7rRB8eqS3IifMv";
 
 export default function GalaRegistrationPage() {
   const [formData, setFormData] = useState({
@@ -352,7 +352,7 @@ export default function GalaRegistrationPage() {
               </div>
 
               <a
-                href="https://chat.whatsapp.com/Elq6KZMF7rRB8eqS3IifMv"
+                href={GALA_WHATSAPP_GROUP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 px-4 rounded-xl shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"

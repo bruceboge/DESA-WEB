@@ -13,7 +13,7 @@ export default function TopBar() {
           </div>
           <div className="hidden lg:flex items-center gap-1.5 text-slate-300">
             <PhoneIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
-            <span>+254 (0) 709 202 942</span>
+            <span></span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-slate-300">
             <MailIcon className="w-3.5 h-3.5 text-[#e5a93c]" />

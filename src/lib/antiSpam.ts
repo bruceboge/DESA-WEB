@@ -146,7 +146,7 @@ export function isDuplicateSubmission(key: string, windowMs = 15000): boolean {
 export async function sendToGoogleSheets(
   scriptUrl: string,
   payload: unknown,
-  timeoutMs = 30000
+  timeoutMs = 10000
 ): Promise<{ ok: boolean; status?: number; error?: string }> {
   try {
     const controller = new AbortController();

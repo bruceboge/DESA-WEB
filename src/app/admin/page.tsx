@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,14 +10,12 @@ import {
   AlertCircleIcon,
   UploadIcon,
   CalendarIcon,
-  MapPinIcon,
   CloseIcon,
   FileTextIcon,
-  ChevronRightIcon,
   ExternalLinkIcon,
 } from "@/components/Icons";
 import { BlogArticle, GalleryPhoto, NewsEventItem } from "@/lib/dataStore";
-import { convertImageToWebP, formatBytes } from "@/lib/imageOptimization";
+import { convertImageToWebP, formatBytes, WebPConversionResult } from "@/lib/imageOptimization";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 const GALLERY_CATEGORIES = [
@@ -41,7 +39,6 @@ export default function AdminPage() {
   const [articles, setArticles] = useState<BlogArticle[]>([]);
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [newsList, setNewsList] = useState<NewsEventItem[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Blog Review State
@@ -73,46 +70,12 @@ export default function AdminPage() {
     image: "",
   });
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
-  const [galleryCompressionStats, setGalleryCompressionStats] = useState<any | null>(null);
+  const [galleryCompressionStats, setGalleryCompressionStats] = useState<WebPConversionResult | null>(null);
   const [isUploadingGalleryImage, setIsUploadingGalleryImage] = useState(false);
   const [isAddingGalleryPhoto, setIsAddingGalleryPhoto] = useState(false);
 
-  // Check existing session
-  useEffect(() => {
-    const savedSecret = sessionStorage.getItem("desa_admin_secret");
-    if (savedSecret) {
-      setPasskey(savedSecret);
-      verifyAuth(savedSecret);
-    }
-  }, []);
-
-  const verifyAuth = async (key: string) => {
-    setIsVerifying(true);
-    setAuthError(null);
-    try {
-      const res = await fetch("/api/admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", passkey: key }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsAuthenticated(true);
-        sessionStorage.setItem("desa_admin_secret", key);
-        loadDashboardData(key);
-      } else {
-        setAuthError(data.error || "Incorrect Secretariat passkey.");
-        sessionStorage.removeItem("desa_admin_secret");
-      }
-    } catch {
-      setAuthError("Could not connect to authentication service.");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const loadDashboardData = async (key: string) => {
-    setIsLoadingData(true);
+  // Load dashboard data
+  const loadDashboardData = useCallback(async (key: string) => {
     try {
       const res = await fetch("/api/admin", {
         headers: { "x-admin-secret": key },
@@ -125,10 +88,46 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
-    } finally {
-      setIsLoadingData(false);
     }
-  };
+  }, []);
+
+  // Verify authentication
+  const verifyAuth = useCallback(async (key: string) => {
+    setIsVerifying(true);
+    setAuthError(null);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", passkey: key }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAuthenticated(true);
+        setPasskey(key);
+        sessionStorage.setItem("desa_admin_secret", key);
+        loadDashboardData(key);
+      } else {
+        setAuthError(data.error || "Incorrect Secretariat passkey.");
+        sessionStorage.removeItem("desa_admin_secret");
+      }
+    } catch {
+      setAuthError("Could not connect to authentication service.");
+    } finally {
+      setIsVerifying(false);
+    }
+  }, [loadDashboardData]);
+
+  // Check existing session on mount
+  useEffect(() => {
+    const savedSecret = sessionStorage.getItem("desa_admin_secret");
+    if (savedSecret) {
+      const timer = setTimeout(() => {
+        verifyAuth(savedSecret);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [verifyAuth]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("desa_admin_secret");
@@ -705,7 +704,7 @@ export default function AdminPage() {
                     </label>
                     <select
                       value={newsForm.type}
-                      onChange={(e) => setNewsForm({ ...newsForm, type: e.target.value as any })}
+                      onChange={(e) => setNewsForm({ ...newsForm, type: e.target.value as "event" | "news" })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     >
                       <option value="event">Upcoming Event</option>
