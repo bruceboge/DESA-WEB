@@ -1,5 +1,5 @@
 import React from "react";
-import { MapPinIcon, PhoneIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, InstagramIcon } from "./Icons";
+import { MapPinIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, InstagramIcon } from "./Icons";
 
 export default function TopBar() {
   return (
@@ -10,10 +10,6 @@ export default function TopBar() {
           <div className="flex items-center gap-1.5 text-slate-300 hover:text-[#e5a93c] transition-colors">
             <MapPinIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
             <span>Dedan Kimathi University of Technology • Nyeri, Kenya</span>
-          </div>
-          <div className="hidden lg:flex items-center gap-1.5 text-slate-300">
-            <PhoneIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
-            <span></span>
           </div>
           <div className="hidden sm:flex items-center gap-1.5 text-slate-300">
             <MailIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
