@@ -15,7 +15,7 @@ export default function LivePulseTicker({
   return (
     <section className="bg-[#0c1a32] border-y border-[#e5a93c]/20 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3.5">
           {/* Card 1: Next Immediate Event */}
           <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 hover:border-[#e5a93c]/50 transition-colors flex items-center justify-between gap-3 group">
             <div className="flex items-center gap-3 min-w-0">

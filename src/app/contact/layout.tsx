@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Reach the DESA Secretariat. Submit official inquiries, member support requests, and leadership communications to the Engineering Students Association at Dedan Kimathi University of Technology, Nyeri.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Contact & Support | DESA DeKUT",
+    title: "Contact & Support | ESA DeKUT",
     description:
       "Reach the DESA Secretariat. Submit official inquiries, member support requests, and leadership communications to the Engineering Students Association at Dedan Kimathi University of Technology, Nyeri.",
     url: "https://esa-dekut.vercel.app/contact",

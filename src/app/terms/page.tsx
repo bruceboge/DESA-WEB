@@ -6,7 +6,7 @@ import { ChevronRightIcon, ShieldCheckIcon, MailIcon, MapPinIcon } from "@/compo
 export const metadata: Metadata = {
   title: "Terms & Conditions | DESA DeKUT",
   description:
-    "Official Terms and Conditions governing membership, portal utilization, and academic conduct for the Dedan Kimathi University Engineering Students Association (DESA).",
+    "Terms for using the Dedan Kimathi University Engineering Students Association (DESA) website and its online services.",
   alternates: { canonical: "/terms" },
 };
 
@@ -32,7 +32,7 @@ export default function TermsPage() {
               Terms & Conditions of Membership & Platform Use
             </h1>
             <p className="mt-3 text-base text-slate-300 leading-relaxed text-justify">
-              These terms govern student membership, electronic attendance check-in, academic material access, and participation in activities organized by the Dedan Kimathi University Engineering Students Association (DESA).
+              These terms apply to your use of the Dedan Kimathi University Engineering Students Association (DESA) website, including its membership, contact, article-submission, and roll-call services.
             </p>
           </div>
         </div>
@@ -66,15 +66,15 @@ export default function TermsPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">02</span>
-              <span>Academic Integrity & Vault Material Usage</span>
+              <span>Website Content & Acceptable Use</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify mb-3">
-              All documents, laboratory guides, syllabi outlines, and research publications indexed in the DESA Academic Vault are provided solely for academic revision and educational purposes:
+              The website provides information about DESA, its activities, news, events, and member services. You may use the site for lawful, personal, and association-related purposes. When using the site, you must not:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm text-slate-700">
-              <li>Materials must not be sold, monetized, or redistributed commercially.</li>
-              <li>Students must uphold strict academic integrity in accordance with DeKUT examination rules and Engineers Board of Kenya (EBK) ethics.</li>
-              <li>Attribution must be maintained for all peer-authored capstone designs and technical documentation.</li>
+              <li>Submit information that you know is false, misleading, or unauthorized.</li>
+              <li>Attempt to disrupt, damage, or gain unauthorized access to the site or its data.</li>
+              <li>Copy or republish site content in a way that infringes another person&apos;s rights or applicable law.</li>
             </ul>
           </div>
 
@@ -82,10 +82,10 @@ export default function TermsPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">03</span>
-              <span>Roll Call & Attendance Verification</span>
+              <span>Forms, Membership & Attendance Submissions</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              The digital Roll Call portal serves as the official registry for association meetings, industrial symposiums, and engineering congresses. Submitting fraudulent attendance records, signing in on behalf of absent students (proxy check-in), or inputting false registration numbers constitutes academic dishonesty and is subject to disciplinary action under the DeKUT Student Code of Conduct.
+              Information submitted through the website must be accurate and relate to you, unless you are authorized to submit it for someone else. Do not submit attendance on behalf of another person. A form submission or attendance receipt confirms that information was received; it does not by itself guarantee membership approval, event registration, certification, or any other decision. DESA may contact you to verify a submission or correct an error.
             </p>
           </div>
 
@@ -93,10 +93,10 @@ export default function TermsPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">04</span>
-              <span>Intellectual Property & Student Inventions</span>
+              <span>Article Submissions & Intellectual Property</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              Prototypes, hardware designs, and capstone software developed within DeKUT innovation hubs (such as DeHUB, DESA robotics labs, and STL cleanroom collaborations) remain governed by the Dedan Kimathi University of Technology Intellectual Property (IP) Policy. DESA showcases verified achievements with appropriate student and faculty co-creator attribution.
+              You retain the rights you hold in material you submit. By submitting an article, you confirm that you have the right to provide it and grant DESA permission to review it and, if accepted, publish and display it on DESA’s website and related channels with reasonable attribution. Submission does not guarantee publication. Do not include confidential material or content that infringes another person’s rights.
             </p>
           </div>
 
@@ -104,10 +104,10 @@ export default function TermsPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">05</span>
-              <span>Disclaimer & Limitation of Liability</span>
+              <span>Information, Availability & External Links</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              DESA provides platform information in good faith to support student professional development. While every effort is made to maintain complete synchronization with School of Engineering academic schedules, official examination timetables and statutory notices issued directly by the DeKUT Registrar (Academic Affairs) supersede all association communications.
+              Website content is provided for general information and may change or contain errors. The site and its services may occasionally be unavailable or interrupted. Check with DESA or the relevant university office for confirmation of important information, dates, or requirements. The site may link to external websites; DESA does not control those sites or their content.
             </p>
           </div>
 

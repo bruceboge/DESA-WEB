@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BlogArticle } from "@/lib/dataStore";
+import type { BlogArticle } from "@/lib/dataStore";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
   SearchIcon,
@@ -123,6 +123,7 @@ export default function InnovationsFeed({ initialArticles }: InnovationsFeedProp
                     src={article.imageUrl}
                     alt={article.title}
                     fill
+                    sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1023px) calc((100vw - 3rem) / 2), (max-width: 1280px) calc((100vw - 4rem) / 3), 400px"
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                     unoptimized
                   />
@@ -246,6 +247,7 @@ export default function InnovationsFeed({ initialArticles }: InnovationsFeedProp
                   src={activeModalArticle.imageUrl}
                   alt={activeModalArticle.title}
                   fill
+                  sizes="(max-width: 768px) calc(100vw - 3rem), 672px"
                   className="object-cover"
                   unoptimized
                 />

@@ -1,8 +1,12 @@
 import { MetadataRoute } from "next";
+import { getAllPosts } from "@/lib/posts";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://esa-dekut.vercel.app";
   const currentDate = new Date().toISOString();
+  const posts = await getAllPosts();
 
   return [
     {
@@ -95,5 +99,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    ...posts.map((post) => ({
+      url: `${baseUrl}/news-events/${post.slug}`,
+      lastModified: post.date,
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    })),
   ];
 }

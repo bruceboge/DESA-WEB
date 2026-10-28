@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import CookieConsent from "@/components/CookieConsent";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { Analytics } from "@vercel/analytics/next";
 
 export const viewport: Viewport = {
@@ -179,12 +180,13 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]" suppressHydrationWarning>
         <TopBar />
         <Navbar />
-        <main className="flex-1">
+        <main className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
         <Footer />
         <BackToTop />
         <CookieConsent />
+        <MobileBottomNav />
         <Analytics />
       </body>
     </html>

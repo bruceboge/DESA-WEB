@@ -22,7 +22,7 @@ export default function LatestDispatches({ posts }: LatestDispatchesProps) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-[#b87a14] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
-              Live Updates
+              Updates
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#071325] tracking-tight">
               Latest Dispatches & Event Calendar
@@ -53,6 +53,7 @@ export default function LatestDispatches({ posts }: LatestDispatchesProps) {
                     src={post.coverImage || "/images/dekut-campus.jpg"}
                     alt={post.title}
                     fill
+                    sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1280px) calc((100vw - 4rem) / 3), 400px"
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#071325]/80 via-transparent to-transparent" />

@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
-    const post = getPostBySlug(slug);
+    const post = await getPostBySlug(slug);
 
     const title = post ? post.title : "DESA Engineering Event";
     const eventType = post?.type === "event" ? "OFFICIAL DESA EVENT" : "DESA NEWS DISPATCH";
@@ -153,6 +153,7 @@ export async function GET(
       }
     );
   } catch (error) {
-    return new Response(`Failed to generate Open Graph image: ${error}`, { status: 500 });
+    console.error("Open Graph image generation failed:", error);
+    return new Response("Image temporarily unavailable.", { status: 500 });
   }
 }

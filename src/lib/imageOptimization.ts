@@ -1,6 +1,6 @@
 /**
  * Client-side browser image conversion & compression to WebP.
- * Reduces storage footprint on Vercel Blob and speeds up mobile page load times.
+ * Reduces storage footprint and speeds up mobile page load times.
  */
 
 export interface WebPConversionResult {

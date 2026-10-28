@@ -88,9 +88,11 @@ export default function SubmitArticlePage() {
       // 2. Upload WebP to upload endpoint
       const bodyFormData = new FormData();
       bodyFormData.append("file", webpResult.file);
+      bodyFormData.append("purpose", "article");
 
-      const res = await fetch("/api/blob/upload", {
+      const res = await fetch("/api/media/upload", {
         method: "POST",
+        headers: { "x-upload-purpose": "article" },
         body: bodyFormData,
       });
 
@@ -102,11 +104,11 @@ export default function SubmitArticlePage() {
           setImageUploadNotice(data.notice);
         }
       } else {
-        setImageUploadNotice("Preview saved locally. Will be hosted upon approval.");
+        setImageUploadNotice(data.error || "Could not save image. Please retry.");
       }
     } catch (err: unknown) {
       console.error("WebP conversion or upload error:", err);
-      setImageUploadNotice("Could not compress image. Please ensure it is a valid PNG or JPEG.");
+      setImageUploadNotice("Could not process image. Please ensure it is a valid PNG or JPEG.");
     } finally {
       setIsUploadingImage(false);
     }
@@ -171,13 +173,13 @@ export default function SubmitArticlePage() {
           </nav>
 
           <span className="text-xs font-bold uppercase tracking-wider text-[#e5a93c] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
-            Editorial Submission Studio
+            Editorial Studio
           </span>
           <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
             Submit Your Article
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Have you written an engineering analysis, technical tutorial, research finding, or cohort article? Submit your write-up to be reviewed by the Secretariat and published on the official DESA Engineering Blog.
+            Have you written an engineering analysis, technical tutorial, research finding, or cohort article? Submit your write-up to be published on our Blog.
           </p>
         </div>
       </section>
@@ -200,7 +202,7 @@ export default function SubmitArticlePage() {
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              Your article details have been queued in the Secretariat database. Submissions are reviewed by the editorial team before publishing live on the blog.
+              Your article details have been queued. Submissions are reviewed by the editorial team before publishing.
             </p>
 
             <div className="my-6 p-4 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2 font-mono text-xs">
@@ -245,7 +247,6 @@ export default function SubmitArticlePage() {
                     imageUrl: "",
                     website: "",
                   });
-                  setImageFile(null);
                   setImagePreview(null);
                   setCompressionStats(null);
                 }}
@@ -275,7 +276,7 @@ export default function SubmitArticlePage() {
                     Article Information & Authorship
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Provide accurate credentials for article credit and cohort attribution.
+                    Provide accurate credentials for article credit and attribution.
                   </p>
                 </div>
               </div>
@@ -317,7 +318,7 @@ export default function SubmitArticlePage() {
                     required
                     minLength={3}
                     maxLength={80}
-                    placeholder="e.g. Victor Mutua"
+                    placeholder="e.g. Dedan Kimathi"
                     value={formData.author}
                     onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -326,7 +327,7 @@ export default function SubmitArticlePage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    DeKUT Registration Number <span className="text-red-500">*</span>
+                    Registration Number <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -342,7 +343,7 @@ export default function SubmitArticlePage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Academic Department <span className="text-red-500">*</span>
+                    Program <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.department}
@@ -416,7 +417,7 @@ export default function SubmitArticlePage() {
                     Cover Illustration or Diagram
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Uploaded photos are automatically converted into compressed WebP format for fast loading and reduced storage on Vercel Blob.
+                    Uploaded images are to appear alongside submitted article.
                   </p>
                 </div>
               </div>
@@ -438,10 +439,10 @@ export default function SubmitArticlePage() {
                   </div>
                   <div>
                     <span className="text-xs sm:text-sm font-bold text-[#071325] hover:underline">
-                      Click to choose article cover image or schematic diagram
+                      Click to choose article cover image
                     </span>
                     <p className="text-[11px] text-slate-500 mt-0.5">
-                      Supports PNG, JPG, or WebP. Auto-compressed to lightweight WebP.
+                      Supports PNG, JPG, or WebP.
                     </p>
                   </div>
                 </label>
@@ -450,7 +451,7 @@ export default function SubmitArticlePage() {
               {isUploadingImage && (
                 <div className="text-xs text-slate-600 flex items-center gap-2 justify-center py-2">
                   <div className="w-3.5 h-3.5 border-2 border-[#e5a93c] border-t-transparent rounded-full animate-spin" />
-                  <span>Converting image to WebP and uploading to Blob storage...</span>
+                  <span>Processing...</span>
                 </div>
               )}
 
@@ -463,6 +464,7 @@ export default function SubmitArticlePage() {
                         src={imagePreview}
                         alt="Article Cover Preview"
                         fill
+                        sizes="64px"
                         className="object-cover"
                         unoptimized
                       />
@@ -470,7 +472,7 @@ export default function SubmitArticlePage() {
                     <div>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#0a5c36]">
                         <CheckCircleIcon className="w-4 h-4" />
-                        <span>WebP Optimized Image Ready</span>
+                        <span>Image Ready</span>
                       </div>
                       <p className="text-[11px] text-slate-600 mt-0.5">
                         Original: {compressionStats.originalSize} &rarr; WebP:{" "}
@@ -480,7 +482,7 @@ export default function SubmitArticlePage() {
                     </div>
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-[#0a5c36] px-2.5 py-1 rounded-full border border-emerald-300 shrink-0">
-                    Vercel Blob Ready
+                    Image ready
                   </span>
                 </div>
               )}
@@ -541,7 +543,7 @@ export default function SubmitArticlePage() {
                   {/* Summary / Abstract */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Article Abstract / Summary <span className="text-red-500">*</span>
+                      Abstract / Summary <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       required
@@ -592,7 +594,7 @@ export default function SubmitArticlePage() {
                     </label>
                     <input
                       type="url"
-                      placeholder="https://github.com/your-username or paper link"
+                      placeholder="https://youtube.com/ or paper link"
                       value={formData.externalLink}
                       onChange={(e) => setFormData({ ...formData, externalLink: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
@@ -608,6 +610,7 @@ export default function SubmitArticlePage() {
                         src={imagePreview}
                         alt="Article Cover Preview"
                         fill
+                        sizes="(max-width: 640px) calc(100vw - 3rem), 640px"
                         className="object-cover"
                         unoptimized
                       />
@@ -675,7 +678,7 @@ export default function SubmitArticlePage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <ShieldCheckIcon className="w-4 h-4 text-[#0a5c36]" />
-                <span>Reviewed by the DESA Secretariat before public display</span>
+                <span>Reviewed by the DESA Editorial before public display</span>
               </div>
 
               <div className="flex items-center gap-3 w-full sm:w-auto">

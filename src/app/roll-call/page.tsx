@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   UsersIcon,
@@ -20,16 +20,14 @@ interface SubmittedReceipt {
   sessionTopic: string;
   timestamp: string;
   verified: boolean;
-  savedToSheets: boolean;
 }
 
-const getTodayString = () =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Africa/Nairobi",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
+interface OpenMeeting {
+  id: string;
+  title: string;
+  sessionDate: string;
+  location: string;
+}
 
 const rollCallPrograms = [
   ...engineeringPrograms,
@@ -51,14 +49,39 @@ export default function RollCallPage() {
     regNumber: "",
     department: engineeringPrograms[0] as string,
     yearOfStudy: "Year 1",
-    sessionDate: getTodayString(),
-    sessionTopic: "",
+    meetingId: "",
     website: "", // Honeypot field for bot trapping
   });
 
+  const [openMeetings, setOpenMeetings] = useState<OpenMeeting[]>([]);
+  const [isLoadingMeetings, setIsLoadingMeetings] = useState(true);
+  const [meetingLoadError, setMeetingLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<SubmittedReceipt | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/roll-call", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const result = (await response.json()) as { meetings?: OpenMeeting[]; error?: string };
+        if (!response.ok) throw new Error(result.error || "Could not load open meetings.");
+        setOpenMeetings(result.meetings || []);
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          setMeetingLoadError(
+            error instanceof Error ? error.message : "Could not load open meetings."
+          );
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoadingMeetings(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  const selectedMeeting = openMeetings.find((meeting) => meeting.id === formData.meetingId);
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,16 +98,11 @@ export default function RollCallPage() {
       hour12: true,
     }).format(new Date());
 
-    const fallbackTopic = formData.sessionTopic.trim() || "General Assembly";
-
     try {
       const response = await fetch("/api/roll-call", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          sessionTopic: fallbackTopic,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const result = await response.json();
@@ -100,7 +118,6 @@ export default function RollCallPage() {
           sessionTopic: result.entry.sessionTopic,
           timestamp: result.entry.timestamp || timeFormatted,
           verified: true,
-          savedToSheets: Boolean(result.savedToSheets),
         });
 
         // Reset inputs while preserving current date and topic for the next student
@@ -143,7 +160,7 @@ export default function RollCallPage() {
                 Roll Call Portal
               </h1>
               <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl text-justify">
-                Record your verified in-person attendance for any technical workshop, general meeting, or engineering session.
+                Record your in-person attendance for any technical workshop, general meeting, or engineering session.
               </p>
             </div>
 
@@ -218,40 +235,47 @@ export default function RollCallPage() {
                   />
                 </div>
 
-                {/* Session Date Selector */}
                 <div>
-                  <label htmlFor="rollcall-date" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Meeting / Session Date <span className="text-red-500">*</span>
+                  <label htmlFor="rollcall-meeting" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    Open meeting <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <input
-                      id="rollcall-date"
-                      type="date"
-                      required
-                      value={formData.sessionDate}
-                      onChange={(e) => setFormData({ ...formData, sessionDate: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] font-medium focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Defaults to today.
-                  </span>
-                </div>
-
-                {/* Session / Meeting Topic */}
-                <div>
-                  <label htmlFor="rollcall-topic" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Event / Meeting Topic
-                  </label>
-                  <input
-                    id="rollcall-topic"
-                    type="text"
-                    maxLength={120}
-                    placeholder="e.g. Weekly Assembly, Robotics Workshop, General Meeting"
-                    value={formData.sessionTopic}
-                    onChange={(e) => setFormData({ ...formData, sessionTopic: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  />
+                  <select
+                    id="rollcall-meeting"
+                    required
+                    value={formData.meetingId}
+                    disabled={isLoadingMeetings || openMeetings.length === 0}
+                    onChange={(event) =>
+                      setFormData({ ...formData, meetingId: event.target.value })
+                    }
+                    className="w-full min-h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c] disabled:opacity-60"
+                  >
+                    <option value="">
+                      {isLoadingMeetings
+                        ? "Loading open meetings…"
+                        : openMeetings.length
+                          ? "Choose the meeting you are attending"
+                          : "No meetings are scheduled for roll call today"}
+                    </option>
+                    {openMeetings.map((meeting) => (
+                      <option key={meeting.id} value={meeting.id}>
+                        {meeting.title} · {meeting.sessionDate}
+                        {meeting.location ? ` · ${meeting.location}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {meetingLoadError ? (
+                    <span role="alert" className="mt-1 block text-xs text-red-700">
+                      {meetingLoadError}
+                    </span>
+                  ) : selectedMeeting ? (
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Attendance will be recorded for this meeting only.
+                    </span>
+                  ) : (
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Roll call only opens in the event of a scheduled meeting.
+                    </span>
+                  )}
                 </div>
 
                 {/* Full Name */}
@@ -334,10 +358,10 @@ export default function RollCallPage() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isLoadingMeetings || !selectedMeeting}
                   className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? "Logging & Syncing..." : "Confirm & Record Attendance"}
+                  {isSubmitting ? "Recording attendance…" : "Confirm & Record Attendance"}
                 </button>
               </form>
             </div>
@@ -400,7 +424,7 @@ export default function RollCallPage() {
                 <div className="p-3.5 rounded-xl bg-[#0a5c36]/5 border border-[#0a5c36]/20 text-xs text-slate-700 mb-5 flex items-start gap-2">
                   <ShieldCheckIcon className="w-4 h-4 text-[#0a5c36] shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    This receipt confirms your attendance is recorded. Take a screenshot for your personal records if required.
+                    This receipt confirms your attendance is recorded.
                   </p>
                 </div>
               </div>

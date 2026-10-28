@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
   checkRateLimit,
   getClientIp,
@@ -7,13 +8,12 @@ import {
   isValidEmail,
   isValidRegNumber,
   isValidPhone,
-  sanitizeForSheets,
-  sendToGoogleSheets,
-  isDuplicateSubmission,
+  normalizeInputText,
   getNairobiDate,
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
+import { nextPortalReference, savePortalRecord } from "@/lib/dataStore";
 
 export const dynamic = "force-dynamic";
 
@@ -36,14 +36,14 @@ export interface MemberRegistrationRecord {
 export async function GET() {
   return NextResponse.json(
     {
-      error: "Access Denied: Member records are confidential and stored securely in the Secretariat Google Sheet.",
+      error: "Access denied: member records are confidential and available to authorized administrators only.",
       records: [],
     },
     { status: 403 }
   );
 }
 
-// POST: Secure write-only submission to Google Sheets with anti-spam safeguards
+// POST: Secure write-only submission to Supabase with anti-spam safeguards
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
@@ -69,14 +69,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
+    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard
     if (isHoneypotTriggered(website)) {
-      console.warn("Spam bot trapped by registration honeypot. Bypassing Google Sheets.");
+      console.warn("Spam bot trapped by registration honeypot.");
       return NextResponse.json({
         success: true,
-        memberId: `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`,
+        memberId: "DESA-DKUT-000000",
         issuedDate: getNairobiHumanDate(),
-        savedToSheets: false,
       });
     }
 
@@ -130,67 +129,38 @@ export async function POST(request: Request) {
     const todayDate = getNairobiDate();
     const timeString = getNairobiTime();
 
-    const memberId = `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const memberId = await nextPortalReference("member");
 
-    // 4. Formula Injection Sanitization: Prevent CSV / formula injection in Google Sheets
+    // Preserve the submitted values in the database; Sheets formula safety is applied at sync time.
     const newRecord: MemberRegistrationRecord = {
       memberId,
       registrationDate: todayDate,
       timestamp: timeString,
-      fullName: sanitizeForSheets(fullName),
-      regNumber: sanitizeForSheets(regNumber.toUpperCase()),
+      fullName: normalizeInputText(fullName),
+      regNumber: normalizeInputText(regNumber.toUpperCase()),
       email: email.trim().toLowerCase(),
-      phone: sanitizeForSheets(phone ? phone.trim() : "Not provided"),
-      department: sanitizeForSheets(department),
-      yearOfStudy: sanitizeForSheets(yearOfStudy),
-      interest: sanitizeForSheets(interest || "General Engineering"),
+      phone: normalizeInputText(phone ? phone.trim() : "Not provided"),
+      department: normalizeInputText(department),
+      yearOfStudy: normalizeInputText(yearOfStudy),
+      interest: normalizeInputText(interest || "General Engineering"),
       contribution: "Ksh 200 / yr",
       status: "Active Registered Member",
     };
 
-    // Prevent duplicate registrations if identical regNumber was submitted in the last 15 seconds
-    const dedupeKey = `reg:${regNumber.trim().toUpperCase()}`;
-    if (isDuplicateSubmission(dedupeKey, 15000)) {
-      console.log(`Duplicate registration prevented for ${dedupeKey}`);
-      return NextResponse.json({
-        success: true,
-        memberId,
-        issuedDate: getNairobiHumanDate(),
-        entry: newRecord,
-        savedToSheets: true,
-      });
-    }
-
-    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_MEMBERS_URL;
-    let savedToSheets = false;
-    let sheetError: string | null = null;
-
-    if (scriptUrl) {
-      const sheetsPayload = {
-        action: "register",
-        secret: process.env.APPS_SCRIPT_SECRET || "",
-        ...newRecord,
-      };
-      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
-      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
-      savedToSheets = syncResult.ok;
-      sheetError = syncResult.error || null;
-      if (!syncResult.ok) {
-        console.error("Google Sheets register sync error:", syncResult.error, "Status:", syncResult.status);
-      }
-    } else {
-      console.warn("No Google Sheets URL configured for registration (APPS_SCRIPT_URL or GOOGLE_SHEETS_MEMBERS_URL missing).");
-    }
+    await savePortalRecord(
+      "registration",
+      `registration-${randomUUID()}`,
+      newRecord
+    );
 
     return NextResponse.json({
       success: true,
       memberId,
       issuedDate: getNairobiHumanDate(),
       entry: newRecord,
-      savedToSheets,
-      sheetError,
     });
-  } catch {
+  } catch (err) {
+    console.error("Member registration failed:", err);
     return NextResponse.json(
       { success: false, error: "Failed to process member registration" },
       { status: 500 }

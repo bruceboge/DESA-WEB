@@ -1,6 +1,6 @@
 /**
  * Anti-Spam & Input Validation Library for DESA Web Application
- * Protects Google Sheets from spam bots, rate limit exhaustion, formula injection, and invalid payloads.
+ * Protects form endpoints from spam, rate limit exhaustion, and invalid payloads.
  */
 
 // In-memory IP submission rate limiter (per-route bucket)
@@ -129,65 +129,6 @@ export function isDuplicateSubmission(key: string, windowMs = 15000): boolean {
 }
 
 /**
- * Dispatch payload to Google Apps Script cleanly ONCE.
- *
- * IMPORTANT: Because Google Apps Script appends rows to a spreadsheet,
- * row insertion is NOT idempotent. Retrying a request that has already been dispatched
- * to Google Apps Script causes duplicate rows to be logged if Google's server takes longer
- * than a short timeout.
- *
- * We use a realistic 30-second timeout to allow Google Apps Script to cold-start,
- * acquire its lock, and write the row without being cut off prematurely.
- *
- * @param scriptUrl The Google Apps Script deployment URL
- * @param payload Record payload to forward
- * @param timeoutMs Request timeout in milliseconds (default: 30000)
- */
-export async function sendToGoogleSheets(
-  scriptUrl: string,
-  payload: unknown,
-  timeoutMs = 10000
-): Promise<{ ok: boolean; status?: number; error?: string }> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    const response = await fetch(scriptUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8",
-      },
-      body: JSON.stringify(payload),
-      redirect: "follow",
-      signal: controller.signal,
-    });
-
-    clearTimeout(timer);
-
-    if (response.ok) {
-      return { ok: true, status: response.status };
-    }
-
-    return {
-      ok: false,
-      status: response.status,
-      error: `Google Apps Script returned HTTP ${response.status}`,
-    };
-  } catch (err) {
-    if (err instanceof Error && err.name === "AbortError") {
-      return { ok: false, error: "Google Sheets request timed out" };
-    }
-    return {
-      ok: false,
-      error: err instanceof Error ? err.message : "Failed to reach Google Sheets",
-    };
-  }
-}
-
-// Backward-compatible alias
-export const sendToGoogleSheetsWithRetry = sendToGoogleSheets;
-
-/**
  * Get client IP from standard Next.js request headers
  */
 export function getClientIp(request: Request): string {
@@ -213,17 +154,11 @@ export function isHoneypotTriggered(honeypotValue?: unknown): boolean {
 }
 
 /**
- * Neutralize CSV / Google Sheets Formula Injection attacks.
- * If a cell string starts with '=', '+', '-', or '@', prepend a single quote (')
- * so Google Sheets safely treats it as literal text rather than an executable formula.
+ * Normalize text while preserving the value stored in Supabase.
+ * Formula safety is applied only when the Edge Function mirrors data to Sheets.
  */
-export function sanitizeForSheets(str: string): string {
-  if (!str) return "";
-  const trimmed = str.trim();
-  if (/^[=+\-@]/.test(trimmed)) {
-    return `'${trimmed}`;
-  }
-  return trimmed;
+export function normalizeInputText(str: string): string {
+  return str.trim();
 }
 
 /**

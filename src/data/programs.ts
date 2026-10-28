@@ -5,6 +5,7 @@ export const engineeringPrograms = [
   "BSc Mechanical Engineering",
   "BSc Chemical Engineering",
   "BSc Civil Engineering",
+  "BSc GEGIS",
   "BED Electrical and Electronic Engineering",
   "BED Mechanical Engineering",
   "BED Civil Engineering",

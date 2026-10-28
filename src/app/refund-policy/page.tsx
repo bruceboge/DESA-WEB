@@ -1,7 +1,7 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRightIcon, ShieldCheckIcon, MailIcon, MapPinIcon } from "@/components/Icons";
+import { ChevronRightIcon, ShieldCheckIcon, MailIcon } from "@/components/Icons";
 
 export const metadata: Metadata = {
   title: "Refund & Membership Dues Policy | DESA DeKUT",
@@ -44,7 +44,7 @@ export default function RefundPolicyPage() {
           
           <div className="border-b border-slate-200 pb-6">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-              DESA Treasury & Audit Committee Guidelines
+              DESA Treasury & Committee Guidelines
             </span>
             <p className="text-xs text-slate-600">
               Administered in collaboration with the DeKUT School of Engineering Dean&apos;s Office and Student Affairs Directorate.
@@ -55,10 +55,10 @@ export default function RefundPolicyPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">01</span>
-              <span>Annual Association Membership Dues</span>
+              <span>Membership Registration Dues</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              The student registration fee (Ksh 200) and annual membership subscription (Ksh 200) are non-refundable once registered. Members wishing to withdraw from the Association are not entitled to a refund of any dues paid. Membership contributions are dedicated directly to financing student engineering hackathons, technical workshops, peer mentorship, and student representation before national bodies.
+              The student registration fee (Ksh 200) and annual membership subscription (Ksh 100) are non-refundable once registered. Members wishing to withdraw from the Association are not entitled to a refund of any dues paid. Membership contributions are dedicated directly to financing student engineering hackathons, technical workshops, peer mentorship, and student representation before national bodies.
             </p>
           </div>
 
@@ -66,14 +66,14 @@ export default function RefundPolicyPage() {
           <div>
             <h2 className="text-xl font-bold text-[#071325] mb-3 flex items-center gap-2">
               <span className="w-7 h-7 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center text-xs font-mono font-bold">02</span>
-              <span>Industrial Excursions & Workshop Registrations</span>
+              <span>Field Events & Workshop Activities</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify mb-3">
-              For fee-carrying technical trips (e.g. Olkaria Geothermal Power Plant, Thika Superhighway infrastructure tours, or technical certification exam vouchers):
+              For fee-carrying events and activities, such as industrial tours, hackathons, and technical workshops, the following refund policy applies:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm text-slate-700">
               <li><strong>Cancellations &gt; 7 Days Prior:</strong> Eligible for a 100% full refund upon written notification to the Treasury Secretary.</li>
-              <li><strong>Cancellations 3 to 7 Days Prior:</strong> Eligible for a 70% refund, accounting for pre-booked logistics, transportation seat reservations, and industrial gate clearance fees.</li>
+              <li><strong>Cancellations 3 to 7 Days Prior:</strong> Eligible for a 70% refund, accounting for pre-booked logistics.</li>
               <li><strong>Cancellations &lt; 72 Hours Prior:</strong> Non-refundable due to finalized institutional vehicle dispatch and non-transferable gate security credentials.</li>
             </ul>
           </div>
@@ -85,7 +85,7 @@ export default function RefundPolicyPage() {
               <span>Event Rescheduling or Cancellation by DESA</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              In the unlikely event that an engineering tour, hackathon, or training workshop is cancelled by the association due to institutional university directives, severe weather, or facility closure, registered participants will automatically receive an option between a 100% full refund or an immediate credit transfer to the rescheduled event date.
+              In the unlikely event that an activity or training workshop is cancelled by the association due to institutional university directives, severe weather, or facility closure, registered participants will automatically receive an option between a 100% full refund or an immediate credit transfer to the rescheduled event date.
             </p>
           </div>
 
@@ -96,7 +96,7 @@ export default function RefundPolicyPage() {
               <span>Refund Processing & Disbursement</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              All approved refund claims are audited by the DESA Finance Committee and disbursed within 5 to 7 business days via the original payment method (M-Pesa registered student mobile number or official University student bank account). Cash refunds are strictly prohibited for accountability purposes.
+              All approved refund claims are audited by the DESA Finance Committee and disbursed within 5 to 7 business days via the original payment method (M-Pesa account). Cash refunds are strictly prohibited for accountability purposes.
             </p>
           </div>
 
@@ -110,10 +110,6 @@ export default function RefundPolicyPage() {
               To submit a claim or inquire about membership dues payment status, contact the Finance Secretary with your DeKUT Registration Number and receipt transaction code:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-700">
-              <div className="flex items-start gap-2">
-                <MapPinIcon className="w-4 h-4 text-[#e5a93c] shrink-0 mt-0.5" />
-                <span>DESA Office, Engineering Complex, DeKUT Nyeri</span>
-              </div>
               <div className="flex items-center gap-2">
                 <MailIcon className="w-4 h-4 text-[#e5a93c] shrink-0" />
                 <a href="mailto:engineeringstudentsassociation@dkut.ac.ke" className="hover:underline text-slate-800 font-medium">engineeringstudentsassociation@dkut.ac.ke</a>

@@ -11,15 +11,17 @@ import {
   Share2Icon,
   ArrowRightIcon,
 } from "@/components/Icons";
-import { getAllPosts, getPostBySlug } from "@/lib/posts";
+import { getMarkdownPosts, getPostBySlug } from "@/lib/posts";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export async function generateStaticParams() {
-  const posts = getAllPosts();
+  const posts = getMarkdownPosts();
   return posts.map((post) => ({
     slug: post.slug,
   }));
@@ -27,7 +29,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -69,7 +71,7 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 export default async function PostDetailPage({ params }: PostPageProps) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
@@ -168,6 +170,7 @@ export default async function PostDetailPage({ params }: PostPageProps) {
             src={post.coverImage || "/images/dekut-campus.jpg"}
             alt={post.title}
             fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1200px) 90vw, 1152px"
             className="object-contain p-2 sm:p-4"
             priority
           />
@@ -193,13 +196,14 @@ export default async function PostDetailPage({ params }: PostPageProps) {
                 {post.recapPhotos.map((photo, pIdx) => (
                   <div
                     key={pIdx}
-                    className="relative h-44 rounded-xl overflow-hidden border border-slate-200 shadow-sm group"
+                    className="relative h-44 rounded-xl overflow-hidden border border-slate-200 shadow-sm group bg-slate-100"
                   >
                     <Image
                       src={photo}
                       alt={`${post.title} archive photo ${pIdx + 1}`}
                       fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 639px) calc(100vw - 2rem), (max-width: 767px) calc((100vw - 3rem) / 2), (max-width: 1200px) calc((100vw - 4rem) / 3), 384px"
+                      className="object-contain"
                     />
                   </div>
                 ))}

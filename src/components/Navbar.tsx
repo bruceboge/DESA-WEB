@@ -29,7 +29,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo & University Identity */}
           <Link href="/" className="flex items-center gap-3 group shrink-0">
             <div className="relative w-10 h-10 sm:w-12 sm:h-12 group-hover:scale-105 transition-transform duration-300 shrink-0">
@@ -37,6 +37,7 @@ export default function Navbar() {
                 src="/images/desa-official-logo.png"
                 alt="DESA - Dedan Kimathi University Engineering Students Association Logo"
                 fill
+                sizes="(max-width: 640px) 40px, 48px"
                 unoptimized
                 className="object-contain"
                 priority
@@ -87,14 +88,16 @@ export default function Navbar() {
           <div className="flex lg:hidden items-center gap-2">
             <Link
               href="/membership#register"
-              className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold px-3 py-1.5 rounded shadow transition-colors"
+              className="min-h-11 inline-flex items-center justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-xs font-bold px-4 rounded-lg shadow transition-colors"
             >
               Join
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-slate-300 hover:text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-              aria-label="Toggle Navigation Menu"
+              className="min-h-11 min-w-11 text-slate-300 hover:text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls={mobileMenuOpen ? "mobile-navigation" : undefined}
             >
               {mobileMenuOpen ? <CloseIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
@@ -104,7 +107,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer (Visible < lg) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#071325] border-b border-slate-800 px-4 pt-3 pb-6 space-y-3">
+        <div id="mobile-navigation" className="lg:hidden max-h-[calc(100svh-4rem)] overflow-y-auto bg-[#071325] border-b border-slate-800 px-4 pt-3 pb-6 space-y-3">
           <div className="flex flex-col space-y-1.5">
             {navLinks.map((link) => {
               const active = isActive(link.href);
@@ -113,7 +116,7 @@ export default function Navbar() {
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`text-sm font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${active
+                  className={`min-h-11 text-sm font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${active
                     ? "text-[#e5a93c] bg-[#0c1a32] border border-[#e5a93c]/30"
                     : "text-slate-200 hover:text-[#e5a93c] hover:bg-slate-800/60"
                     }`}
@@ -128,7 +131,7 @@ export default function Navbar() {
             <Link
               href="/membership#register"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-sm py-2.5 rounded-lg text-center shadow transition-colors block"
+              className="min-h-11 w-full bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-sm py-3 rounded-lg text-center shadow transition-colors block"
             >
               Register as DESA Member
             </Link>

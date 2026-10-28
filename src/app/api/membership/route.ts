@@ -7,136 +7,116 @@ import {
   isValidEmail,
   isValidRegNumber,
   isValidPhone,
-  sanitizeForSheets,
-  isDuplicateSubmission,
+  normalizeInputText,
   getNairobiDate,
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
+import { findMemberByRegistration, nextPortalReference, savePortalRecord } from "@/lib/dataStore";
+import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 
-// Helper to mask name: "Victor Mutua" -> "Victor M."
 function maskName(name: string): string {
   if (!name) return "Student Member";
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0];
-  const first = parts[0];
-  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
-  return `${first} ${lastInitial}.`;
+  return `${parts[0]} ${parts[parts.length - 1].charAt(0).toUpperCase()}.`;
+}
+
+function isDuplicateMemberRegistrationError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes("Registration number already exists in the member register.")
+  );
 }
 
 /**
- * GET: Membership Status Lookup by Registration Number
- * Rate-limited to 5 requests/minute per IP to prevent scraping.
- * Never caches response.
+ * Membership status lookup by registration number.
+ * This is rate-limited and returns only the existing masked status summary.
  */
 export async function GET(request: Request) {
+  const headers = { "Cache-Control": "no-store, max-age=0" };
   try {
-    const ip = getClientIp(request);
     const { searchParams } = new URL(request.url);
-    const rawReg = searchParams.get("reg");
-
-    if (!rawReg || rawReg.trim().length === 0) {
+    const rawRegNumber = searchParams.get("reg");
+    if (!rawRegNumber || !isValidRegNumber(rawRegNumber).valid) {
       return NextResponse.json(
-        { error: "Missing registration number parameter 'reg'" },
-        { status: 400, headers: { "Cache-Control": "no-store, max-age=0" } }
+        { error: "Enter a valid registration number." },
+        { status: 400, headers }
       );
     }
 
-    const regNumber = rawReg.trim().toUpperCase();
-
-    // 1. Strict Rate Limit: 5 requests / min per IP
-    const rateCheck = checkRateLimit(ip, "membership-lookup", 5, 60, regNumber, 5);
+    const regNumber = rawRegNumber.trim().toUpperCase();
+    const rateCheck = checkRateLimit(
+      getClientIp(request),
+      "membership-lookup",
+      5,
+      60,
+      regNumber,
+      5
+    );
     if (!rateCheck.allowed) {
       return NextResponse.json(
-        {
-          error: rateCheck.reason || "Too many lookup attempts. Please wait 60 seconds.",
-        },
+        { error: rateCheck.reason || "Too many lookup attempts. Please wait 60 seconds." },
         {
           status: 429,
           headers: {
+            ...headers,
             "Retry-After": String(rateCheck.retryAfter || 60),
-            "Cache-Control": "no-store, max-age=0",
           },
         }
       );
     }
 
-    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_MEMBERS_URL;
-
-    if (!scriptUrl) {
-      return NextResponse.json(
-        { error: "Lookup service unavailable." },
-        { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } }
-      );
-    }
-
-    // Call Google Apps Script with 10s timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
+    let storedMember: Record<string, unknown> | null = null;
     try {
-      const response = await fetch(
-        `${scriptUrl}?action=lookup&reg=${encodeURIComponent(regNumber)}`,
-        {
-          method: "GET",
-          signal: controller.signal,
-          cache: "no-store",
-        }
+      storedMember = await findMemberByRegistration(regNumber);
+    } catch (error) {
+      console.error("Supabase membership lookup failed:", error);
+      return NextResponse.json(
+        { error: "Membership lookup is temporarily unavailable. Please retry." },
+        { status: 503, headers }
       );
-      clearTimeout(timeoutId);
+    }
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.found && data.member) {
-          // Mask the name if full name was returned
-          return NextResponse.json(
-            {
-              found: true,
-              member: {
-                ...data.member,
-                maskedName: maskName(data.member.maskedName || data.member.fullName),
-              },
-            },
-            { headers: { "Cache-Control": "no-store, max-age=0" } }
-          );
-        }
-        return NextResponse.json(
-          { found: false, message: "No registered member found with this registration number." },
-          { headers: { "Cache-Control": "no-store, max-age=0" } }
-        );
-      }
-    } catch (fetchErr) {
-      clearTimeout(timeoutId);
-      console.warn("Lookup to Apps Script failed:", fetchErr);
+    if (storedMember) {
       return NextResponse.json(
         {
-          found: false,
-          error: "Membership lookup is temporarily unavailable. Please retry in a few moments.",
+          found: true,
+          member: {
+            regNumber,
+            maskedName: maskName(String(storedMember.fullName || "")),
+            department: String(storedMember.department || ""),
+            yearOfStudy: String(storedMember.yearOfStudy || ""),
+            membershipStatus: String(
+              storedMember.membershipStatus || storedMember.status || "Active"
+            ),
+            paymentStatus: String(storedMember.paymentStatus || "Unpaid"),
+            memberId: String(storedMember.memberId || ""),
+            dateRegistered: String(storedMember.registrationDate || storedMember.date || ""),
+          },
         },
-        { status: 503, headers: { "Cache-Control": "no-store, max-age=0" } }
+        { headers }
       );
     }
 
     return NextResponse.json(
-      {
-        found: false,
-        message: "No registered record found with this registration number. Please register using the form below.",
-      },
-      { headers: { "Cache-Control": "no-store, max-age=0" } }
+      { found: false, message: "No registered member found with this registration number." },
+      { headers }
     );
-  } catch {
+  } catch (err) {
+    console.error("Membership lookup failed:", err);
     return NextResponse.json(
-      { error: "Internal server error during lookup" },
-      { status: 500, headers: { "Cache-Control": "no-store, max-age=0" } }
+      { error: "Membership lookup is temporarily unavailable. Please retry." },
+      { status: 503, headers }
     );
   }
 }
 
 /**
  * POST: Member Registration
- * Forwards to Google Apps Script master sheet
+ * Saves the record to Supabase; the database outbox is mirrored by a Supabase Edge Function.
  */
 export async function POST(request: Request) {
   try {
@@ -160,7 +140,7 @@ export async function POST(request: Request) {
     if (isHoneypotTriggered(website)) {
       return NextResponse.json({
         success: true,
-        memberId: `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`,
+        memberId: "DESA-DKUT-000000",
         issuedDate: getNairobiHumanDate(),
       });
     }
@@ -188,56 +168,43 @@ export async function POST(request: Request) {
 
     const todayDate = getNairobiDate();
     const timeString = getNairobiTime();
-    const memberId = `DESA-DKUT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const memberId = await nextPortalReference("member");
 
     const record = {
       action: "register",
-      secret: process.env.APPS_SCRIPT_SECRET || "",
       memberId,
       registrationDate: todayDate,
       timestamp: timeString,
-      fullName: sanitizeForSheets(fullName),
-      regNumber: sanitizeForSheets(regNumber.toUpperCase()),
+      fullName: normalizeInputText(fullName),
+      regNumber: normalizeInputText(regNumber.toUpperCase()),
       email: email.trim().toLowerCase(),
-      phone: sanitizeForSheets(phone ? phone.trim() : "Not provided"),
-      department: sanitizeForSheets(department || "Engineering"),
-      yearOfStudy: sanitizeForSheets(yearOfStudy || "Year 1"),
+      phone: normalizeInputText(phone ? phone.trim() : "Not provided"),
+      department: normalizeInputText(department || "Engineering"),
+      yearOfStudy: normalizeInputText(yearOfStudy || "Year 1"),
       membershipStatus: "Active",
       paymentStatus: "Unpaid",
     };
 
-    // Deduplication check
-    const dedupeKey = `mem:${regNumber.trim().toUpperCase()}`;
-    if (isDuplicateSubmission(dedupeKey, 15000)) {
-      return NextResponse.json({
-        success: true,
-        memberId,
-        issuedDate: getNairobiHumanDate(),
-        entry: record,
-      });
-    }
-
-    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_MEMBERS_URL;
-    if (scriptUrl) {
-      try {
-        await fetch(scriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(record),
-          signal: AbortSignal.timeout(15000),
-        });
-      } catch (err) {
-        console.warn("Could not dispatch registration to Google Apps Script:", err);
-      }
-    }
+    await savePortalRecord("membership", `membership-${randomUUID()}`, record);
 
     return NextResponse.json({
       success: true,
       memberId,
       issuedDate: getNairobiHumanDate(),
-      entry: record,
     });
-  } catch {
+  } catch (err) {
+    if (isDuplicateMemberRegistrationError(err)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This registration number is already registered. Use Verify Membership to check your status, or contact the DESA Secretariat if you need help.",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    console.error("Membership registration failed:", err);
     return NextResponse.json(
       { success: false, error: "Failed to process member registration" },
       { status: 500 }

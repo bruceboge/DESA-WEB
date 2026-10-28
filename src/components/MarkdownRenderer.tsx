@@ -43,7 +43,7 @@ function parseInline(text: string): React.ReactNode[] {
           <img
             src={src}
             alt={alt || "Article Illustration"}
-            className="rounded-xl border border-slate-200 max-h-96 w-auto mx-auto shadow-sm object-cover"
+            className="rounded-xl border border-slate-200 max-h-96 w-auto mx-auto shadow-sm object-contain"
             loading="lazy"
           />
           {alt && (

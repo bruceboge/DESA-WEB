@@ -1,0 +1,179 @@
+DESA SUPABASE TO GOOGLE SHEETS SYNC
+==================================
+
+OVERVIEW
+--------
+Supabase is the system of record. Google Sheets is a one-way mirror for
+administrative convenience; the website does not read from Sheets.
+
+When a row in public.portal_records is inserted, updated, trashed, restored,
+or deleted, a database trigger adds an event to public.sheet_sync_outbox.
+The sync-sheets Edge Function claims up to 10 eligible events per invocation
+and sends each to the Google Apps Script web app. Apps Script creates or
+updates the matching spreadsheet row. Deletes and moves to Trash remove the
+matching mirrored row.
+
+This is an incremental sync, not a historical import. Records that existed
+before the outbox trigger was installed are not copied automatically. A
+separate, deliberate backfill is required for historical data.
+
+RECORDS AND SHEET TABS
+----------------------
+The Apps Script currently maps these record types:
+
+  membership, registration -> Members
+  contact                  -> Tickets
+  roll_call                -> RollCall
+  meeting                  -> Meetings
+  article                  -> Innovations
+  gala                     -> GalaRegistrations
+  news                     -> NewsEvents
+  gallery                  -> Gallery
+
+The script creates a tab and its headers the first time a matching event is
+delivered. It also stores a SupabaseRecordID in each tab to make updates and
+deletes target the same row. The script sanitizes text beginning with formula
+characters before writing it to Sheets.
+
+REQUIRED CONFIGURATION
+----------------------
+Google Apps Script:
+  Script Property SHARED_SECRET
+    A private, unpredictable value used to authorize sync writes.
+
+  Web app deployment:
+    Execute as: the script owner
+    Who has access: Anyone
+    Use the deployment's /exec URL.
+
+Supabase Edge Function Secrets:
+  APPS_SCRIPT_URL
+    The deployed Google Apps Script /exec URL.
+  APPS_SCRIPT_SECRET
+    Must exactly match the Apps Script SHARED_SECRET.
+  SHEETS_SYNC_FUNCTION_SECRET
+    A separate private value used to authenticate cron requests to the
+    Edge Function. It is not the Apps Script secret.
+
+Supabase Vault:
+  sheets_sync_function_url
+    https://<project-ref>.supabase.co/functions/v1/sync-sheets
+  sheets_sync_function_secret
+    Must exactly match SHEETS_SYNC_FUNCTION_SECRET.
+
+Do not put these secrets in browser code, source control, or this document.
+Supabase supplies SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the hosted
+Edge Function. The service-role key must never be exposed to a browser.
+
+DEPLOYMENT AND SCHEDULING
+-------------------------
+1. In the Google Sheet, open Extensions > Apps Script and install the code
+   from google-apps-script-desa-portal.js.
+2. Set SHARED_SECRET in Apps Script Project Settings > Script Properties.
+3. Deploy as a Web app using the settings above. When code changes, deploy a
+   new version and update APPS_SCRIPT_URL if the deployment URL changes.
+4. Deploy supabase/functions/sync-sheets/index.ts as the Supabase function
+   named sync-sheets. Its config in supabase/config.toml disables gateway
+   JWT verification; the function itself requires the x-sync-secret header.
+5. Add the three Edge Function secrets and the two named Vault entries above.
+6. Enable pg_cron and pg_net if needed, then create the scheduled job below.
+
+Run this in Supabase SQL Editor. It invokes the function once per minute:
+
+  select cron.schedule(
+    'desa-sheets-sync',
+    '* * * * *',
+    $$
+    select net.http_post(
+      url := (select decrypted_secret
+              from vault.decrypted_secrets
+              where name = 'sheets_sync_function_url'),
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'x-sync-secret',
+          (select decrypted_secret
+           from vault.decrypted_secrets
+           where name = 'sheets_sync_function_secret')
+      ),
+      body := jsonb_build_object('scheduled_at', now())
+    );
+    $$
+  );
+
+If the job already exists, scheduling it again with the same name updates
+that job. Do not create multiple differently named copies.
+
+HOW TO VERIFY
+-------------
+1. Submit a normal test record through the website or make a safe admin edit.
+2. Check the outbox:
+
+   select id, record_type, operation, status, attempts, last_error,
+          next_attempt_at
+   from public.sheet_sync_outbox
+   order by id desc
+   limit 20;
+
+3. Check that the corresponding spreadsheet tab contains the row.
+4. Check Edge Function logs for the JSON result:
+   processed = events claimed, delivered = successful Apps Script writes,
+   failed = individual deliveries that need retry.
+
+The function handles up to 10 events per minute at this schedule, so a large
+queue takes multiple minutes to drain. Failed events remain pending and retry
+with backoff. Events for the same record are delivered in order.
+
+TROUBLESHOOTING
+---------------
+Cron job says Succeeded:
+  This only means the SQL job queued an HTTP request with pg_net. Inspect
+  net._http_response for the actual HTTP response and check Edge Function logs.
+
+Edge Function returns 401:
+  Check that Vault's sheets_sync_function_secret exactly matches the
+  SHEETS_SYNC_FUNCTION_SECRET Edge Function secret.
+
+Edge Function returns 500 with a missing-secret log:
+  Add the named missing secret under Edge Function Secrets. Supabase changes
+  to function secrets take effect without redeploying.
+
+Outbox last_error says Apps Script returned HTTP 401 or unauthorized:
+  Confirm APPS_SCRIPT_SECRET exactly matches the Apps Script SHARED_SECRET.
+  Confirm APPS_SCRIPT_URL is the current /exec deployment URL and the web app
+  is deployed with access set to Anyone.
+
+Apps Script receives requests but rows do not appear:
+  Check Apps Script > Executions for doPost errors. Confirm the deployment
+  runs as the spreadsheet owner and that the script is bound to the Sheet
+  being checked. A doGet success only confirms the endpoint is reachable; it
+  does not test the secret or spreadsheet write.
+
+Outbox is pending with zero attempts:
+  The event has not been claimed yet. Check the cron schedule is active, the
+  Vault URL and secret names are exact, and the Edge Function logs for the
+  scheduled invocation.
+
+Outbox is pending with attempts and last_error:
+  The function attempted delivery. Fix the reported error and allow the job
+  to retry. Do not clear the queue to troubleshoot.
+
+Useful cron checks:
+
+  select jobid, jobname, schedule, active
+  from cron.job
+  where jobname = 'desa-sheets-sync';
+
+  select status, return_message, start_time
+  from cron.job_run_details
+  where jobid = (
+    select jobid from cron.job where jobname = 'desa-sheets-sync'
+  )
+  order by start_time desc
+  limit 10;
+
+DATA HANDLING NOTE
+------------------
+The mirror can contain personal and operational data from portal_records,
+including membership contact details and submitted messages. Restrict access
+to the Google Sheet to people who need it. This sync is not an archival or
+backup strategy.

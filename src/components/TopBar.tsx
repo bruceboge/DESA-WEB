@@ -3,7 +3,7 @@ import { MapPinIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, Insta
 
 export default function TopBar() {
   return (
-    <div className="bg-[#050d1a] text-slate-300 text-xs py-2 px-4 border-b border-slate-800/80">
+    <div className="hidden md:block bg-[#050d1a] text-slate-300 text-xs py-2 px-4 border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
         {/* Left: Physical & Institutional Location */}
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[11px] md:text-xs">
@@ -31,15 +31,6 @@ export default function TopBar() {
             <ExternalLinkIcon className="w-3 h-3 text-[#e5a93c]" />
           </a>
           <span className="text-slate-700">|</span>
-          <a
-            href="https://portal.dkut.ac.ke"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-300 hover:text-[#e5a93c] transition-colors"
-          >
-            Students Portal
-          </a>
-          <span className="text-slate-700 hidden md:inline">|</span>
           <div className="flex items-center gap-2 pl-1 border-l border-slate-800 md:border-l-0 md:pl-0">
             <a
               href="https://www.tiktok.com/@desa_dekut"

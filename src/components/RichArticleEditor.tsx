@@ -176,7 +176,7 @@ export default function RichArticleEditor({
   const processAndInsertImage = async (file: File) => {
     try {
       setIsUploadingImage(true);
-      setUploadNotice("Compressing to WebP and uploading to Blob...");
+      setUploadNotice("Compressing and saving image...");
 
       // 1. Client-side WebP compression
       const webpResult = await convertImageToWebP(file, {
@@ -187,14 +187,19 @@ export default function RichArticleEditor({
       // 2. Upload to Blob
       const bodyFormData = new FormData();
       bodyFormData.append("file", webpResult.file);
+      bodyFormData.append("purpose", "article");
 
-      const res = await fetch("/api/blob/upload", {
+      const res = await fetch("/api/media/upload", {
         method: "POST",
+        headers: { "x-upload-purpose": "article" },
         body: bodyFormData,
       });
 
       const data = await res.json();
-      const imageUrl = data.url || webpResult.previewUrl;
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Image upload failed.");
+      }
+      const imageUrl = data.url;
       const cleanName = file.name.replace(/\.[^/.]+$/, "");
 
       // 3. Insert into article at cursor
@@ -204,7 +209,7 @@ export default function RichArticleEditor({
       setUploadNotice(null);
     } catch (err) {
       console.error("Image upload failed:", err);
-      setUploadNotice("Could not upload image. Please try again.");
+      setUploadNotice(err instanceof Error ? err.message : "Could not upload image. Please try again.");
     } finally {
       setIsUploadingImage(false);
     }

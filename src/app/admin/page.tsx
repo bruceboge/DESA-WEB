@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,108 +8,208 @@ import {
   ShieldCheckIcon,
   CheckCircleIcon,
   AlertCircleIcon,
-  UploadIcon,
-  CalendarIcon,
   CloseIcon,
-  FileTextIcon,
   ExternalLinkIcon,
 } from "@/components/Icons";
-import { BlogArticle, GalleryPhoto, NewsEventItem } from "@/lib/dataStore";
-import { convertImageToWebP, formatBytes, WebPConversionResult } from "@/lib/imageOptimization";
+import type { BlogArticle, GalleryPhoto, NewsEventItem } from "@/lib/dataStore";
+import { convertImageToWebP, WebPConversionResult } from "@/lib/imageOptimization";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import AdminRecordsManager from "@/components/AdminRecordsManager";
+import AdminMeetingsManager from "@/components/AdminMeetingsManager";
+import AdminSectionErrorBoundary from "@/components/AdminSectionErrorBoundary";
 
 const GALLERY_CATEGORIES = [
-  "Annual Galas & Dinners",
+  "Annual Galas",
   "Campus Events & Socials",
   "Technical Sessions & Mentorship",
-  "Campus & Labs",
-  "Association Identity",
+  "Campus Views",
+  "Our Identity",
 ];
 
-export default function AdminPage() {
-  const [passkey, setPasskey] = useState("");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+type AdminDashboardSection = "overview" | "blog" | "news" | "gallery";
 
-  // Active Admin Tab
-  const [activeTab, setActiveTab] = useState<"blog" | "news" | "gallery">("blog");
+interface NewsFormDraft {
+  title: string;
+  type: "event" | "news";
+  eventDate: string;
+  date: string;
+  location: string;
+  coverImage: string;
+  excerpt: string;
+  content: string;
+}
 
-  // Data state
-  const [articles, setArticles] = useState<BlogArticle[]>([]);
-  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
-  const [newsList, setNewsList] = useState<NewsEventItem[]>([]);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+interface GalleryFormDraft {
+  title: string;
+  category: string;
+  department: string;
+  location: string;
+  date: string;
+  description: string;
+  image: string;
+}
 
-  // Blog Review State
-  const [inspectArticle, setInspectArticle] = useState<BlogArticle | null>(null);
+const NEWS_DRAFT_KEY = "desa-admin-news-draft";
+const GALLERY_DRAFT_KEY = "desa-admin-gallery-draft";
 
-  // News Form State
-  const [newsForm, setNewsForm] = useState({
+function createDefaultNewsForm(): NewsFormDraft {
+  return {
     title: "",
-    type: "event" as "event" | "news",
+    type: "event",
     eventDate: "",
     date: new Date().toISOString().split("T")[0],
     location: "DeKUT Main Campus, Nyeri",
     coverImage: "",
     excerpt: "",
     content: "",
+  };
+}
+
+function createDefaultGalleryForm(): GalleryFormDraft {
+  return {
+    title: "",
+    category: GALLERY_CATEGORIES[0],
+    department: "",
+    location: "",
+    date: new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
+    description: "",
+    image: "",
+  };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNewsFormDraft(value: unknown): value is NewsFormDraft {
+  return (
+    isObject(value) &&
+    typeof value.title === "string" &&
+    (value.type === "event" || value.type === "news") &&
+    typeof value.eventDate === "string" &&
+    typeof value.date === "string" &&
+    typeof value.location === "string" &&
+    typeof value.coverImage === "string" &&
+    typeof value.excerpt === "string" &&
+    typeof value.content === "string"
+  );
+}
+
+function isGalleryFormDraft(value: unknown): value is GalleryFormDraft {
+  return (
+    isObject(value) &&
+    typeof value.title === "string" &&
+    typeof value.category === "string" &&
+    typeof value.department === "string" &&
+    typeof value.location === "string" &&
+    typeof value.date === "string" &&
+    typeof value.description === "string" &&
+    typeof value.image === "string"
+  );
+}
+
+export default function AdminPage() {
+  const adminLastActivity = useRef(0);
+  const loadedSections = useRef(new Set<AdminDashboardSection>());
+  const [hasLoadedBlog, setHasLoadedBlog] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Active Admin Tab
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "blog" | "news" | "gallery" | "meetings" | "records"
+  >("overview");
+
+  // Data state
+  const [articles, setArticles] = useState<BlogArticle[]>([]);
+  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const [newsList, setNewsList] = useState<NewsEventItem[]>([]);
+  const [stats, setStats] = useState({
+    members: 0,
+    contacts: 0,
+    gala: 0,
+    attendance: 0,
+    meetings: 0,
+    articles: 0,
+    pendingArticles: 0,
+    news: 0,
+    gallery: 0,
+    total: 0,
   });
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Blog Review State
+  const [inspectArticle, setInspectArticle] = useState<BlogArticle | null>(null);
+
+  // News Form State
+  const [newsForm, setNewsForm] = useState<NewsFormDraft>(createDefaultNewsForm);
+  const [newsDraftStatus, setNewsDraftStatus] = useState("");
+  const [galleryDraftStatus, setGalleryDraftStatus] = useState("");
+  const [draftsLoaded, setDraftsLoaded] = useState(false);
   const [newsImagePreview, setNewsImagePreview] = useState<string | null>(null);
   const [isUploadingNewsImage, setIsUploadingNewsImage] = useState(false);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
 
   // Gallery Form State
-  const [galleryForm, setGalleryForm] = useState({
-    title: "",
-    category: GALLERY_CATEGORIES[0],
-    department: "School of Engineering",
-    location: "Golden Gates Hotel, Nyeri",
-    date: new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
-    description: "",
-    image: "",
-  });
+  const [galleryForm, setGalleryForm] = useState<GalleryFormDraft>(createDefaultGalleryForm);
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
   const [galleryCompressionStats, setGalleryCompressionStats] = useState<WebPConversionResult | null>(null);
   const [isUploadingGalleryImage, setIsUploadingGalleryImage] = useState(false);
   const [isAddingGalleryPhoto, setIsAddingGalleryPhoto] = useState(false);
 
   // Load dashboard data
-  const loadDashboardData = useCallback(async (key: string) => {
+  const loadDashboardData = useCallback(async (
+    section: AdminDashboardSection = "overview",
+    force = false
+  ) => {
+    if (!force && loadedSections.current.has(section)) return;
     try {
-      const res = await fetch("/api/admin", {
-        headers: { "x-admin-secret": key },
-      });
+      const res = await fetch(`/api/admin?section=${section}`, { cache: "no-store" });
       const data = await res.json();
-      if (res.ok) {
-        setArticles(data.articles || []);
-        setPhotos(data.photos || []);
-        setNewsList(data.news || []);
+      if (res.status === 401) {
+        loadedSections.current.clear();
+        setHasLoadedBlog(false);
+        setIsAuthenticated(false);
+        return;
       }
+      if (!res.ok) throw new Error(data.error || "Could not load data.");
+
+      if (section === "overview") setStats(data.stats);
+      if (section === "blog") {
+        setArticles(data.articles || []);
+        setHasLoadedBlog(true);
+      }
+      if (section === "news") setNewsList(data.news || []);
+      if (section === "gallery") setPhotos(data.photos || []);
+      loadedSections.current.add(section);
+      setIsAuthenticated(true);
     } catch (err) {
-      console.error("Failed to load dashboard data:", err);
+      console.error(`Failed to load admin ${section} data:`, err);
     }
   }, []);
 
   // Verify authentication
-  const verifyAuth = useCallback(async (key: string) => {
+  const verifyAuth = useCallback(async (email: string, password: string) => {
     setIsVerifying(true);
     setAuthError(null);
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", passkey: key }),
+        body: JSON.stringify({ action: "login", email, password }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        setAdminPassword("");
+        adminLastActivity.current = Date.now();
         setIsAuthenticated(true);
-        setPasskey(key);
-        sessionStorage.setItem("desa_admin_secret", key);
-        loadDashboardData(key);
+        await loadDashboardData("overview", true);
       } else {
-        setAuthError(data.error || "Incorrect Secretariat passkey.");
-        sessionStorage.removeItem("desa_admin_secret");
+        setAuthError(data.error || "Admin sign-in failed.");
       }
     } catch {
       setAuthError("Could not connect to authentication service.");
@@ -118,22 +218,165 @@ export default function AdminPage() {
     }
   }, [loadDashboardData]);
 
-  // Check existing session on mount
+  // Restore the session from the HttpOnly cookie.
   useEffect(() => {
-    const savedSecret = sessionStorage.getItem("desa_admin_secret");
-    if (savedSecret) {
-      const timer = setTimeout(() => {
-        verifyAuth(savedSecret);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [verifyAuth]);
+    const timer = setTimeout(() => void loadDashboardData("overview"), 0);
+    return () => clearTimeout(timer);
+  }, [loadDashboardData]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("desa_admin_secret");
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (activeTab === "meetings") return;
+    const section =
+      activeTab === "records" ? "overview" : activeTab;
+    const timer = window.setTimeout(() => void loadDashboardData(section), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeTab, isAuthenticated, loadDashboardData]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!isAuthenticated) {
+        setDraftsLoaded(false);
+        return;
+      }
+
+      try {
+        const newsDraft = sessionStorage.getItem(NEWS_DRAFT_KEY);
+        if (newsDraft) {
+          const parsed: unknown = JSON.parse(newsDraft);
+          if (isNewsFormDraft(parsed)) {
+            setNewsForm(parsed);
+            setNewsImagePreview(parsed.coverImage || null);
+          }
+        }
+
+        const galleryDraft = sessionStorage.getItem(GALLERY_DRAFT_KEY);
+        if (galleryDraft) {
+          const parsed: unknown = JSON.parse(galleryDraft);
+          if (isGalleryFormDraft(parsed)) {
+            setGalleryForm(parsed);
+            setGalleryImagePreview(parsed.image || null);
+          }
+        }
+      } catch (error) {
+        console.error("Could not restore admin form drafts from this tab:", error);
+      }
+      setDraftsLoaded(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !draftsLoaded) return;
+    const timer = window.setTimeout(() => {
+      try {
+        const hasDraft = Boolean(
+          newsForm.title ||
+            newsForm.type !== "event" ||
+            newsForm.eventDate ||
+            newsForm.coverImage ||
+            newsForm.excerpt ||
+            newsForm.content ||
+            newsForm.location !== "DeKUT Main Campus, Nyeri"
+        );
+        if (hasDraft) {
+          sessionStorage.setItem(NEWS_DRAFT_KEY, JSON.stringify(newsForm));
+          setNewsDraftStatus("Draft saved in this tab.");
+        } else {
+          sessionStorage.removeItem(NEWS_DRAFT_KEY);
+          setNewsDraftStatus("No unsaved draft.");
+        }
+      } catch (error) {
+        console.error("Could not autosave the news draft:", error);
+        setNewsDraftStatus("Draft could not be saved in this tab.");
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [draftsLoaded, isAuthenticated, newsForm]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !draftsLoaded) return;
+    const timer = window.setTimeout(() => {
+      try {
+        const hasDraft = Boolean(
+          galleryForm.title ||
+            galleryForm.image ||
+            galleryForm.description ||
+            galleryForm.category !== GALLERY_CATEGORIES[0] ||
+            galleryForm.department !== "School of Engineering" ||
+            galleryForm.location !== "Golden Gates Hotel, Nyeri"
+        );
+        if (hasDraft) {
+          sessionStorage.setItem(GALLERY_DRAFT_KEY, JSON.stringify(galleryForm));
+          setGalleryDraftStatus("Draft saved in this tab.");
+        } else {
+          sessionStorage.removeItem(GALLERY_DRAFT_KEY);
+          setGalleryDraftStatus("No unsaved draft.");
+        }
+      } catch (error) {
+        console.error("Could not autosave the gallery draft:", error);
+        setGalleryDraftStatus("Draft could not be saved in this tab.");
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [draftsLoaded, galleryForm, isAuthenticated]);
+
+  const handleLogout = useCallback(() => {
+    void fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "logout" }),
+    });
     setIsAuthenticated(false);
-    setPasskey("");
-  };
+    setHasLoadedBlog(false);
+    loadedSections.current.clear();
+    setAdminEmail("");
+    setAdminPassword("");
+    setShowAdminPassword(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    adminLastActivity.current = Date.now();
+    const noteActivity = () => {
+      adminLastActivity.current = Date.now();
+    };
+    const heartbeat = window.setInterval(() => {
+      const idleFor = Date.now() - adminLastActivity.current;
+      if (idleFor >= 5 * 60 * 1000) {
+        handleLogout();
+        setAuthError("Your admin session ended due to inactivity.");
+        return;
+      }
+      if (idleFor <= 30 * 1000 && document.visibilityState === "visible") {
+        void fetch("/api/admin/session", { cache: "no-store" })
+          .then((response) => {
+            if (!response.ok) {
+              handleLogout();
+              setAuthError("Your admin session expired. Please sign in again.");
+            }
+          })
+          .catch(() => {
+            setAuthError("Could not verify your admin session. Try again shortly.");
+          });
+      }
+    }, 30 * 1000);
+
+    window.addEventListener("pointerdown", noteActivity);
+    window.addEventListener("pointermove", noteActivity);
+    window.addEventListener("keydown", noteActivity);
+    window.addEventListener("touchstart", noteActivity);
+    window.addEventListener("wheel", noteActivity);
+    return () => {
+      window.clearInterval(heartbeat);
+      window.removeEventListener("pointerdown", noteActivity);
+      window.removeEventListener("pointermove", noteActivity);
+      window.removeEventListener("keydown", noteActivity);
+      window.removeEventListener("touchstart", noteActivity);
+      window.removeEventListener("wheel", noteActivity);
+    };
+  }, [handleLogout, isAuthenticated]);
 
   // Article Approval
   const handleApproveArticle = async (id: string) => {
@@ -142,7 +385,6 @@ export default function AdminPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({ action: "approveArticle", id }),
       });
@@ -161,20 +403,19 @@ export default function AdminPage() {
 
   // Article Delete
   const handleDeleteArticle = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this article?")) return;
+    if (!confirm("Move this article to Trash? You can restore it later from People & records → Trash.")) return;
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({ action: "deleteArticle", id }),
       });
       if (res.ok) {
         setArticles((prev) => prev.filter((a) => a.id !== id));
         setInspectArticle(null);
-        setStatusMessage("Article deleted.");
+        setStatusMessage("Article moved to Trash.");
         setTimeout(() => setStatusMessage(null), 3000);
       }
     } catch {
@@ -182,7 +423,7 @@ export default function AdminPage() {
     }
   };
 
-  // Handle News Image Upload to Vercel Blob
+  // Handle News Image Upload to Supabase Storage
   const handleNewsImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -195,15 +436,35 @@ export default function AdminPage() {
       const formData = new FormData();
       formData.append("file", webpResult.file);
 
-      const res = await fetch("/api/blob/upload", { method: "POST", body: formData });
+      formData.append("purpose", "admin");
+      const res = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { "x-upload-purpose": "admin" },
+        body: formData,
+      });
       const data = await res.json();
       if (res.ok && data.url) {
         setNewsForm((prev) => ({ ...prev, coverImage: data.url }));
+      } else {
+        throw new Error(data.error || "Could not save the news image.");
       }
     } catch (err) {
       console.error("News image upload error:", err);
+      alert(err instanceof Error ? err.message : "News image upload failed.");
     } finally {
       setIsUploadingNewsImage(false);
+    }
+  };
+
+  const discardNewsDraft = () => {
+    setNewsForm(createDefaultNewsForm());
+    setNewsImagePreview(null);
+    try {
+      sessionStorage.removeItem(NEWS_DRAFT_KEY);
+      setNewsDraftStatus("Draft discarded.");
+    } catch (error) {
+      console.error("Could not discard the news draft:", error);
+      setNewsDraftStatus("Draft could not be removed from this tab.");
     }
   };
 
@@ -217,7 +478,6 @@ export default function AdminPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({
           action: "addNews",
@@ -228,19 +488,17 @@ export default function AdminPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setNewsList((prev) => [data.item, ...prev]);
-        setNewsForm({
-          title: "",
-          type: "event",
-          eventDate: "",
-          date: new Date().toISOString().split("T")[0],
-          location: "DeKUT Main Campus, Nyeri",
-          coverImage: "",
-          excerpt: "",
-          content: "",
-        });
+        setNewsForm(createDefaultNewsForm());
         setNewsImagePreview(null);
+        try {
+          sessionStorage.removeItem(NEWS_DRAFT_KEY);
+        } catch (error) {
+          console.error("Could not clear the published news draft:", error);
+        }
         setStatusMessage("News announcement published successfully.");
         setTimeout(() => setStatusMessage(null), 3000);
+      } else {
+        alert(data.error || "Failed to publish news item.");
       }
     } catch {
       alert("Failed to publish news item.");
@@ -249,7 +507,7 @@ export default function AdminPage() {
     }
   };
 
-  // Handle Gallery Photo Upload to Vercel Blob
+  // Handle Gallery Photo Upload to Supabase Storage
   const handleGalleryPhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -258,24 +516,41 @@ export default function AdminPage() {
       setIsUploadingGalleryImage(true);
       const webpResult = await convertImageToWebP(file, { quality: 0.82, maxWidth: 1600 });
       setGalleryImagePreview(webpResult.previewUrl);
-      setGalleryCompressionStats({
-        originalSize: formatBytes(webpResult.originalSize),
-        webpSize: formatBytes(webpResult.webpSize),
-        reductionPercentage: webpResult.reductionPercentage,
-      });
+      setGalleryCompressionStats(webpResult);
 
       const formData = new FormData();
       formData.append("file", webpResult.file);
 
-      const res = await fetch("/api/blob/upload", { method: "POST", body: formData });
+      formData.append("purpose", "admin");
+      const res = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { "x-upload-purpose": "admin" },
+        body: formData,
+      });
       const data = await res.json();
       if (res.ok && data.url) {
         setGalleryForm((prev) => ({ ...prev, image: data.url }));
+      } else {
+        throw new Error(data.error || "Could not save the gallery image.");
       }
     } catch (err) {
       console.error("Gallery upload error:", err);
+      alert(err instanceof Error ? err.message : "Gallery image upload failed.");
     } finally {
       setIsUploadingGalleryImage(false);
+    }
+  };
+
+  const discardGalleryDraft = () => {
+    setGalleryForm(createDefaultGalleryForm());
+    setGalleryImagePreview(null);
+    setGalleryCompressionStats(null);
+    try {
+      sessionStorage.removeItem(GALLERY_DRAFT_KEY);
+      setGalleryDraftStatus("Draft discarded.");
+    } catch (error) {
+      console.error("Could not discard the gallery draft:", error);
+      setGalleryDraftStatus("Draft could not be removed from this tab.");
     }
   };
 
@@ -294,7 +569,6 @@ export default function AdminPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({
           action: "addGalleryPhoto",
@@ -305,19 +579,18 @@ export default function AdminPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setPhotos((prev) => [data.photo, ...prev]);
-        setGalleryForm({
-          title: "",
-          category: GALLERY_CATEGORIES[0],
-          department: "School of Engineering",
-          location: "Golden Gates Hotel, Nyeri",
-          date: new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
-          description: "",
-          image: "",
-        });
+        setGalleryForm(createDefaultGalleryForm());
         setGalleryImagePreview(null);
         setGalleryCompressionStats(null);
+        try {
+          sessionStorage.removeItem(GALLERY_DRAFT_KEY);
+        } catch (error) {
+          console.error("Could not clear the published gallery draft:", error);
+        }
         setStatusMessage("Official event photo added to the gallery.");
         setTimeout(() => setStatusMessage(null), 3000);
+      } else {
+        alert(data.error || "Failed to add photo to gallery.");
       }
     } catch {
       alert("Failed to add photo to gallery.");
@@ -328,19 +601,18 @@ export default function AdminPage() {
 
   // Delete Gallery Photo
   const handleDeletePhoto = async (id: string) => {
-    if (!confirm("Are you sure you want to remove this photo from the official gallery?")) return;
+    if (!confirm("Move this photo to Trash? You can restore it later from People & records → Trash.")) return;
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({ action: "deleteGalleryPhoto", id }),
       });
       if (res.ok) {
         setPhotos((prev) => prev.filter((p) => p.id !== id));
-        setStatusMessage("Photo removed from gallery.");
+        setStatusMessage("Photo moved to Trash.");
         setTimeout(() => setStatusMessage(null), 3000);
       }
     } catch {
@@ -350,19 +622,18 @@ export default function AdminPage() {
 
   // Delete News Item
   const handleDeleteNews = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this news item?")) return;
+    if (!confirm("Move this news item to Trash? You can restore it later from People & records → Trash.")) return;
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-secret": passkey,
         },
         body: JSON.stringify({ action: "deleteNews", id }),
       });
       if (res.ok) {
         setNewsList((prev) => prev.filter((n) => n.id !== id));
-        setStatusMessage("News item removed.");
+        setStatusMessage("News item moved to Trash.");
         setTimeout(() => setStatusMessage(null), 3000);
       }
     } catch {
@@ -371,7 +642,7 @@ export default function AdminPage() {
   };
 
   // ─────────────────────────────────────────────────────────────────────
-  // 1. Passkey Login Screen
+  // 1. Admin Sign-In Screen
   // ─────────────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
@@ -382,11 +653,11 @@ export default function AdminPage() {
               <LockIcon className="w-7 h-7" />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5a93c] block">
-              DESA DeKUT Executive Studio
+              DESA Executive Studio
             </span>
-            <h1 className="text-2xl font-extrabold text-white">Secretariat Admin Portal</h1>
+            <h1 className="text-2xl font-extrabold text-white">Admin Portal</h1>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Enter the executive passkey to review student blog submissions, publish news announcements, and manage official gallery records.
+              Sign in with a provisioned account for access.
             </p>
           </div>
 
@@ -400,22 +671,48 @@ export default function AdminPage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              verifyAuth(passkey);
+              void verifyAuth(adminEmail, adminPassword);
             }}
             className="space-y-4"
           >
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wide mb-1.5">
-                Secretariat Passkey
+                Admin Email
               </label>
               <input
-                type="password"
+                type="email"
                 required
-                placeholder="Enter admin passkey..."
-                value={passkey}
-                onChange={(e) => setPasskey(e.target.value)}
+                autoComplete="username"
+                placeholder="name@example.com"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wide mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showAdminPassword ? "text" : "password"}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full px-4 py-3 pr-16 bg-slate-800/80 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAdminPassword((visible) => !visible)}
+                  aria-label={showAdminPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showAdminPassword}
+                  className="absolute inset-y-0 right-3 text-xs font-semibold text-slate-300 hover:text-white"
+                >
+                  {showAdminPassword ? "Hide" : "Show"}
+                </button>
+              </div>
             </div>
 
             <button
@@ -423,7 +720,7 @@ export default function AdminPage() {
               disabled={isVerifying}
               className="w-full bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs py-3 rounded-xl transition-colors shadow cursor-pointer disabled:opacity-50"
             >
-              {isVerifying ? "Verifying Credentials..." : "Unlock Administrative Studio"}
+              {isVerifying ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
@@ -442,105 +739,272 @@ export default function AdminPage() {
   // ─────────────────────────────────────────────────────────────────────
   const pendingArticles = articles.filter((a) => a.status === "Pending Review");
   const publishedArticles = articles.filter((a) => a.status === "Published");
+  const activeSection = {
+    records: {
+      title: "People & records",
+      detail: "A protected view across the association’s operational data.",
+    },
+    blog: {
+      title: "Article review",
+      detail: "Review student submissions and manage what is published.",
+    },
+    news: {
+      title: "News & events",
+      detail: "Publish announcements and keep event information current.",
+    },
+    gallery: {
+      title: "Official gallery",
+      detail: "Curate the association’s public event and campus photography.",
+    },
+    meetings: {
+      title: "Meetings & roll call",
+      detail: "Publish scheduled meetings and review their attendance in one place.",
+    },
+  }[activeTab === "overview" ? "records" : activeTab];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-      {/* Top Admin Header */}
-      <header className="bg-[#071325] text-white border-b border-[#e5a93c]/20 py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#e5a93c]/20 text-[#e5a93c] flex items-center justify-center border border-[#e5a93c]/30 font-bold">
-              <ShieldCheckIcon className="w-6 h-6" />
+    <div className="min-h-screen bg-[#f3f6fa] text-slate-800">
+      <header className="relative overflow-hidden bg-[#071325] text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(229,169,60,0.17),transparent_45%)]" />
+        <div className="relative mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-10 lg:py-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#e5a93c]/30 bg-[#e5a93c]/10 text-[#e5a93c]">
+              <ShieldCheckIcon className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5a93c] block">
-                Official Administrative Console
-              </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-white">
-                DESA Secretariat Studio
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#e5a93c]">
+                DESA · Secretariat
+              </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                Management console
               </h1>
+              <p className="mt-1 text-sm text-slate-300">
+                One secure workspace for members, operations, and content.
+              </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => loadDashboardData(passkey)}
-              className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-xs text-slate-300 font-semibold transition-colors cursor-pointer"
+              onClick={() => {
+                const section =
+                  activeTab === "records" || activeTab === "meetings" ? "overview" : activeTab;
+                void loadDashboardData(section, true);
+              }}
+              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              Refresh Data
+              Refresh
             </button>
             <button
               onClick={handleLogout}
-              className="px-3.5 py-1.5 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800 text-xs text-red-200 font-bold transition-colors cursor-pointer"
+              className="rounded-xl border border-rose-300/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20"
             >
-              Lock / Logout
+              Lock console
             </button>
           </div>
         </div>
       </header>
 
-      {/* Status Alert Banner */}
       {statusMessage && (
-        <div className="bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 text-center shadow-md animate-fade-in">
+        <div role="status" className="border-b border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-800">
           {statusMessage}
         </div>
       )}
 
-      {/* Main Studio Navigation Tabs */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 overflow-x-auto py-3">
+      <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+        <nav
+          aria-label="Administration sections"
+          className="mx-auto flex max-w-[1440px] gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-10"
+        >
+          {[
+            { id: "overview", label: "Overview" },
+            { id: "records", label: "People & records" },
+            {
+              id: "blog",
+              label: "Article review",
+              count: hasLoadedBlog ? pendingArticles.length : stats.pendingArticles,
+            },
+            { id: "news", label: "News & events", count: stats.news },
+            { id: "gallery", label: "Gallery", count: stats.gallery },
+            { id: "meetings", label: "Meetings & roll call", count: stats.meetings },
+          ].map((item) => (
             <button
-              onClick={() => setActiveTab("blog")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "blog"
-                  ? "bg-[#071325] text-[#e5a93c] shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id as typeof activeTab)}
+              aria-current={activeTab === item.id ? "page" : undefined}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                activeTab === item.id
+                  ? "bg-[#071325] text-white shadow-sm"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
-              <FileTextIcon className="w-4 h-4" />
-              <span>Student Blog Review</span>
-              {pendingArticles.length > 0 && (
-                <span className="bg-amber-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                  {pendingArticles.length}
+              {item.label}
+              {item.count !== undefined && (
+                <span className={`rounded-full px-2 py-0.5 text-xs ${
+                  activeTab === item.id ? "bg-white/15 text-[#f6c867]" : "bg-slate-100 text-slate-500"
+                }`}>
+                  {item.count}
                 </span>
               )}
             </button>
-
-            <button
-              onClick={() => setActiveTab("news")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "news"
-                  ? "bg-[#071325] text-[#e5a93c] shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              <span>News & Events Publisher</span>
-              <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                {newsList.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("gallery")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === "gallery"
-                  ? "bg-[#071325] text-[#e5a93c] shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-              }`}
-            >
-              <UploadIcon className="w-4 h-4" />
-              <span>Official Gallery Manager</span>
-              <span className="bg-slate-200 text-slate-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                {photos.length}
-              </span>
-            </button>
-          </div>
-        </div>
+          ))}
+        </nav>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 lg:px-10 lg:py-9">
+        <AdminSectionErrorBoundary resetKey={activeTab}>
+        {activeTab === "overview" && (
+          <div className="space-y-7">
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b87a14]">
+                  System overview
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">
+                  Overview
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  ESA records and operations, at a glance.
+                </p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 text-xs font-medium text-slate-500">
+                <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+                Admin session
+              </span>
+            </div>
+
+            <section
+              aria-label="System record counts"
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+            >
+              <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Managed records</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">Records stored across the portal</p>
+                </div>
+                <p className="text-right">
+                  <span className="text-2xl font-bold tracking-tight text-slate-900">
+                    {stats.total.toLocaleString()}
+                  </span>
+                  <span className="ml-2 text-xs font-medium text-slate-500">total</span>
+                </p>
+              </div>
+              <div className="grid sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  { label: "Members & registrations", value: stats.members, accent: "text-[#0a5c36]", tab: "records" },
+                  { label: "Contact messages", value: stats.contacts, accent: "text-sky-700", tab: "records" },
+                  { label: "Gala registrations", value: stats.gala, accent: "text-violet-700", tab: "records" },
+                  { label: "Attendance entries", value: stats.attendance, accent: "text-amber-700", tab: "records" },
+                  { label: "Meetings", value: stats.meetings, accent: "text-emerald-700", tab: "records" },
+                  { label: "Articles", value: stats.articles, accent: "text-blue-700", tab: "blog" },
+                  { label: "News & events", value: stats.news, accent: "text-indigo-700", tab: "news" },
+                  { label: "Gallery items", value: stats.gallery, accent: "text-rose-700", tab: "gallery" },
+                ].map((metric, index) => (
+                  <button
+                    key={metric.label}
+                    type="button"
+                    onClick={() => setActiveTab(metric.tab as typeof activeTab)}
+                    className={`group flex min-h-14 items-center justify-between gap-4 border-b border-slate-100 px-5 py-3 text-left transition hover:bg-slate-50 ${
+                      index % 2 === 0 ? "sm:border-r sm:border-slate-100" : ""
+                    } ${
+                      index % 4 !== 3
+                        ? "xl:border-r xl:border-slate-100"
+                        : "xl:border-r-0"
+                    }`}
+                  >
+                    <span className="text-sm font-medium text-slate-600 transition group-hover:text-slate-900">
+                      {metric.label}
+                    </span>
+                    <span className={`text-lg font-semibold tabular-nums ${metric.accent}`}>
+                      {metric.value.toLocaleString()}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">Needs attention</h3>
+                    <p className="mt-1 text-sm text-slate-500">Keep submissions and updates moving.</p>
+                  </div>
+                  <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">
+                    {pendingArticles.length} pending
+                  </span>
+                </div>
+                <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">Article submissions</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Review, approve, or reject content waiting for publication.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("blog")}
+                    className="shrink-0 rounded-xl bg-[#071325] px-4 py-2.5 text-sm font-bold text-[#f6c867] transition hover:bg-[#102242]"
+                  >
+                    Review queue
+                  </button>
+                </div>
+                <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold text-slate-900">Database-first operations</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      New and edited records are saved to Supabase. Sheets mirrors asynchronously.
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-emerald-700">
+                    Supabase source
+                  </span>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b87a14]">
+                  Quick actions
+                </p>
+                <h3 className="mt-1 text-lg font-bold text-slate-900">Manage the portal</h3>
+                <div className="mt-5 grid gap-3">
+                  {[
+                    { label: "Add a member", detail: "Update the active register", tab: "records" },
+                    { label: "Publish an announcement", detail: "Create news or an event", tab: "news" },
+                    { label: "Upload event photos", detail: "Manage the official gallery", tab: "gallery" },
+                  ].map((action) => (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={() => setActiveTab(action.tab as typeof activeTab)}
+                      className="rounded-2xl border border-slate-200 p-4 text-left transition hover:border-[#e5a93c]/60 hover:bg-amber-50/40"
+                    >
+                      <span className="block text-sm font-bold text-slate-900">{action.label}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{action.detail}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+        )}
+        {activeTab !== "overview" && activeTab !== "records" && (
+          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b87a14]">
+                Manage DESA
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                {activeSection.title}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">{activeSection.detail}</p>
+            </div>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+              <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+              Direct Supabase Database View
+            </span>
+          </div>
+        )}
         {/* ─────────────────────────────────────────────────────────────
             TAB 1: BLOG ARTICLE REVIEW QUEUE
            ───────────────────────────────────────────────────────────── */}
@@ -551,10 +1015,10 @@ export default function AdminPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
                 <div>
                   <h2 className="text-lg font-bold text-[#071325]">
-                    Pending Student Blog Submissions ({pendingArticles.length})
+                    Pending Article Submissions ({pendingArticles.length})
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Articles submitted by public student users. Review content, verification, and approve to publish live on the Innovation Blog.
+                    Articles submitted by students. Review content, verify, and approve to publish on the Innovation Blog.
                   </p>
                 </div>
               </div>
@@ -614,7 +1078,7 @@ export default function AdminPage() {
               ) : (
                 <div className="py-12 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
                   <CheckCircleIcon className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  <span>No pending student submissions waiting for review.</span>
+                  <span>No pending article submissions waiting for review.</span>
                 </div>
               )}
             </div>
@@ -675,14 +1139,26 @@ export default function AdminPage() {
             <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-[#071325]">
-                  Publish Official News or Event
+                  Publish News or Event
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Only accessible through this safe administrative portal. Images are compressed to WebP and uploaded to Vercel Blob.
+                  Only accessible through this admin portal.
                 </p>
               </div>
 
               <form onSubmit={handleNewsSubmit} className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p role="status" aria-live="polite" className="text-[11px] text-slate-500">
+                    {newsDraftStatus || "Draft autosaves in this tab."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={discardNewsDraft}
+                    className="text-[11px] font-semibold text-slate-500 underline hover:text-red-700"
+                  >
+                    Discard draft
+                  </button>
+                </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
                     Announcement Title <span className="text-red-500">*</span>
@@ -738,10 +1214,10 @@ export default function AdminPage() {
                   />
                 </div>
 
-                {/* Cover Image Upload (WebP + Vercel Blob) */}
+                {/* Cover Image Upload */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Cover Poster / Photo (Auto-WebP to Blob)
+                    Cover Poster / Photo (Auto-WebP to Supabase Storage)
                   </label>
                   <input
                     type="file"
@@ -751,19 +1227,19 @@ export default function AdminPage() {
                   />
                   {isUploadingNewsImage && (
                     <span className="text-[11px] text-slate-500 mt-1 block">
-                      Compressing to WebP and uploading to Vercel Blob...
+                      Saving...
                     </span>
                   )}
                   {newsImagePreview && (
                     <div className="relative w-full h-36 rounded-xl overflow-hidden mt-2 border border-slate-200">
-                      <Image src={newsImagePreview} alt="Preview" fill className="object-cover" unoptimized />
+                      <Image src={newsImagePreview} alt="Preview" fill sizes="100vw" className="object-contain" unoptimized />
                     </div>
                   )}
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Summary / Excerpt <span className="text-red-500">*</span>
+                    Summary<span className="text-red-500">*</span>
                   </label>
                   <textarea
                     required
@@ -832,7 +1308,7 @@ export default function AdminPage() {
                         onClick={() => handleDeleteNews(item.id || item.slug)}
                         className="px-2.5 py-1 text-[11px] bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold cursor-pointer"
                       >
-                        Delete
+                        Move to Trash
                       </button>
                     </div>
                   </div>
@@ -851,14 +1327,26 @@ export default function AdminPage() {
             <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-[#071325]">
-                  Upload Official Event Photo to Gallery
+                  Upload Photos to Gallery
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Only Secretariat admins can publish official photos to the campus gallery. All images are compressed into lightweight WebP and hosted on Vercel Blob.
+                  Only admins can publish official photos to the campus gallery.
                 </p>
               </div>
 
               <form onSubmit={handleGallerySubmit} className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p role="status" aria-live="polite" className="text-[11px] text-slate-500">
+                    {galleryDraftStatus || "Draft autosaves in this tab."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={discardGalleryDraft}
+                    className="text-[11px] font-semibold text-slate-500 underline hover:text-red-700"
+                  >
+                    Discard draft
+                  </button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Photo File */}
                   <div>
@@ -874,17 +1362,23 @@ export default function AdminPage() {
                     />
                     {isUploadingGalleryImage && (
                       <span className="text-[11px] text-slate-500 mt-1 block">
-                        Compressing to WebP and uploading to Vercel Blob...
+                        Saving...
                       </span>
                     )}
-                    {galleryImagePreview && galleryCompressionStats && (
+                    {galleryImagePreview && (
                       <div className="mt-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center gap-3">
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-emerald-300">
-                          <Image src={galleryImagePreview} alt="Preview" fill className="object-cover" unoptimized />
+                          <Image src={galleryImagePreview} alt="Preview" fill sizes="48px" className="object-contain" unoptimized />
                         </div>
                         <div className="text-[11px] text-slate-600">
-                          <strong className="text-[#0a5c36] block">WebP Uploaded</strong>
-                          <span>{galleryCompressionStats.originalSize} &rarr; {galleryCompressionStats.webpSize} ({galleryCompressionStats.reductionPercentage}% smaller)</span>
+                          {galleryCompressionStats ? (
+                            <>
+                              <strong className="text-[#0a5c36] block">WebP Uploaded</strong>
+                              <span>{galleryCompressionStats.originalSize} &rarr; {galleryCompressionStats.webpSize} ({galleryCompressionStats.reductionPercentage}% smaller)</span>
+                            </>
+                          ) : (
+                            <strong className="text-[#0a5c36] block">Uploaded image restored from draft</strong>
+                          )}
                         </div>
                       </div>
                     )}
@@ -998,7 +1492,7 @@ export default function AdminPage() {
                   >
                     <div>
                       <div className="relative h-44 w-full bg-slate-900">
-                        <Image src={p.image} alt={p.title} fill className="object-cover" unoptimized />
+                        <Image src={p.image} alt={p.title} fill sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" className="object-contain" unoptimized />
                         <span className="absolute top-2 left-2 bg-[#071325]/90 text-[#e5a93c] text-[10px] font-bold px-2 py-0.5 rounded">
                           {p.category}
                         </span>
@@ -1015,7 +1509,7 @@ export default function AdminPage() {
                         onClick={() => handleDeletePhoto(p.id)}
                         className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
                       >
-                        Delete
+                        Move to Trash
                       </button>
                     </div>
                   </div>
@@ -1024,6 +1518,10 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "records" && <AdminRecordsManager />}
+        {activeTab === "meetings" && <AdminMeetingsManager />}
+        </AdminSectionErrorBoundary>
       </main>
 
       {/* Inspect Article Modal */}
@@ -1044,7 +1542,7 @@ export default function AdminPage() {
 
             {inspectArticle.imageUrl && (
               <div className="relative w-full h-56 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                <Image src={inspectArticle.imageUrl} alt={inspectArticle.title} fill className="object-cover" unoptimized />
+                <Image src={inspectArticle.imageUrl} alt={inspectArticle.title} fill sizes="(max-width: 672px) calc(100vw - 3rem), 672px" className="object-contain" unoptimized />
               </div>
             )}
 
@@ -1070,7 +1568,7 @@ export default function AdminPage() {
                 onClick={() => handleDeleteArticle(inspectArticle.id)}
                 className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
-                Reject & Delete
+                Reject & Move to Trash
               </button>
               {inspectArticle.status === "Pending Review" && (
                 <button

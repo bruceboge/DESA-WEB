@@ -13,10 +13,10 @@ export default function Footer() {
         <div className="mb-8 sm:mb-12 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-[#0a182e] via-slate-900 to-[#0a182e] border border-slate-800/90 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shadow-xl">
           <div className="text-center lg:text-left">
             <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#e5a93c] block">
-              Official DESA Social Channels
+              DESA Social Channels
             </span>
             <h3 className="text-sm sm:text-base lg:text-lg font-bold text-white mt-0.5">
-              Connect with DeKUT Engineering Students Association
+              Connect with us
             </h3>
           </div>
 
@@ -31,10 +31,6 @@ export default function Footer() {
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-black flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform border border-slate-800">
                 <TikTokIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div className="text-center sm:text-left">
-                <span className="text-[9px] sm:text-[10px] text-slate-400 block leading-none font-medium">TikTok</span>
-                <span className="text-[11px] sm:text-xs font-bold text-white group-hover:text-[#e5a93c] transition-colors leading-tight truncate max-w-[80px] sm:max-w-none">@desa_dekut</span>
-              </div>
             </a>
 
             {/* LinkedIn */}
@@ -47,10 +43,6 @@ export default function Footer() {
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#0a66c2] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                 <LinkedInIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div className="text-center sm:text-left">
-                <span className="text-[9px] sm:text-[10px] text-slate-400 block leading-none font-medium">LinkedIn</span>
-                <span className="text-[11px] sm:text-xs font-bold text-white group-hover:text-[#38bdf8] transition-colors leading-tight">DESA</span>
-              </div>
             </a>
 
             {/* Instagram */}
@@ -62,10 +54,6 @@ export default function Footer() {
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                 <InstagramIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="text-[9px] sm:text-[10px] text-slate-400 block leading-none font-medium">Instagram</span>
-                <span className="text-[11px] sm:text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors leading-tight truncate max-w-[80px] sm:max-w-none">@dekut</span>
               </div>
             </a>
           </div>
@@ -82,6 +70,7 @@ export default function Footer() {
                   src="/images/desa-official-logo.png"
                   alt="DESA - DeKUT Engineering Students Association Official Logo"
                   fill
+                  sizes="(max-width: 640px) 48px, 64px"
                   unoptimized
                   className="object-contain"
                 />

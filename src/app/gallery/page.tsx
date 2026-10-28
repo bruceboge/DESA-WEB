@@ -9,7 +9,7 @@ import {
   CloseIcon,
   MapPinIcon,
 } from "@/components/Icons";
-import { GalleryPhoto } from "@/lib/dataStore";
+import type { GalleryPhoto } from "@/lib/dataStore";
 
 const categories = [
   "All Categories",
@@ -86,7 +86,7 @@ export default function GalleryPage() {
               Home
             </Link>
             <ChevronRightIcon className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-[#e5a93c] font-semibold">Gallery & Field Archives</span>
+            <span className="text-[#e5a93c] font-semibold">Gallery & Archives</span>
           </div>
 
           <div className="max-w-3xl">
@@ -94,17 +94,17 @@ export default function GalleryPage() {
               Visual Chronicles of DeKUT Engineers
             </span>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-              DESA Engineering Gallery
+              DESA Gallery
             </h1>
             <p className="mt-3 text-base sm:text-lg text-slate-300 leading-relaxed">
-              Explore visual highlights and archived memories from official DESA events, including our Annual Masquerade Gala Dinners, cohort game nights, IEEE WIE technical mentorship sessions, and campus life at Dedan Kimathi University of Technology.
+              Explore visual highlights and archived memories from our events, and campus life at DeKUT.
             </p>
           </div>
         </div>
       </section>
 
       {/* Filter Tabs */}
-      <section className="py-6 bg-white border-b border-slate-200 sticky top-20 z-30 shadow-sm">
+      <section className="py-4 sm:py-6 bg-white border-b border-slate-200 sticky top-16 sm:top-20 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => (
@@ -139,13 +139,13 @@ export default function GalleryPage() {
                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md hover:border-[#e5a93c] transition-all cursor-pointer group flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative h-52 w-full overflow-hidden bg-slate-900">
+                  <div className="relative h-52 w-full overflow-hidden bg-slate-100">
                     <Image
                       src={item.image}
                       alt={item.title}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="object-contain"
                       unoptimized
                     />
                     <div className="absolute top-3 left-3">
@@ -209,7 +209,7 @@ export default function GalleryPage() {
                 alt={selectedPhoto.title}
                 fill
                 sizes="(max-width: 1024px) 100vw, 800px"
-                className="object-cover"
+                className="object-contain"
                 unoptimized
               />
 

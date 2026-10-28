@@ -58,13 +58,13 @@ export default function PrivacyPolicyPage() {
               <span>Information We Collect</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify mb-3">
-              DESA collects only minimal, necessary information strictly relevant to student membership, academic certification, assembly roll call, and participation in engineering competitions:
+              DESA collects only minimal, necessary information strictly relevant to student membership, academic records, assembly roll call, and participation in engineering activities:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm text-slate-700">
-              <li><strong>Academic Identity:</strong> Official Full Name, DeKUT Student Registration Number (e.g. C025-01-XXXX/2023).</li>
+              <li><strong>Academic Identity:</strong> Official Full Name, DeKUT Student Registration Number (e.g. E025-01-XXXX/2023).</li>
               <li><strong>Institutional Affiliation:</strong> School of Engineering Department (Mechatronics, Mechanical, Electrical, Civil, Chemical) and current Academic Year of Study.</li>
               <li><strong>Contact Information:</strong> Official University email address (@dkut.ac.ke) and mobile telephone number for association announcements.</li>
-              <li><strong>Event Check-in Records:</strong> Timestamps and attendance verification markers for general assemblies and laboratory workshops.</li>
+              <li><strong>Event Check-in Records:</strong> Timestamps and attendance verification markers for meetings and events workshops.</li>
             </ul>
           </div>
 
@@ -75,13 +75,13 @@ export default function PrivacyPolicyPage() {
               <span>Lawful Basis & Purpose of Processing</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify mb-3">
-              In accordance with Section 30 of the Kenya Data Protection Act, we process personal data under legitimate institutional mandates:
+              In accordance with the Kenya Data Protection Act, we process personal data under legitimate institutional mandates:
             </p>
             <ul className="list-disc pl-6 space-y-2 text-sm text-slate-700">
               <li>Verifying student eligibility for Engineers Board of Kenya (EBK) and IEK student membership accreditations.</li>
               <li>Maintaining accurate quorum and attendance logs for Association General Meetings (AGM) and executive elections.</li>
-              <li>Issuing digital credentials and event participation certificates for hackathons and DESA technical workshops.</li>
-              <li>Disseminating technical digests, curriculum updates, and industrial attachment vacancies.</li>
+              <li>Issuing digital credentials and event participation certificates for DESA technical workshops.</li>
+              <li>Disseminating technical digests, curriculum updates, and industrial opportunities.</li>
             </ul>
           </div>
 
@@ -92,7 +92,7 @@ export default function PrivacyPolicyPage() {
               <span>Data Confidentiality & Non-Disclosure</span>
             </h2>
             <p className="text-sm text-slate-700 leading-relaxed text-justify">
-              DESA does not sell, lease, commercialize, or share student data with unauthorized third parties or advertisers. Data may only be shared with the DeKUT School of Engineering Dean&apos;s Office or regulatory engineering bodies (such as the Engineers Board of Kenya) for official accreditation, academic verification, or attachment certification.
+              DESA does not sell, lease, commercialize, or share student data with unauthorized third parties or advertisers. Data may only be shared with the University Managements through the SOE Dean&apos;s Office.
             </p>
           </div>
 
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
             <ul className="list-disc pl-6 space-y-2 text-sm text-slate-700">
               <li><strong>Right to be informed:</strong> To know what personal data is logged and for what specific association purpose.</li>
               <li><strong>Right of access:</strong> To inspect and receive a verified copy of your personal association records.</li>
-              <li><strong>Right to rectification:</strong> To update or correct inaccurate departmental or registration details.</li>
+              <li><strong>Right to rectification:</strong> To update or correct inaccurate registration details.</li>
               <li><strong>Right to erasure:</strong> To request deletion of membership records upon graduation or departure from DeKUT.</li>
             </ul>
           </div>

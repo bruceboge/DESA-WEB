@@ -16,17 +16,17 @@ export default function CommandCtaBanner() {
         </div>
 
         <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight max-w-2xl mx-auto">
-          Ready to Elevate Your Engineering Journey at DeKUT?
+          Ready to Elevate Your Engineering Journey?
         </h2>
 
         <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-          Access project groups, industrial excursions, and EBK mentorship.
+          Join the DeKUT Engineering Students Association (DESA) today and unlock your full potential as an engineer. Gain access to exclusive project groups, industry insights, and mentorship opportunities that will shape your professional future. Let&apos;s innovate, collaborate, and build something extraordinary together.
         </p>
 
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5">
           <Link
             href="/membership#register"
-            className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow transition-colors flex items-center gap-2"
           >
             <span>Register as a Member</span>
             <ArrowRightIcon className="w-4 h-4" />
@@ -34,7 +34,7 @@ export default function CommandCtaBanner() {
 
           <Link
             href="/membership#lookup"
-            className="bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold px-6 py-3.5 rounded-xl border border-white/15 transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold px-6 py-3.5 rounded-xl border border-white/15 transition-colors flex items-center gap-2"
           >
             <span>Check Registration Status</span>
             <ChevronRightIcon className="w-4 h-4" />

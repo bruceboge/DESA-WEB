@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Membership Hub & Portal | DESA DeKUT",
+  title: "Membership Hub & Portal | ESA DeKUT",
   description:
     "Official DESA Membership Hub at Dedan Kimathi University of Technology. Check membership status, register as an engineering student, view dues info, and access member services.",
   alternates: { canonical: "/membership" },

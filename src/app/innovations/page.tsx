@@ -12,8 +12,18 @@ export const metadata: Metadata = {
   alternates: { canonical: "/innovations" },
 };
 
-export default function InnovationsPage() {
-  const articles = getPublishedArticles();
+export const dynamic = "force-dynamic";
+
+export default async function InnovationsPage() {
+  let articles: Awaited<ReturnType<typeof getPublishedArticles>> = [];
+  let articlesUnavailable = false;
+
+  try {
+    articles = await getPublishedArticles();
+  } catch (error) {
+    console.error("Could not load published innovations:", error);
+    articlesUnavailable = true;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -31,13 +41,13 @@ export default function InnovationsPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="max-w-2xl">
               <span className="text-xs font-bold uppercase tracking-wider text-[#e5a93c] bg-[#e5a93c]/10 px-3.5 py-1.5 rounded-full border border-[#e5a93c]/30 inline-block mb-4">
-                DESA Technical Publications
+                DESA Publications
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
                 Engineering Articles & Blog
               </h1>
               <p className="mt-3 text-base text-slate-300 leading-relaxed">
-                Authentic technical write-ups, research insights, and engineering analyses authored by students across Mechatronic, Mechanical, Electrical, Civil, and Chemical disciplines at Dedan Kimathi University of Technology.
+                Technical write-ups, research insights, and engineering analyses authored by students at Dedan Kimathi University of Technology.
               </p>
             </div>
 
@@ -56,6 +66,14 @@ export default function InnovationsPage() {
 
       {/* Main Feed Section */}
       <section className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {articlesUnavailable && (
+          <div
+            role="status"
+            className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+          >
+            The article feed is temporarily unavailable. Please try again later.
+          </div>
+        )}
         <InnovationsFeed initialArticles={articles} />
       </section>
     </div>

@@ -15,29 +15,21 @@ const points = [
     icon: CpuIcon,
     title: "Innovate",
     desc: "Turn classroom theory into real-world engineering solutions, authored technical write-ups, and practical innovations across campus laboratories.",
-    href: "/innovations",
-    linkText: "Read Blog",
   },
   {
     icon: UsersIcon,
     title: "Collaborate",
     desc: "Connect across all five engineering disciplines at DeKUT, forming inter-departmental project teams, study circles, and peer networks.",
-    href: "/membership#register",
-    linkText: "Join Cohort",
   },
   {
     icon: GraduationCapIcon,
     title: "Grow",
     desc: "Gain verified leadership credentials, hands-on technical workshop mastery, and direct mentorship from Engineers Board of Kenya (EBK) professionals.",
-    href: "/news-events",
-    linkText: "Explore Events",
   },
   {
     icon: ShieldCheckIcon,
     title: "Make an Impact",
     desc: "Contribute to sustainable technology initiatives, campus innovations, and community engineering solutions that address national challenges.",
-    href: "/about",
-    linkText: "Our Mission",
   },
   {
     icon: BuildingIcon,
@@ -91,13 +83,7 @@ export default function ThreePillars() {
                   </div>
                 </div>
 
-                <Link
-                  href={pt.href}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#071325] hover:text-[#b87a14] shrink-0 transition-colors pl-11 sm:pl-0"
-                >
-                  <span>{pt.linkText}</span>
-                  <ChevronRightIcon className="w-3.5 h-3.5" />
-                </Link>
+
               </div>
             );
           })}

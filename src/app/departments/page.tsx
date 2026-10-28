@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Engineering Departments | DESA DeKUT",
   description:
-    "Explore the five engineering departments at DeKUT — Mechatronic, Mechanical, Electrical & Electronic, Civil, and Chemical — represented by DESA student cohorts and faculty.",
+    "Explore the six engineering departments at DeKUT — Mechatronic, Mechanical, Electrical & Electronic, Civil, BSc GEGIES and Chemical — represented by DESA student cohorts and faculty.",
   alternates: { canonical: "/departments" },
 };
 

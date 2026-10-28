@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import "server-only";
+import { getDynamicNewsEvents } from "@/lib/dataStore";
 
 export interface Post {
   slug: string;
@@ -17,7 +19,7 @@ export interface Post {
 
 const postsDirectory = path.join(process.cwd(), "content", "posts");
 
-function parseFrontmatter(fileContent: string): { data: Record<string, string>; content: string } {
+function parseFrontmatter(fileContent: string): { data: Record<string, string | string[]>; content: string } {
   const frontmatterRegex = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
   const match = frontmatterRegex.exec(fileContent);
 
@@ -27,7 +29,7 @@ function parseFrontmatter(fileContent: string): { data: Record<string, string>; 
 
   const rawYaml = match[1];
   const content = match[2].trim();
-  const data: Record<string, string> = {};
+  const data: Record<string, string | string[]> = {};
 
   rawYaml.split(/\r?\n/).forEach((line) => {
     const colonIndex = line.indexOf(":");
@@ -64,7 +66,7 @@ function parseFrontmatter(fileContent: string): { data: Record<string, string>; 
   return { data, content };
 }
 
-export function getAllPosts(): Post[] {
+export function getMarkdownPosts(): Post[] {
   if (!fs.existsSync(postsDirectory)) {
     return [];
   }
@@ -79,69 +81,53 @@ export function getAllPosts(): Post[] {
       const { data, content } = parseFrontmatter(fileContents);
 
       const today = new Date().toISOString().split("T")[0];
+      const eventDate = data.eventDate as string | undefined;
       const isPast =
-        data.type === "event" && data.eventDate ? data.eventDate < today : false;
+        data.type === "event" && eventDate ? eventDate < today : false;
 
       return {
         slug,
-        title: data.title || "Untitled Post",
-        date: data.date || today,
+        title: (data.title as string) || "Untitled Post",
+        date: (data.date as string) || today,
         type: data.type === "event" ? "event" : "news",
-        location: data.location || undefined,
-        eventDate: data.eventDate || undefined,
-        coverImage: data.coverImage || "/images/hero-concept.jpg",
-        excerpt: data.excerpt || "",
+        location: (data.location as string) || undefined,
+        eventDate: eventDate || undefined,
+        coverImage: (data.coverImage as string) || "/images/hero-concept.jpg",
+        excerpt: (data.excerpt as string) || "",
         content,
         recapPhotos: Array.isArray(data.recapPhotos) ? data.recapPhotos : [],
         isPast,
       };
     });
 
-  // Also include dynamic news/events published via the admin portal
-  const dynamicNewsPath = path.join(process.cwd(), "content", "data", "news.json");
-  let dynamicPosts: Post[] = [];
-  if (fs.existsSync(dynamicNewsPath)) {
-    try {
-      const raw = fs.readFileSync(dynamicNewsPath, "utf-8");
-      const items = JSON.parse(raw);
-      if (Array.isArray(items)) {
-        const today = new Date().toISOString().split("T")[0];
-        interface RawDynamicItem {
-          slug: string;
-          title?: string;
-          date?: string;
-          type?: string;
-          location?: string;
-          eventDate?: string;
-          coverImage?: string;
-          excerpt?: string;
-          content?: string;
-          recapPhotos?: string[];
-          isPast?: boolean;
-        }
-        dynamicPosts = (items as RawDynamicItem[]).map((item) => ({
-          slug: item.slug,
-          title: item.title || "Untitled Announcement",
-          date: item.date || today,
-          type: item.type === "event" ? ("event" as const) : ("news" as const),
-          location: item.location || undefined,
-          eventDate: item.eventDate || undefined,
-          coverImage: item.coverImage || "/images/hero-concept.jpg",
-          excerpt: item.excerpt || "",
-          content: item.content || "",
-          recapPhotos: Array.isArray(item.recapPhotos) ? item.recapPhotos : [],
-          isPast:
-            item.isPast ??
-            (item.type === "event" && item.eventDate ? item.eventDate < today : false),
-        }));
-      }
-    } catch {
-      // ignore
-    }
+  return posts;
+}
+
+export async function getAllPosts(): Promise<Post[]> {
+  const today = new Date().toISOString().split("T")[0];
+  let newsEvents: Awaited<ReturnType<typeof getDynamicNewsEvents>>;
+  try {
+    newsEvents = await getDynamicNewsEvents();
+  } catch (error) {
+    console.error("Could not load Supabase news; serving committed Markdown posts instead:", error);
+    newsEvents = [];
   }
 
-  // Deduplicate by slug giving precedence to dynamic posts
-  const combined = [...dynamicPosts, ...posts.filter((p) => !dynamicPosts.some((dp) => dp.slug === p.slug))];
+  const dynamicPosts: Post[] = newsEvents.map((item) => ({
+    slug: item.slug,
+    title: item.title,
+    date: item.date,
+    type: item.type,
+    location: item.location,
+    eventDate: item.eventDate,
+    coverImage: item.coverImage || "/images/hero-concept.jpg",
+    excerpt: item.excerpt,
+    content: item.content,
+    recapPhotos: item.recapPhotos || [],
+    isPast: item.isPast ?? (item.type === "event" && item.eventDate ? item.eventDate < today : false),
+  }));
+  const posts = getMarkdownPosts();
+  const combined = [...dynamicPosts, ...posts.filter((post) => !dynamicPosts.some((item) => item.slug === post.slug))];
 
   // Sort by date or eventDate newest first
   return combined.sort((a, b) => {
@@ -151,7 +137,7 @@ export function getAllPosts(): Post[] {
   });
 }
 
-export function getPostBySlug(slug: string): Post | null {
-  const posts = getAllPosts();
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  const posts = await getAllPosts();
   return posts.find((p) => p.slug === slug) || null;
 }

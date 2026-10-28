@@ -15,7 +15,7 @@ import {
 const contactChannels = [
   {
     icon: MailIcon,
-    title: "Official Secretariat Email",
+    title: "Official Email",
     detail: "engineeringstudentsassociation@dkut.ac.ke",
     subtext: "General inquiries, official correspondence, and partnerships",
     actionLabel: "Email Us",
@@ -79,8 +79,7 @@ export default function ContactPage() {
         setErrorMsg(result.error || "Failed to dispatch message. Please try again.");
       }
     } catch {
-      // Graceful offline fallback
-      setSubmitted(true);
+      setErrorMsg("Unable to send message. Please check your internet connection and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -178,77 +177,14 @@ export default function ContactPage() {
               );
             })}
           </div>
-
-          {/* Social Media Channels Grid */}
-          <div className="pt-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-3">
-              Official Social Media Handles
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* TikTok */}
-              <a
-                href="https://www.tiktok.com/@desa_dekut"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 rounded-xl bg-slate-900 hover:bg-black text-white border border-slate-800 hover:border-slate-600 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
-              >
-                <div className="w-9 h-9 rounded-lg bg-black border border-slate-700 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
-                  <TikTokIcon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-medium">TikTok</span>
-                  <span className="text-xs font-bold text-white group-hover:text-[#e5a93c] transition-colors truncate block">
-                    desa_dekut
-                  </span>
-                </div>
-              </a>
-              {/* LinkedIn */}
-              <a
-                href="https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 rounded-xl bg-[#071325] hover:bg-[#0b1c36] text-white border border-slate-800 hover:border-[#0a66c2]/60 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
-              >
-                <div className="w-9 h-9 rounded-lg bg-[#0a66c2] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
-                  <LinkedInIcon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-medium">LinkedIn</span>
-                  <span className="text-xs font-bold text-white group-hover:text-[#38bdf8] transition-colors truncate block">
-                    DESA
-                  </span>
-                </div>
-              </a>
-              {/* Instagram */}
-              <a
-                href="https://www.instagram.com/dekut_engineeringstudents"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-3.5 rounded-xl bg-[#140b20] hover:bg-[#1a0e2a] text-white border border-slate-800 hover:border-[#e4405f]/60 transition-all flex items-center gap-3 group shadow-sm hover:-translate-y-0.5"
-              >
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
-                  <InstagramIcon className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] text-slate-400 block font-medium">Instagram</span>
-                  <span className="text-xs font-bold text-white group-hover:text-[#f472b6] transition-colors truncate block">
-                    dekut_engineeringstudents
-                  </span>
-                </div>
-              </a>
-            </div>
-          </div>
         </div>
 
         {/* Contact & Support Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
           <div className="mb-6">
             <h2 className="text-lg sm:text-xl font-bold text-[#071325]">
-              Send a Message to the Secretariat
+              Message the Secretariat
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
-              Inquiries are routed to the relevant executive officer.
-            </p>
           </div>
 
           {submitted ? (
@@ -324,17 +260,17 @@ export default function ContactPage() {
 
                 <div>
                   <label htmlFor="contact-email" className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Email Address *
+                    Email/Phone Number *
                   </label>
                   <input
                     id="contact-email"
-                    type="email"
+                    type="text"
                     required
                     maxLength={100}
                     autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="name@students.dkut.ac.ke"
+                    placeholder="name@students.dkut.ac.ke / 07xx-xxx-xxx"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                   />
                 </div>
@@ -353,10 +289,12 @@ export default function ContactPage() {
                   >
                     <option value="General Inquiry">General Inquiry</option>
                     <option value="Membership & Dues">Membership & Dues</option>
-                    <option value="Technical Projects">Technical Projects / Hackathons</option>
+                    <option value="Technical Projects">Projects / Hackathons</option>
                     <option value="Industrial Excursions">Industrial Excursions</option>
                     <option value="Academic Mentorship">Academic Mentorship</option>
-                    <option value="Corporate Partnership">Corporate Partnership</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Feedback">Feedback</option>
+                    <option value="Other">Other (Specify in message)</option>
                   </select>
                 </div>
 
@@ -427,7 +365,7 @@ export default function ContactPage() {
                 className="w-full bg-[#071325] hover:bg-[#0c1a32] text-white text-xs font-bold py-2.5 rounded-lg shadow transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 <SendIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
-                <span>{isSubmitting ? "Sending & Syncing to Secretariat..." : "Submit Message"}</span>
+                <span>{isSubmitting ? "Sending ..." : "Submit Message"}</span>
               </button>
             </form>
           )}

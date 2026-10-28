@@ -29,7 +29,6 @@ interface LookupMember {
 export default function MembershipHubPage() {
   const [activeTab, setActiveTab] = useState<"lookup" | "register" | "dues" | "roll-call" | "services">("lookup");
 
-  // Lookup state
   const [searchReg, setSearchReg] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [lookupResult, setLookupResult] = useState<LookupMember | null>(null);
@@ -67,8 +66,8 @@ export default function MembershipHubPage() {
     };
   }, []);
 
-  const handleLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLookup = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!searchReg.trim()) return;
 
     setIsSearching(true);
@@ -77,18 +76,18 @@ export default function MembershipHubPage() {
     setHasSearched(true);
 
     try {
-      const res = await fetch(`/api/membership?reg=${encodeURIComponent(searchReg.trim())}`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-
-      if (res.ok && data.found && data.member) {
-        setLookupResult(data.member);
+      const response = await fetch(
+        `/api/membership?reg=${encodeURIComponent(searchReg.trim())}`,
+        { cache: "no-store" }
+      );
+      const data = await response.json();
+      if (response.ok && data.found && data.member) {
+        setLookupResult(data.member as LookupMember);
       } else {
-        setLookupError(data.message || data.error || "No record found for this registration number.");
+        setLookupError(data.message || data.error || "No matching member record was found.");
       }
     } catch {
-      setLookupError("Network error. Could not connect to the membership verification service.");
+      setLookupError("Membership lookup is temporarily unavailable. Please retry.");
     } finally {
       setIsSearching(false);
     }
@@ -148,14 +147,14 @@ export default function MembershipHubPage() {
             DESA Membership Hub
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-            Join the association, verify your membership, pay dues, and access DESA services.
+            Join the association, verify your membership, and access DESA services.
           </p>
 
           {/* Tab Navigation */}
-          <div className="flex flex-wrap gap-2 mt-6 pt-4 border-t border-slate-800 text-xs font-bold">
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t border-slate-800 text-xs font-bold overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setActiveTab("lookup")}
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "lookup"
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "lookup"
                 ? "bg-[#e5a93c] text-[#071325] shadow"
                 : "bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700"
                 }`}
@@ -166,7 +165,7 @@ export default function MembershipHubPage() {
 
             <button
               onClick={() => setActiveTab("register")}
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "register"
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "register"
                 ? "bg-[#e5a93c] text-[#071325] shadow"
                 : "bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700"
                 }`}
@@ -177,7 +176,7 @@ export default function MembershipHubPage() {
 
             <button
               onClick={() => setActiveTab("dues")}
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "dues"
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "dues"
                 ? "bg-[#e5a93c] text-[#071325] shadow"
                 : "bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700"
                 }`}
@@ -188,7 +187,7 @@ export default function MembershipHubPage() {
 
             <button
               onClick={() => setActiveTab("roll-call")}
-              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${activeTab === "roll-call" || activeTab === "services"
+              className={`px-4 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${activeTab === "roll-call" || activeTab === "services"
                 ? "bg-[#e5a93c] text-[#071325] shadow"
                 : "bg-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-700"
                 }`}
@@ -201,21 +200,20 @@ export default function MembershipHubPage() {
       </section>
 
       {/* Main Tab Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {/* ───────────────────────────────────────────────────────────── */}
         {/* TAB 1: REG NO LOOKUP */}
         {/* ───────────────────────────────────────────────────────────── */}
         {activeTab === "lookup" && (
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-sm">
 
               <h2 className="text-lg sm:text-xl font-bold text-[#071325]">
-                Check Your Membership
+                Check Your Membership Status
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
-                Enter your DeKUT registration number to instantly check your current membership status.
+                Enter your DeKUT registration number below to check your active membership records and status.
               </p>
-
               <form onSubmit={handleLookup} className="mt-5 flex flex-col sm:flex-row gap-2.5">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -225,7 +223,7 @@ export default function MembershipHubPage() {
                     type="text"
                     required
                     value={searchReg}
-                    onChange={(e) => setSearchReg(e.target.value)}
+                    onChange={(event) => setSearchReg(event.target.value)}
                     placeholder="e.g. E020-01-1444/2023"
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono uppercase text-[#071325] placeholder:normal-case placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                   />
@@ -239,96 +237,56 @@ export default function MembershipHubPage() {
                 </button>
               </form>
 
-              {/* Status Display Card */}
               {lookupResult && (
-                <div className="mt-6 p-5 rounded-xl bg-slate-50 border border-slate-200 space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                        Verified Member
-                      </span>
-                      <h3 className="text-base font-bold text-[#071325]">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Membership record
+                      </p>
+                      <h3 className="mt-1 text-base font-bold text-[#071325]">
                         {lookupResult.maskedName}
                       </h3>
-                      <p className="text-xs font-mono text-slate-600">
-                        {lookupResult.regNumber}
-                      </p>
+                      <p className="text-xs font-mono text-slate-600">{lookupResult.regNumber}</p>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-bold px-3 py-1 rounded-full border ${lookupResult.membershipStatus.toLowerCase() === "active"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                          : "bg-amber-50 text-amber-700 border-amber-300"
-                          }`}
-                      >
-                        ● {lookupResult.membershipStatus} Member
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                        {lookupResult.membershipStatus} member
                       </span>
-
-                      <span
-                        className={`text-xs font-bold px-3 py-1 rounded-full border ${lookupResult.paymentStatus.toLowerCase() === "paid"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                          : "bg-rose-50 text-rose-700 border-rose-300"
-                          }`}
-                      >
-                        {lookupResult.paymentStatus === "Paid" ? "✓ Dues Paid" : "⚠ Dues Unpaid"}
+                      <span className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700">
+                        Dues: {lookupResult.paymentStatus}
                       </span>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-200 pt-3 text-xs sm:grid-cols-4">
                     <div>
-                      <span className="text-slate-400 block text-[11px]">Department</span>
+                      <span className="block text-[11px] text-slate-500">Department</span>
                       <span className="font-semibold text-slate-800">{lookupResult.department || "Engineering"}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[11px]">Year of Study</span>
-                      <span className="font-semibold text-slate-800">{lookupResult.yearOfStudy || "Year 2"}</span>
+                      <span className="block text-[11px] text-slate-500">Year of study</span>
+                      <span className="font-semibold text-slate-800">{lookupResult.yearOfStudy || "—"}</span>
                     </div>
                     {lookupResult.memberId && (
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Member ID</span>
+                        <span className="block text-[11px] text-slate-500">Member ID</span>
                         <span className="font-mono font-semibold text-slate-800">{lookupResult.memberId}</span>
                       </div>
                     )}
                     {lookupResult.dateRegistered && (
                       <div>
-                        <span className="text-slate-400 block text-[11px]">Registration Date</span>
+                        <span className="block text-[11px] text-slate-500">Registration date</span>
                         <span className="font-semibold text-slate-800">{lookupResult.dateRegistered}</span>
                       </div>
                     )}
                   </div>
-
-                  {lookupResult.paymentStatus.toLowerCase() !== "paid" && (
-                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between gap-3 text-xs text-amber-800">
-                      <span>Reg fee dues are pending clearance.</span>
-                      <button
-                        onClick={() => setActiveTab("dues")}
-                        className="font-bold underline text-[#071325] hover:text-[#b87a14] shrink-0 cursor-pointer"
-                      >
-                        View Paybill Details →
-                      </button>
-                    </div>
-                  )}
                 </div>
               )}
 
-              {/* Not Found Alert */}
               {hasSearched && !isSearching && lookupError && (
-                <div className="mt-5 p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 space-y-2">
-                  <div className="flex items-center gap-2 font-bold">
-                    <AlertCircleIcon className="w-4 h-4 text-amber-600" />
-                    <span>No record found</span>
-                  </div>
-                  <p className="leading-relaxed">
-                    We could not find an active registration record for <strong>{searchReg}</strong>. If you are a new engineering student, please enroll below.
-                  </p>
-                  <button
-                    onClick={() => setActiveTab("register")}
-                    className="font-bold text-[#071325] hover:underline block pt-1 cursor-pointer"
-                  >
-                    Open Membership Registration Form →
-                  </button>
+                <div role="alert" className="mt-5 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+                  <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{lookupError}</span>
                 </div>
               )}
             </div>
@@ -383,7 +341,7 @@ export default function MembershipHubPage() {
               Register as a DESA Member
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
-              Join the student engineering body at Dedan Kimathi University of Technology.
+              Join the student engineering body at DeKUT.
             </p>
 
             {registerSuccess ? (
@@ -398,7 +356,7 @@ export default function MembershipHubPage() {
                   Member ID: {registerSuccess.memberId}
                 </div>
                 <p className="text-xs text-slate-700 leading-relaxed max-w-sm mx-auto">
-                  Your registration has been logged in. You are now a DESA member.
+                  Your registration has been Recorded. You are now a DESA member.
                 </p>
                 <div className="pt-2 flex justify-center gap-3">
                   <button
@@ -521,7 +479,10 @@ export default function MembershipHubPage() {
                 </div>
 
                 {registerError && (
-                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+                  <div
+                    role="alert"
+                    className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700"
+                  >
                     {registerError}
                   </div>
                 )}
@@ -546,10 +507,10 @@ export default function MembershipHubPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
               <h2 className="text-lg sm:text-xl font-bold text-[#071325]">
-                Annual Association Dues Payment
+                Reg fee & Annual Subscription Payment
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
-                Annual dues sustain student workshops, equipment purchases for the engineering labs, competitive hackathon sponsorships, and industrial excursion logistics.
+                Annual dues sustains club activities including, equipment purchases, event logistics, and many more.
               </p>
 
               {/* Dues Instruction Card */}
@@ -588,7 +549,7 @@ export default function MembershipHubPage() {
 
                   <div className="p-3.5 rounded-xl bg-white/5 border border-white/10">
                     <span className="text-[10px] text-slate-400 block uppercase font-semibold">
-                      Annual Contribution
+                      REGISTRATION FEE
                     </span>
                     <span className="font-mono text-base sm:text-lg font-extrabold text-emerald-400">
                       200
@@ -632,7 +593,7 @@ export default function MembershipHubPage() {
                   </div>
                   <h3 className="text-sm font-bold text-[#071325]">Refund & Dues Policy</h3>
                   <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Official rules governing member subscriptions, financial transparency, excursion deposits, and refund terms.
+                    Official rules governing member subscriptions, financial transparency, and refund terms.
                   </p>
                 </div>
                 <div className="pt-4 mt-4 border-t border-slate-200">

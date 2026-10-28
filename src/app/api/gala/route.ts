@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
   checkRateLimit,
   getClientIp,
   isHoneypotTriggered,
-  sanitizeForSheets,
-  sendToGoogleSheets,
-  isDuplicateSubmission,
+  isValidEmail,
+  normalizeInputText,
   getNairobiDate,
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
+import { savePortalRecord } from "@/lib/dataStore";
 
 export const dynamic = "force-dynamic";
 
@@ -31,32 +32,19 @@ export interface GalaRegistrationRecord {
   mpesaRef?: string;
 }
 
-// GET: Diagnostic & readiness check
-export async function GET() {
-  const hasGalaUrl = Boolean(process.env.GALA_SCRIPT_URL);
-  const hasMasterUrl = Boolean(process.env.APPS_SCRIPT_URL);
-  const hasGalaSecret = Boolean(process.env.GALA_SCRIPT_SECRET);
+function text(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value.trim() : fallback;
+}
 
+// GET: Service readiness check
+export async function GET() {
   return NextResponse.json({
     status: "active",
     service: "DESA Gala Seat Reservation API",
-    columns: [
-      "Timestamp",
-      "Full Name",
-      "Attendee Type",
-      "Reg Number",
-      "Year of Study",
-      "Phone / WhatsApp",
-      "Course / Program",
-      "Payment Pledge",
-      "Dietary Requirements",
-    ],
-    configured: {
-      hasDedicatedGalaUrl: hasGalaUrl,
-      hasMasterUrl: hasMasterUrl,
-      hasGalaSecret: hasGalaSecret,
+  }, {
+    headers: {
+      "Cache-Control": "no-store",
     },
-    message: "POST to this endpoint to reserve your seat for the Annual Engineering Gala.",
   });
 }
 
@@ -87,23 +75,23 @@ export async function POST(request: Request) {
       website,
     } = body;
 
-    const rawName = (name || fullName || "").trim();
-    const rawAttendeeType = (attendeeType || "DeKUT Student").trim();
-    let rawContact = (contact || phone || "").trim();
-    const rawEmail = (email || "").trim().toLowerCase();
-    const rawCourse = (course || department || "N/A").trim();
-    const rawMembership = (membership || "Non-Member / Guest").trim();
-    const rawRegNumber = (regNumber || "N/A").trim().toUpperCase();
-    const rawYear = (yearOfStudy || "N/A").trim();
-    const rawPaymentPledge = (paymentPledge || "Lipa pole pole allowed").trim();
-    const rawDietary = (dietary || "Standard").trim();
-    const rawDietaryDetails = (dietaryDetails || "").trim();
-    const rawHasPresentation = Boolean(hasPresentation);
-    const rawPresentationCat = (presentationCategory || "").trim();
-    const rawPresentationDesc = (presentationDesc || "").trim();
-    const rawMpesaRef = (mpesaRef || "").trim().toUpperCase();
+    const rawName = text(name || fullName);
+    const rawAttendeeType = text(attendeeType, "DeKUT Student");
+    let rawContact = text(contact || phone);
+    const rawEmail = text(email).toLowerCase();
+    const rawCourse = text(course || department, "N/A");
+    const rawMembership = text(membership, "Non-Member / Guest");
+    const rawRegNumber = text(regNumber, "N/A").toUpperCase();
+    const rawYear = text(yearOfStudy, "N/A");
+    const rawPaymentPledge = text(paymentPledge, "Lipa pole pole allowed");
+    const rawDietary = text(dietary, "Standard");
+    const rawDietaryDetails = text(dietaryDetails);
+    const rawHasPresentation = hasPresentation === true || hasPresentation === "true";
+    const rawPresentationCat = text(presentationCategory);
+    const rawPresentationDesc = text(presentationDesc);
+    const rawMpesaRef = text(mpesaRef).toUpperCase();
 
-    // 1. Rate Limiting: protect Google Sheets webhook from bot floods
+    // 1. Rate Limiting: protect the registration endpoint from bot floods
     const rateCheck = checkRateLimit(ip, "gala", 100, 60, rawContact || rawName, 3);
     if (!rateCheck.allowed) {
       return NextResponse.json(
@@ -124,20 +112,38 @@ export async function POST(request: Request) {
 
     // 2. Honeypot check: silently discard bots that fill out the hidden input
     if (isHoneypotTriggered(website)) {
-      console.warn("Spam bot trapped by gala registration honeypot. Bypassing Google Sheets.");
+      console.warn("Spam bot trapped by gala registration honeypot.");
       return NextResponse.json({
         success: true,
         issuedDate: getNairobiHumanDate(),
-        savedToSheets: false,
       });
     }
 
     // 3. Field Validations
-    if (!rawName || rawName.length < 3) {
+    if (!rawName || rawName.length < 3 || rawName.length > 200) {
       return NextResponse.json(
-        { success: false, error: "Please enter your full name (minimum 3 characters)." },
+        { success: false, error: "Please enter a valid full name (3 to 200 characters)." },
         { status: 400 }
       );
+    }
+
+    if (
+      rawContact.length > 300 ||
+      rawEmail.length > 254 ||
+      (rawEmail && !isValidEmail(rawEmail).valid) ||
+      rawCourse.length > 120 ||
+      rawMembership.length > 100 ||
+      rawRegNumber.length > 50 ||
+      rawYear.length > 30 ||
+      rawAttendeeType.length > 100 ||
+      rawPaymentPledge.length > 200 ||
+      rawDietary.length > 500 ||
+      rawDietaryDetails.length > 1000 ||
+      rawPresentationCat.length > 200 ||
+      rawPresentationDesc.length > 3000 ||
+      rawMpesaRef.length > 100
+    ) {
+      return NextResponse.json({ success: false, error: "One or more Gala fields are invalid or too long." }, { status: 400 });
     }
 
     if (!rawContact && !rawEmail) {
@@ -166,133 +172,52 @@ export async function POST(request: Request) {
     const todayDate = getNairobiDate(); // YYYY-MM-DD
     const todayTime = getNairobiTime(); // hh:mm a
 
-    // 4. Formula injection sanitization
-    const sanitizedName = sanitizeForSheets(rawName);
-    const sanitizedAttendeeType = sanitizeForSheets(rawAttendeeType);
-    const sanitizedContact = sanitizeForSheets(rawContact);
-    const sanitizedCourse = sanitizeForSheets(rawCourse);
-    const sanitizedMembership = sanitizeForSheets(rawMembership);
-    const sanitizedRegNumber = sanitizeForSheets(rawRegNumber);
-    const sanitizedYear = sanitizeForSheets(rawYear);
-    const sanitizedPaymentPledge = sanitizeForSheets(rawPaymentPledge);
-    const sanitizedDietary = sanitizeForSheets(combinedDietary);
-    const sanitizedPresentation = sanitizeForSheets(presentationSummary);
-    const sanitizedMpesa = sanitizeForSheets(rawMpesaRef);
+    // Preserve submitted values in Supabase; spreadsheet escaping happens during mirroring.
+    const normalizedName = normalizeInputText(rawName);
+    const normalizedAttendeeType = normalizeInputText(rawAttendeeType);
+    const normalizedContact = normalizeInputText(rawContact);
+    const normalizedCourse = normalizeInputText(rawCourse);
+    const normalizedMembership = normalizeInputText(rawMembership);
+    const normalizedRegNumber = normalizeInputText(rawRegNumber);
+    const normalizedYear = normalizeInputText(rawYear);
+    const normalizedPaymentPledge = normalizeInputText(rawPaymentPledge);
+    const normalizedDietary = normalizeInputText(combinedDietary);
+    const normalizedPresentation = normalizeInputText(presentationSummary);
+    const normalizedMpesa = normalizeInputText(rawMpesaRef);
 
     const record: GalaRegistrationRecord = {
-      name: sanitizedName,
-      contact: sanitizedContact,
-      course: sanitizedCourse,
+      name: normalizedName,
+      contact: normalizedContact,
+      course: normalizedCourse,
       date: todayDate,
       regTime: todayTime,
-      membership: sanitizedMembership,
-      regNumber: sanitizedRegNumber,
-      yearOfStudy: sanitizedYear,
-      attendeeType: sanitizedAttendeeType,
-      paymentPledge: sanitizedPaymentPledge,
-      dietary: sanitizedDietary,
+      membership: normalizedMembership,
+      regNumber: normalizedRegNumber,
+      yearOfStudy: normalizedYear,
+      attendeeType: normalizedAttendeeType,
+      paymentPledge: normalizedPaymentPledge,
+      dietary: normalizedDietary,
       hasPresentation: rawHasPresentation,
-      presentationCategory: sanitizeForSheets(rawPresentationCat),
-      presentationDesc: sanitizeForSheets(rawPresentationDesc),
-      mpesaRef: sanitizedMpesa,
+      presentationCategory: normalizeInputText(rawPresentationCat),
+      presentationDesc: normalizeInputText(rawPresentationDesc),
+      mpesaRef: normalizedMpesa,
     };
 
-    // 5. Anti-duplicate submission guard within 15 seconds
-    const dedupeKey = `gala:${sanitizedContact.toLowerCase()}:${sanitizedName.toLowerCase()}`;
-    if (isDuplicateSubmission(dedupeKey, 15000)) {
-      return NextResponse.json({
-        success: true,
-        entry: record,
-        savedToSheets: true,
-        message: "Seat reservation already recorded.",
-      });
-    }
-
-    // 6. Dispatch to Google Apps Script
-    const scriptUrl = process.env.GALA_SCRIPT_URL || process.env.APPS_SCRIPT_URL;
-    const galaSecret = process.env.GALA_SCRIPT_SECRET || process.env.APPS_SCRIPT_SECRET || "";
-
-    let savedToSheets = false;
-    let sheetError: string | null = null;
-
-    if (scriptUrl) {
-      const sheetsPayload = {
-        action: "gala",
-        secret: galaSecret,
-        GALA_SCRIPT_SECRET: galaSecret,
-
-        // Core fields matching Gala form exactly
-        timestamp: `${todayDate} ${todayTime}`,
-        date: todayDate,
-        time: todayTime,
-        regTime: todayTime,
-        name: sanitizedName,
-        fullName: sanitizedName,
-        Name: sanitizedName,
-
-        attendeeType: sanitizedAttendeeType,
-        "Attendee Type": sanitizedAttendeeType,
-        ATTENDEE_TYPE: sanitizedAttendeeType,
-
-        regNumber: sanitizedRegNumber,
-        regNo: sanitizedRegNumber,
-        REG_NO: sanitizedRegNumber,
-        "Reg Number": sanitizedRegNumber,
-
-        yearOfStudy: sanitizedYear,
-        year: sanitizedYear,
-        YEAR: sanitizedYear,
-        "Year of Study": sanitizedYear,
-
-        contact: sanitizedContact,
-        phone: sanitizedContact,
-        CONTACT: sanitizedContact,
-        "Phone / WhatsApp": sanitizedContact,
-
-        course: sanitizedCourse,
-        COURSE: sanitizedCourse,
-        department: sanitizedCourse,
-        "Course / Program": sanitizedCourse,
-
-        membership: sanitizedMembership,
-        MEMBERSHIP: sanitizedMembership,
-        "DESA Membership": sanitizedMembership,
-
-        paymentPledge: sanitizedPaymentPledge,
-        "Payment Pledge": sanitizedPaymentPledge,
-        paymentStatus: sanitizedPaymentPledge,
-        PAYMENT_STATUS: sanitizedPaymentPledge,
-        "Payment Commitment": sanitizedPaymentPledge,
-
-        // Dietary specifications
-        dietary: sanitizedDietary || "Standard / None",
-        DIETARY: sanitizedDietary || "Standard / None",
-        diet: sanitizedDietary || "Standard / None",
-        "Dietary Requirements": sanitizedDietary || "Standard / None",
-        "Dietary Notes": sanitizedDietary || "Standard / None",
-
-        presentation: sanitizedPresentation,
-        "Presentation Showcase": sanitizedPresentation,
-        email: rawEmail,
-        mpesaRef: sanitizedMpesa,
-      };
-
-      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 10000);
-      savedToSheets = syncResult.ok;
-      sheetError = syncResult.error || null;
-
-      if (!syncResult.ok) {
-        console.error("Gala Google Sheets sync error:", syncResult.error, "Status:", syncResult.status);
-      }
-    } else {
-      console.warn("No Google Sheets URL configured for Gala (GALA_SCRIPT_URL or APPS_SCRIPT_URL missing).");
-    }
+    const recordId = `gala-${randomUUID()}`;
+    await savePortalRecord("gala", recordId, {
+      ...record,
+      id: recordId,
+      email: rawEmail,
+      hasPresentation: rawHasPresentation,
+      presentationCategory: normalizeInputText(rawPresentationCat),
+      presentationDesc: normalizeInputText(rawPresentationDesc),
+      mpesaRef: normalizedMpesa,
+      presentation: normalizedPresentation,
+    });
 
     return NextResponse.json({
       success: true,
       entry: record,
-      savedToSheets,
-      sheetError,
     });
   } catch (error) {
     console.error("Gala seat reservation endpoint failure:", error);

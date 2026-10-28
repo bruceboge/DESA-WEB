@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Secretariat Administration | DESA DeKUT",
+  title: "Administration | ESA ",
   description: "Official administrative studio for DESA DeKUT Executive Secretariat.",
   robots: {
     index: false,

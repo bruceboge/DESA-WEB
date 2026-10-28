@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import {
   checkRateLimit,
   getClientIp,
   isHoneypotTriggered,
   isValidName,
   isValidEmail,
+  isValidPhone,
   isSpamContent,
-  sanitizeForSheets,
-  sendToGoogleSheets,
-  isDuplicateSubmission,
+  normalizeInputText,
   getNairobiDate,
   getNairobiTime,
 } from "@/lib/antiSpam";
+import { nextPortalReference, savePortalRecord } from "@/lib/dataStore";
 
 export const dynamic = "force-dynamic";
 
@@ -31,14 +32,14 @@ export interface ContactMessageRecord {
 export async function GET() {
   return NextResponse.json(
     {
-      error: "Access Denied: Messages are confidential and routed directly to Secretariat Google Sheet.",
+      error: "Access denied: messages are confidential and available to authorized administrators only.",
       records: [],
     },
     { status: 403 }
   );
 }
 
-// POST: Secure write-only submission to Google Sheets with anti-spam safeguards
+// POST: Secure write-only submission to Supabase with anti-spam safeguards
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
@@ -64,13 +65,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
+    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard
     if (isHoneypotTriggered(website)) {
-      console.warn("Spam bot trapped by contact honeypot. Bypassing Google Sheets.");
+      console.warn("Spam bot trapped by contact honeypot.");
       return NextResponse.json({
         success: true,
-        ticketId: `MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        savedToSheets: false,
+        ticketId: "MSG-0000-000000",
       });
     }
 
@@ -84,9 +84,10 @@ export async function POST(request: Request) {
     }
 
     const emailCheck = isValidEmail(email);
-    if (!emailCheck.valid) {
+    const phoneCheck = isValidPhone(email);
+    if (!emailCheck.valid && !phoneCheck.valid) {
       return NextResponse.json(
-        { success: false, error: emailCheck.reason || "Invalid email address" },
+        { success: false, error: "Please provide a valid email address or phone number." },
         { status: 400 }
       );
     }
@@ -136,62 +137,34 @@ export async function POST(request: Request) {
     const todayDate = getNairobiDate();
     const timeString = getNairobiTime();
 
-    const ticketId = `MSG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const ticketId = await nextPortalReference("contact");
 
-    // 4. Formula Injection Sanitization: Prevent CSV / spreadsheet formula execution in Google Sheets
+    // Preserve submitted values in Supabase; the mirror sanitizes cells before writing them.
     const newRecord: ContactMessageRecord = {
       ticketId,
       date: todayDate,
       timestamp: timeString,
-      name: sanitizeForSheets(name),
-      email: email.trim().toLowerCase(),
-      category: sanitizeForSheets(category || "General Inquiry"),
-      subject: sanitizeForSheets(subject),
-      message: sanitizeForSheets(message),
+      name: normalizeInputText(name),
+      email: emailCheck.valid ? email.trim().toLowerCase() : normalizeInputText(email),
+      category: normalizeInputText(category || "General Inquiry"),
+      subject: normalizeInputText(subject),
+      message: normalizeInputText(message),
       status: "New / Unread",
     };
 
-    // Prevent duplicate messages if identical email and subject were submitted in the last 15 seconds
-    const dedupeKey = `msg:${email.trim().toLowerCase()}:${subject.trim().slice(0, 40)}`;
-    if (isDuplicateSubmission(dedupeKey, 15000)) {
-      console.log(`Duplicate contact inquiry prevented for ${dedupeKey}`);
-      return NextResponse.json({
-        success: true,
-        ticketId,
-        entry: newRecord,
-        savedToSheets: true,
-      });
-    }
-
-    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_CONTACT_URL;
-    let savedToSheets = false;
-    let sheetError: string | null = null;
-
-    if (scriptUrl) {
-      const sheetsPayload = {
-        action: "createTicket",
-        secret: process.env.APPS_SCRIPT_SECRET || "",
-        ...newRecord,
-      };
-      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
-      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
-      savedToSheets = syncResult.ok;
-      sheetError = syncResult.error || null;
-      if (!syncResult.ok) {
-        console.error("Google Sheets contact sync error:", syncResult.error, "Status:", syncResult.status);
-      }
-    } else {
-      console.warn("No Google Sheets URL configured for contact (APPS_SCRIPT_URL or GOOGLE_SHEETS_CONTACT_URL missing).");
-    }
+    await savePortalRecord(
+      "contact",
+      `contact-${randomUUID()}`,
+      newRecord
+    );
 
     return NextResponse.json({
       success: true,
       ticketId,
       entry: newRecord,
-      savedToSheets,
-      sheetError,
     });
-  } catch {
+  } catch (err) {
+    console.error("Contact submission failed:", err);
     return NextResponse.json(
       { success: false, error: "Failed to process contact submission" },
       { status: 500 }

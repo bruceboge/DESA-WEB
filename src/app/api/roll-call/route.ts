@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+import {
+  getOpenMeeting,
+  getOpenMeetings,
+  nextPortalReference,
+  recordMeetingAttendance,
+} from "@/lib/dataStore";
 import {
   checkRateLimit,
   getClientIp,
   isHoneypotTriggered,
   isValidName,
   isValidRegNumber,
-  sanitizeForSheets,
-  sendToGoogleSheets,
-  isDuplicateSubmission,
+  normalizeInputText,
   getNairobiDate,
   getNairobiTime,
 } from "@/lib/antiSpam";
@@ -20,29 +25,47 @@ export interface RollCallRecord {
   fullName: string;
   department: string;
   yearOfStudy: string;
+  meetingId: string;
   sessionDate: string; // YYYY-MM-DD
   sessionTopic?: string;
   timestamp: string;
   verified: boolean;
 }
 
-// GET is permanently disabled to safeguard student privacy and prevent public exposure of records.
+// The public can view only today's open meeting metadata, never attendance entries.
 export async function GET() {
-  return NextResponse.json(
-    {
-      error: "Access Denied: Attendance records are confidential and stored exclusively in the Secretariat Google Sheet.",
-      records: [],
-    },
-    { status: 403 }
-  );
+  try {
+    const today = getNairobiDate();
+    const todaysMeetings = await getOpenMeetings(today);
+
+    return NextResponse.json(
+      {
+        meetings: todaysMeetings.map(({ id, data }) => ({
+          id,
+          title: String(data.title || "DESA meeting"),
+          sessionDate: String(data.sessionDate || ""),
+          location: String(data.location || ""),
+        })),
+        today,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
+  } catch (error) {
+    console.error("Open meeting list failed:", error);
+    return NextResponse.json({ error: "Meetings are temporarily unavailable." }, { status: 503 });
+  }
 }
 
-// POST: Secure write-only submission directly to the private Google Sheet
+// POST: Secure write-only submission to Supabase
 export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
     const body = await request.json();
-    const { regNumber, fullName, department, yearOfStudy, sessionDate, sessionTopic, website } = body;
+    const { regNumber, fullName, department, yearOfStudy, meetingId, website } = body;
+
+    if (typeof meetingId !== "string" || !meetingId || meetingId.length > 200) {
+      return NextResponse.json({ success: false, error: "Select an open meeting." }, { status: 400 });
+    }
 
     // 1. High-Concurrency Rate Limiting:
     // Allows up to 150 check-ins / minute from a shared campus Wi-Fi network (Eduroam / SOE lab NAT),
@@ -63,23 +86,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard without calling Google Sheets
+    // 2. Honeypot Bot Trap: If hidden bot field is filled, silently discard
     if (isHoneypotTriggered(website)) {
-      console.warn("Spam bot trapped by roll-call honeypot. Bypassing Google Sheets.");
+      console.warn("Spam bot trapped by roll-call honeypot.");
       return NextResponse.json({
         success: true,
         entry: {
-          id: `RC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+          id: "RC-0000-000000",
+          meetingId,
           regNumber: regNumber || "C025-01-0000/2024",
           fullName: fullName || "Student Attendee",
           department: department || "Engineering",
           yearOfStudy: yearOfStudy || "Year 1",
           sessionDate: getNairobiDate(),
-          sessionTopic: "General Assembly",
+          sessionTopic: "Meeting",
           timestamp: "12:00 PM",
           verified: true,
         },
-        savedToSheets: false,
       });
     }
 
@@ -114,70 +137,70 @@ export async function POST(request: Request) {
       );
     }
 
-    const topic = sessionTopic && typeof sessionTopic === "string" 
-      ? sessionTopic.trim().slice(0, 120) 
-      : "General Assembly";
+    const meeting = await getOpenMeeting(meetingId);
+    if (!meeting) {
+      return NextResponse.json(
+        { success: false, error: "This meeting is closed or no longer available." },
+        { status: 409 }
+      );
+    }
 
     const todayDate = getNairobiDate();
-    const finalDate = sessionDate && typeof sessionDate === "string" && sessionDate.trim().length > 0
-      ? sessionDate.trim().slice(0, 15)
-      : todayDate;
+    if (meeting.sessionDate !== todayDate) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Roll call registration is only valid on the day of the meeting (${meeting.sessionDate}). Today is ${todayDate}.`,
+        },
+        { status: 400 }
+      );
+    }
 
     const timeString = getNairobiTime();
 
-    // 4. Formula Injection Sanitization: Prevent CSV / spreadsheet formula execution in Google Sheets
     const newRecord: RollCallRecord = {
-      id: `RC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      regNumber: sanitizeForSheets(regNumber.trim().toUpperCase()),
-      fullName: sanitizeForSheets(fullName.trim()),
-      department: sanitizeForSheets(department.trim()),
-      yearOfStudy: sanitizeForSheets(yearOfStudy.trim()),
-      sessionDate: finalDate,
-      sessionTopic: sanitizeForSheets(topic),
+      id: await nextPortalReference("roll-call"),
+      meetingId,
+      regNumber: normalizeInputText(regNumber.toUpperCase()),
+      fullName: normalizeInputText(fullName),
+      department: normalizeInputText(department),
+      yearOfStudy: normalizeInputText(yearOfStudy),
+      sessionDate: meeting.sessionDate,
+      sessionTopic: meeting.title,
       timestamp: timeString,
       verified: true,
     };
 
-    // Prevent double-logging if identical regNumber was submitted in the last 15 seconds
-    const dedupeKey = `rc:${regNumber.trim().toUpperCase()}:${finalDate}`;
-    if (isDuplicateSubmission(dedupeKey, 15000)) {
-      console.log(`Duplicate roll-call check-in prevented for ${dedupeKey}`);
-      return NextResponse.json({
-        success: true,
-        entry: newRecord,
-        savedToSheets: true,
-      });
-    }
-
-    const scriptUrl = process.env.APPS_SCRIPT_URL || process.env.GOOGLE_SHEETS_ROLL_CALL_URL;
-    let savedToSheets = false;
-    let sheetError: string | null = null;
-
-    if (scriptUrl) {
-      const sheetsPayload = {
-        action: "rollCall",
-        secret: process.env.APPS_SCRIPT_SECRET || "",
-        ...newRecord,
-      };
-      // Dispatches cleanly ONCE with 30s timeout (no duplicate retry attempts)
-      const syncResult = await sendToGoogleSheets(scriptUrl, sheetsPayload, 30000);
-      savedToSheets = syncResult.ok;
-      sheetError = syncResult.error || null;
-      if (!syncResult.ok) {
-        console.error("Google Sheets roll-call sync error:", syncResult.error, "Status:", syncResult.status);
+    try {
+      await recordMeetingAttendance(`roll-call-${randomUUID()}`, newRecord);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("already recorded")) {
+        return NextResponse.json(
+          { success: false, error: "Your attendance is already recorded for this meeting." },
+          { status: 409 }
+        );
       }
-    } else {
-      console.warn("No Google Sheets URL configured for roll-call (APPS_SCRIPT_URL or GOOGLE_SHEETS_ROLL_CALL_URL missing).");
+      if (error instanceof Error && error.message.includes("not currently accepting")) {
+        return NextResponse.json(
+          { success: false, error: "This meeting is closed or no longer available." },
+          { status: 409 }
+        );
+      }
+      if (error instanceof Error && error.message.includes("only valid on its scheduled date")) {
+        return NextResponse.json(
+          { success: false, error: "Roll call registration is only available on the scheduled meeting date." },
+          { status: 409 }
+        );
+      }
+      throw error;
     }
 
-    // Return only the current attendee's own receipt, never reading any other student's data
     return NextResponse.json({
       success: true,
       entry: newRecord,
-      savedToSheets,
-      sheetError,
     });
-  } catch {
+  } catch (err) {
+    console.error("Roll-call submission failed:", err);
     return NextResponse.json(
       { success: false, error: "Failed to process roll call submission" },
       { status: 500 }

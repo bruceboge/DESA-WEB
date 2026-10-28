@@ -2,15 +2,21 @@
   "name": "desa-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "supabase:seed": "node --env-file=.env.local scripts/seed-supabase.mjs",
+    "supabase:import-history": "node --env-file=.env.local scripts/import-historical-sheets.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "@vercel/analytics": "^2.0.1",
-    "next": "16.3.6",
+    "next": "^16.4.2",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -20,7 +26,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "^16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

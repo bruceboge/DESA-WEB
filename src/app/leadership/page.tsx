@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "Leadership & Committees | DESA DeKUT",
   description:
-    "Meet the elected Executive Council, Cohort Representatives, and working Committees steering the Engineering Students Association at Dedan Kimathi University of Technology.",
+    "Meet the Executive Council, Cohort Representatives, and working Committees steering the Engineering Students Association.",
   alternates: { canonical: "/leadership" },
 };
 
@@ -141,12 +141,10 @@ const cohortReps = [
 
 const associationCommittees = [
   { id: "1", name: "Projects Committee", desc: "Coordinates student technical engineering innovations, capstone collaboration, hardware hackathons, and design competitions." },
-  { id: "2", name: "Women in Tech Committee", desc: "Empowers and champions female engineering students through specialized mentorship, technical workshops, and industry networking." },
+  { id: "2", name: "Women in Engineering Committee", desc: "Empowers and champions female engineering students through specialized mentorship, technical workshops, and industry networking." },
   { id: "3", name: "Corporates Committee", desc: "Builds partnerships with industry leaders, facilitates industrial attachments, plant visits, and sponsorship collaborations." },
-  { id: "4", name: "Mentorship Committee", desc: "Organizes peer-to-peer tutoring, freshman academic clinics, study circles, and career guidance sessions." },
-  { id: "5", name: "Publicity Committee", desc: "Manages social media coverage, creative multimedia, event photography, campus notices, and public outreach." },
-  { id: "6", name: "Outreach & In-reach Committee", desc: "Drives community service projects, local STEM outreach, member welfare initiatives, and student solidarity." },
-  { id: "7", name: "Editorial Committee", desc: "Publishes the official DESA student engineering magazine, research articles, newsletters, and symposium digests." },
+  { id: "4", name: "Publicity Committee", desc: "Manages social media coverage, creative multimedia, event photography, campus notices, and public outreach." },
+  { id: "5", name: "Editorial Committee", desc: "Publishes the official DESA student engineering magazine, research articles, newsletters, and symposium digests." },
 ];
 
 export default function LeadershipPage() {
@@ -184,6 +182,7 @@ export default function LeadershipPage() {
                     src="/images/desa-official-logo.png"
                     alt="DESA Official Logo"
                     fill
+                    sizes="48px"
                     unoptimized
                     className="object-contain"
                   />
@@ -194,7 +193,7 @@ export default function LeadershipPage() {
                 </div>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Leadership positions are elected by registered student members to serve the engineering community with transparency and dedication.
+                Leadership positions are nominated by registered student members to serve the engineering community with transparency and dedication.
               </p>
             </div>
           </div>
@@ -395,7 +394,7 @@ export default function LeadershipPage() {
               Committees of the Association
             </h2>
             <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-              DESA executes its key activities, hackathons, outreach drives, and mentorship programs through seven dedicated working committees open to active student members:
+              DESA executes its key activities, outreach drives, and mentorship programs through seven dedicated working committees open to active student members:
             </p>
           </div>
 
@@ -421,13 +420,13 @@ export default function LeadershipPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-8 space-y-3">
               <span className="text-xs font-bold uppercase tracking-wider text-[#e5a93c]">
-                Democratic Student Governance
+                Student Governance
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                Meetings & Annual Elections
+                Meetings & Leadership Nominations
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl text-justify">
-                DESA meetings are held fortnightly with general members convened at least twice per semester. Democratic leadership elections are conducted annually by secret ballot during the Annual General Meeting, where every registered engineering member has a vote.
+                DESA meetings are held fortnightly with general members convened at least twice per semester. Leadership nominations are conducted annually during the Annual General Meeting.
               </p>
             </div>
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">

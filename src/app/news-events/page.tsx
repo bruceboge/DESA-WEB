@@ -11,6 +11,8 @@ import {
 } from "@/components/Icons";
 import { getAllPosts } from "@/lib/posts";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "News & Events | DESA DeKUT",
   description:
@@ -25,8 +27,8 @@ export const metadata: Metadata = {
   },
 };
 
-export default function NewsEventsPage() {
-  const posts = getAllPosts();
+export default async function NewsEventsPage() {
+  const posts = await getAllPosts();
   const upcomingEvents = posts.filter((p) => p.type === "event" && !p.isPast);
   const pastRecaps = posts.filter((p) => p.isPast || p.type === "news");
 
@@ -98,21 +100,21 @@ export default function NewsEventsPage() {
                 key={post.slug}
                 className="bg-white rounded-2xl border border-slate-200 hover:border-[#e5a93c] transition-all shadow-sm overflow-hidden flex flex-col group"
               >
-                <div className="relative h-48 w-full bg-slate-900 overflow-hidden">
+                <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
                   <Image
                     src={post.coverImage || "/images/dekut-campus.jpg"}
                     alt={post.title}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 767px) calc(100vw - 2rem), (max-width: 1280px) calc((100vw - 3rem) / 2), 600px"
+                    className="object-contain"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#071325]/90 via-[#071325]/30 to-transparent" />
                   <div className="absolute top-3 left-3">
                     <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5a93c] text-[#071325] px-2.5 py-1 rounded-md shadow-sm">
                       {post.type}
                     </span>
                   </div>
                   {post.eventDate && (
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-xs text-white font-medium">
+                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-[#071325]/85 px-2 py-1 text-xs text-white font-medium">
                       <CalendarIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
                       <span>{post.eventDate}</span>
                     </div>
@@ -184,12 +186,13 @@ export default function NewsEventsPage() {
                 className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:border-[#e5a93c] transition-all"
               >
                 <div className="flex flex-col lg:flex-row gap-6 items-start">
-                  <div className="relative w-full lg:w-72 h-44 rounded-xl overflow-hidden shrink-0 bg-slate-900">
+                  <div className="relative w-full lg:w-72 h-44 rounded-xl overflow-hidden shrink-0 bg-slate-100">
                     <Image
                       src={post.coverImage || "/images/hero-concept.jpg"}
                       alt={post.title}
                       fill
-                      className="object-cover"
+                      sizes="(max-width: 1023px) calc(100vw - 2.5rem), 288px"
+                      className="object-contain"
                     />
                     <div className="absolute top-2.5 left-2.5">
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-[#071325]/90 text-[#e5a93c] px-2 py-0.5 rounded border border-[#e5a93c]/30">
@@ -227,13 +230,14 @@ export default function NewsEventsPage() {
                           {post.recapPhotos.map((imgSrc, i) => (
                             <div
                               key={i}
-                              className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-200"
+                              className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-slate-100"
                             >
                               <Image
                                 src={imgSrc}
                                 alt={`${post.title} photo ${i + 1}`}
                                 fill
-                                className="object-cover"
+                                sizes="96px"
+                                className="object-contain"
                               />
                             </div>
                           ))}

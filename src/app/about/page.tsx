@@ -8,12 +8,12 @@ import {
 export const metadata: Metadata = {
   title: "About DESA | Dedan Kimathi University Engineering Students Association",
   description:
-    "Learn about the mission, objectives, and Engineers Board of Kenya (EBK) affiliation representing Dedan Kimathi University of Technology.",
+    "Learn about the mission, objectives, and presenting Dedan Kimathi University of Technology.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: "About DESA | DeKUT Engineering Students Association",
     description:
-      "Learn about the mission, objectives, and Engineers Board of Kenya (EBK) affiliation representing Dedan Kimathi University of Technology.",
+      "Learn about the mission, objectives, and affiliation representing Dedan Kimathi University of Technology.",
     url: "https://esa-dekut.vercel.app/about",
     siteName: "DESA - DeKUT Engineering Students Association",
     type: "website",
@@ -63,7 +63,7 @@ export default function AboutPage() {
                 Dedan Kimathi University Engineering Students Association
               </h1>
               <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                DESA is the official, student association representing all undergraduate and diploma engineering students at DeKUT, fostering technological innovation, representation, and industrial career readiness.
+                DESA is the official, student club representing all undergraduate and diploma engineering students at DeKUT, fostering technological innovation, representation, and industrial career readiness.
               </p>
             </div>
           </div>

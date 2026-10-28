@@ -2,12 +2,8 @@
  * =====================================================================
  * DESA UNIFIED PORTAL - GOOGLE APPS SCRIPT WEB APP
  * =====================================================================
- * Single unified backend for all DESA forms & services:
- * - Members tab (Registrations & Status Lookup)
- * - Tickets tab (Support & Inquiries + Secretariat Replies)
- * - Opportunities tab (Industrial Attachments & Hackathons)
- * - Notices tab (Homepage Live Notice Ticker)
- * - RollCall tab (General Assembly & Meeting Attendance)
+ * Idempotent Google Sheets mirror for records stored in Supabase.
+ * All application reads and writes go through the Supabase database.
  *
  * SETUP INSTRUCTIONS:
  * 1. Open your master Google Sheet (e.g. "DESA - Unified Master Database").
@@ -15,481 +11,275 @@
  * 3. Replace all code in Code.gs with this script.
  * 4. Project Settings (gear icon) > Script Properties > Add property:
  *      Property: SHARED_SECRET
- *      Value: (any random secret string, e.g. "desa-dekut-secret-2026")
+ *      Value: a newly generated, high-entropy secret matching the Supabase Edge Function secret
  * 5. Deploy > New deployment (or Manage Deployments > Edit > New version):
  *      - Select type: Web app
  *      - Execute as: Me (<your email>)
  *      - Who has access: Anyone
- * 6. Copy the published Web App URL (ends in /exec) into .env.local:
+ * 6. Store the published /exec URL and same secret in Supabase Edge Function secrets:
  *      APPS_SCRIPT_URL="https://script.google.com/macros/s/.../exec"
- *      APPS_SCRIPT_SECRET="desa-dekut-secret-2026"
+ *      APPS_SCRIPT_SECRET="<same high-entropy secret>"
  * =====================================================================
  */
 
 var SCRIPT_PROPERTIES = PropertiesService.getScriptProperties();
 
-// Mask helper: masks "Victor Mutua" -> "Victor M."
-function maskFullName(fullName) {
-  if (!fullName) return "Student Member";
-  var parts = String(fullName).trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  var first = parts[0];
-  var last = parts[parts.length - 1];
-  return first + " " + last.charAt(0).toUpperCase() + ".";
+// ─────────────────────────────────────────────────────────────────────
+// GET is a health check only. All application reads come from Supabase.
+function doGet() {
+  return jsonResponse({ status: "success", service: "DESA Supabase Sheets mirror" });
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// GET: Read Operations (Lookup, Ticket Status, Opportunities, Notices)
-// ─────────────────────────────────────────────────────────────────────
-function doGet(e) {
-  var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "health";
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  try {
-    // 1. Membership Status Lookup
-    if (action === "lookup") {
-      var rawReg = (e.parameter.reg || "").trim().toUpperCase();
-      if (!rawReg) {
-        return jsonResponse({ status: "error", error: "Missing registration number parameter 'reg'" }, 400);
-      }
-
-      var membersSheet = getOrCreateSheet(ss, "Members", [
-        "RegNo", "FullName", "Department", "Year", "Phone", "Email",
-        "MembershipStatus", "PaymentStatus", "MemberID", "DateRegistered"
-      ]);
-
-      var data = membersSheet.getDataRange().getValues();
-      // Column indexes (0-based):
-      // 0: RegNo, 1: FullName, 2: Department, 3: Year, 4: Phone, 5: Email,
-      // 6: MembershipStatus, 7: PaymentStatus, 8: MemberID, 9: DateRegistered
-      for (var i = data.length - 1; i >= 1; i--) {
-        var rowReg = String(data[i][0] || "").trim().toUpperCase();
-        if (rowReg === rawReg) {
-          return jsonResponse({
-            status: "success",
-            found: true,
-            member: {
-              regNumber: rowReg,
-              maskedName: maskFullName(data[i][1]),
-              department: String(data[i][2] || ""),
-              yearOfStudy: String(data[i][3] || ""),
-              membershipStatus: String(data[i][6] || "Active"),
-              paymentStatus: String(data[i][7] || "Unpaid"),
-              memberId: String(data[i][8] || ""),
-              dateRegistered: String(data[i][9] || "")
-            }
-          });
-        }
-      }
-
-      return jsonResponse({
-        status: "success",
-        found: false,
-        message: "No registered member found with this registration number."
-      });
-    }
-
-    // 2. Ticket Status & Secretariat Reply Lookup
-    if (action === "ticketStatus") {
-      var ref = (e.parameter.ref || "").trim().toUpperCase();
-      var email = (e.parameter.email || "").trim().toLowerCase();
-
-      if (!ref || !email) {
-        return jsonResponse({ status: "error", error: "Missing 'ref' or 'email' parameter" }, 400);
-      }
-
-      var ticketsSheet = getOrCreateSheet(ss, "Tickets", [
-        "TicketID", "Date", "RegNo", "Email", "Category", "Message",
-        "Status", "SecretariatReply"
-      ]);
-
-      var tData = ticketsSheet.getDataRange().getValues();
-      // 0: TicketID, 1: Date, 2: RegNo, 3: Email, 4: Category, 5: Message, 6: Status, 7: SecretariatReply
-      for (var j = tData.length - 1; j >= 1; j--) {
-        var rowRef = String(tData[j][0] || "").trim().toUpperCase();
-        var rowEmail = String(tData[j][3] || "").trim().toLowerCase();
-
-        if (rowRef === ref) {
-          if (rowEmail !== email) {
-            return jsonResponse({
-              status: "error",
-              error: "Email verification failed for this ticket reference."
-            }, 403);
-          }
-
-          return jsonResponse({
-            status: "success",
-            ticket: {
-              ticketId: rowRef,
-              date: String(tData[j][1] || ""),
-              category: String(tData[j][4] || ""),
-              status: String(tData[j][6] || "Open"),
-              secretariatReply: String(tData[j][7] || "No reply posted yet. Secretariat will review shortly.")
-            }
-          });
-        }
-      }
-
-      return jsonResponse({
-        status: "error",
-        error: "Ticket reference not found."
-      }, 404);
-    }
-
-    // 3. Innovations & Technical Blog (Published Articles)
-    if (action === "innovations") {
-      var innoSheet = getOrCreateSheet(ss, "Innovations", [
-        "SubmissionID", "Date", "Title", "Author", "RegNo", "Department",
-        "Category", "Summary", "Content", "Highlights", "ImageUrl", "ProjectUrl", "Status"
-      ]);
-
-      var innoData = innoSheet.getDataRange().getValues();
-      var innovations = [];
-      for (var m = innoData.length - 1; m >= 1; m--) {
-        var row = innoData[m];
-        if (!row[0] && !row[2]) continue;
-        var itemStatus = String(row[12] || "Published").trim().toLowerCase();
-        if (itemStatus === "published" || itemStatus === "approved") {
-          innovations.push({
-            id: String(row[0] || ""),
-            date: String(row[1] || ""),
-            title: String(row[2] || ""),
-            author: String(row[3] || ""),
-            department: String(row[5] || ""),
-            category: String(row[6] || ""),
-            summary: String(row[7] || ""),
-            content: String(row[8] || ""),
-            highlights: String(row[9] || "").split(";").map(function(s) { return s.trim(); }).filter(Boolean),
-            imageUrl: String(row[10] || ""),
-            projectUrl: String(row[11] || ""),
-            status: "Published"
-          });
-        }
-      }
-
-      return jsonResponse({ status: "success", innovations: innovations });
-    }
-
-    // 4. Secretariat Notice (Single active notice)
-    if (action === "notices") {
-      var noticeSheet = getOrCreateSheet(ss, "Notices", ["Message", "Active"]);
-      var nData = noticeSheet.getDataRange().getValues();
-      var activeNotice = null;
-
-      for (var n = 1; n < nData.length; n++) {
-        var isAct = String(nData[n][1] || "").toLowerCase();
-        if (isAct === "true" || isAct === "yes" || isAct === "1") {
-          activeNotice = String(nData[n][0] || "").trim();
-          break;
-        }
-      }
-
-      return jsonResponse({ status: "success", notice: activeNotice });
-    }
-
-    // Default Health Check
-    return jsonResponse({
-      status: "active",
-      service: "DESA Unified Master Portal Webhook",
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (err) {
-    return jsonResponse({ status: "error", error: err.toString() }, 500);
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────
-// POST: Write Operations (Registration, Ticket Creation, Roll Call)
-// ─────────────────────────────────────────────────────────────────────
+// POST accepts only database outbox events dispatched by the Supabase Edge Function.
 function doPost(e) {
   var lock = LockService.getScriptLock();
-  var hasLock = lock.tryLock(30000);
-
-  if (!hasLock) {
-    return jsonResponse({ status: "error", error: "Server busy. Please retry in a few seconds." }, 503);
+  if (!lock.tryLock(30000)) {
+    return jsonResponse({ status: "error", error: "Server busy. Retry shortly." }, 503);
   }
 
   try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var payload = {};
-    if (e && e.postData && e.postData.contents) {
-      payload = JSON.parse(e.postData.contents);
-    }
-
-    // 1. Shared Secret Verification (supports SHARED_SECRET or GALA_SCRIPT_SECRET)
-    var galaSecret = SCRIPT_PROPERTIES.getProperty("GALA_SCRIPT_SECRET") || "";
     var expectedSecret = SCRIPT_PROPERTIES.getProperty("SHARED_SECRET") || "";
-    var providedSecret = payload.secret || payload.GALA_SCRIPT_SECRET || (e.parameter && (e.parameter.secret || e.parameter.GALA_SCRIPT_SECRET)) || "";
-
-    if (galaSecret || expectedSecret) {
-      var isAuthorized = false;
-      if (expectedSecret && providedSecret === expectedSecret) isAuthorized = true;
-      if (galaSecret && providedSecret === galaSecret) isAuthorized = true;
-      if (!isAuthorized) {
-        return jsonResponse({ status: "error", error: "Unauthorized: Invalid shared or gala secret" }, 401);
-      }
+    if (!expectedSecret) {
+      return jsonResponse({ status: "error", error: "Write access is not configured." }, 503);
     }
 
-    // Action detection with fallback auto-detection based on payload fields
-    var action = payload.action || "";
-    if (!action) {
-      if (payload.gala || payload.MEMBERSHIP || payload.membership && payload.course) {
-        action = "gala";
-      } else if (payload.sessionTopic || (payload.id && String(payload.id).indexOf("RC-") === 0)) {
-        action = "rollCall";
-      } else if (payload.ticketId || payload.message || payload.category) {
-        action = "createTicket";
-      } else {
-        action = "register";
-      }
+    var payload = JSON.parse(e && e.postData && e.postData.contents || "{}");
+    if (payload.action !== "syncRecord" || payload.secret !== expectedSecret) {
+      return jsonResponse({ status: "error", error: "Unauthorized sync request." }, 401);
     }
 
-    var todayDate = Utilities.formatDate(new Date(), "Africa/Nairobi", "yyyy-MM-dd");
-    var todayTime = Utilities.formatDate(new Date(), "Africa/Nairobi", "hh:mm a");
-
-    // ─────────────────────────────────────────
-    // Action A: Member Registration
-    // ─────────────────────────────────────────
-    if (action === "register") {
-      var membersSheet = getOrCreateSheet(ss, "Members", [
-        "RegNo", "FullName", "Department", "Year", "Phone", "Email",
-        "MembershipStatus", "PaymentStatus", "MemberID", "DateRegistered"
-      ]);
-
-      var regNumber = String(payload.regNumber || "").trim().toUpperCase();
-      var memberId = payload.memberId || ("DESA-DKUT-" + Math.floor(1000 + Math.random() * 9000));
-
-      // Append row
-      membersSheet.appendRow([
-        regNumber,
-        payload.fullName || "",
-        payload.department || "",
-        payload.yearOfStudy || "",
-        payload.phone || "",
-        (payload.email || "").toLowerCase(),
-        payload.membershipStatus || "Active",
-        payload.paymentStatus || "Unpaid",
-        memberId,
-        todayDate
-      ]);
-
-      return jsonResponse({
-        status: "success",
-        memberId: memberId,
-        issuedDate: todayDate,
-        message: "Member registered successfully"
-      });
-    }
-
-    // ─────────────────────────────────────────
-    // Action B: Create Support / Grievance Ticket
-    // ─────────────────────────────────────────
-    if (action === "createTicket" || action === "contact") {
-      var ticketsSheet = getOrCreateSheet(ss, "Tickets", [
-        "TicketID", "Date", "Name", "RegNo", "Email", "Category", "Subject", "Message",
-        "Status", "SecretariatReply"
-      ]);
-
-      var currentYear = new Date().getFullYear();
-      var nextNum = Math.max(1, ticketsSheet.getLastRow());
-      var paddedNum = ("0000" + nextNum).slice(-4);
-      var ticketId = payload.ticketId || ("DESA-" + currentYear + "-" + paddedNum);
-
-      ticketsSheet.appendRow([
-        ticketId,
-        todayDate + " " + todayTime,
-        payload.name || payload.fullName || "",
-        (payload.regNumber || "").toUpperCase(),
-        (payload.email || "").toLowerCase(),
-        payload.category || "General Inquiry",
-        payload.subject || "",
-        payload.message || "",
-        "Open",
-        "" // Secretariat reply empty initially
-      ]);
-
-      return jsonResponse({
-        status: "success",
-        ticketId: ticketId,
-        message: "Support ticket registered successfully"
-      });
-    }
-
-    // ─────────────────────────────────────────
-    // Action C: Roll Call Attendance Check-In
-    // ─────────────────────────────────────────
-    if (action === "rollCall" || action === "roll-call" || action === "rollcall") {
-      var rollSheet = getOrCreateSheet(ss, "RollCall", [
-        "Record ID", "Date", "Timestamp", "Registration Number", "Full Name",
-        "Department", "Year of Study", "Session / Topic"
-      ]);
-
-      var recordId = payload.id || payload.recordId || ("RC-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000));
-
-      rollSheet.appendRow([
-        recordId,
-        payload.sessionDate || todayDate,
-        payload.timestamp || todayTime,
-        (payload.regNumber || "").toUpperCase(),
-        payload.fullName || "",
-        payload.department || "",
-        payload.yearOfStudy || "",
-        payload.sessionTopic || "General Assembly"
-      ]);
-
-      return jsonResponse({
-        status: "success",
-        id: recordId,
-        message: "Roll call check-in recorded"
-      });
-    }
-
-    // 4. Student Innovation / Technical Blog Submission
-    if (action === "submitInnovation") {
-      var innoSheet = getOrCreateSheet(ss, "Innovations", [
-        "SubmissionID", "Date", "Title", "Author", "RegNo", "Department",
-        "Category", "Summary", "Content", "Highlights", "ImageUrl", "ProjectUrl", "Status"
-      ]);
-
-      var subId = payload.submissionId || ("INNOV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000));
-
-      innoSheet.appendRow([
-        subId,
-        payload.date || todayDate,
-        payload.title || "",
-        payload.author || "",
-        (payload.regNumber || "").toUpperCase(),
-        payload.department || "",
-        payload.category || "General Engineering",
-        payload.summary || "",
-        payload.content || "",
-        payload.highlights || "",
-        payload.imageUrl || "",
-        payload.projectUrl || "",
-        "Pending Review"
-      ]);
-
-      return jsonResponse({
-        status: "success",
-        submissionId: subId,
-        message: "Innovation submitted successfully for editorial review."
-      });
-    }
-
-    // ─────────────────────────────────────────
-    // Action E: Annual Engineering Gala Registration
-    // ─────────────────────────────────────────
-    if (action === "gala" || action === "galaRegistration" || action === "gala-register") {
-      var galaHeaders = [
-        "Name",
-        "Reg Number",
-        "Year of Study",
-        "CONTACT",
-        "COURSE",
-        "MEMBERSHIP",
-        "DIETARY",
-        "Presentation Showcase",
-        "Presentation Category",
-        "Presentation Details",
-        "Payment Commitment",
-        "Date",
-        "RegTime"
-      ];
-      var galaSheet = getOrCreateSheet(ss, "GalaRegistrations", galaHeaders);
-
-      var galaName = String(payload.name || payload.Name || payload.fullName || "").trim();
-      var galaRegNo = String(payload.regNumber || payload.regNo || payload.REG_NO || payload["Reg Number"] || payload.ticketCode || "").trim().toUpperCase();
-      var galaYear = String(payload.yearOfStudy || payload.year || payload.YEAR || payload["Year of Study"] || "").trim();
-      var galaContact = String(payload.contact || payload.CONTACT || payload.phone || "").trim();
-      var galaCourse = String(payload.course || payload.COURSE || payload.department || "").trim();
-      var galaMembership = String(payload.membership || payload.MEMBERSHIP || "Non-Member / Guest").trim();
-      var galaDietary = String(payload.dietary || payload.DIETARY || payload.dietaryNotes || "Standard / None").trim();
-
-      var hasPresentation = Boolean(
-        payload.hasPresentation === true ||
-        payload.hasPresentation === "true" ||
-        payload.hasPresentation === "Yes" ||
-        (payload.presentation && String(payload.presentation).toLowerCase().indexOf("yes") === 0)
-      );
-      var galaPresCat = String(payload.presentationCategory || payload.PRESENTATION_CATEGORY || (hasPresentation ? "Talent / Presentation" : "-")).trim();
-      var galaPresDesc = String(payload.presentationDesc || payload.PRESENTATION_DESC || (hasPresentation ? "Pending Coordination" : "-")).trim();
-      var galaPresSummary = "";
-      if (payload.presentation || payload.PRESENTATION || payload["Presentation Showcase"]) {
-        galaPresSummary = String(payload.presentation || payload.PRESENTATION || payload["Presentation Showcase"]).trim();
-      } else if (hasPresentation) {
-        galaPresSummary = "YES: [" + galaPresCat + "] - " + galaPresDesc;
-      } else {
-        galaPresSummary = "No";
-      }
-
-      var galaPaymentStatus = String(payload.paymentStatus || payload.PAYMENT_STATUS || payload.SEAT_RESERVATION || "Deposit: Ksh 500 (Early Bird: Ksh 1,300)").trim();
-      var galaDate = String(payload.date || payload.Date || todayDate).trim();
-      var galaRegTime = String(payload.regTime || payload.RegTime || todayTime).trim();
-
-      var galaEmail = String(payload.email || "").trim();
-      if (galaEmail && galaContact.indexOf(galaEmail) === -1) {
-        galaContact = galaContact ? (galaContact + " | " + galaEmail) : galaEmail;
-      }
-
-      if (!galaName) {
-        return jsonResponse({ status: "error", error: "Missing required field: Name" }, 400);
-      }
-      if (!galaContact) {
-        return jsonResponse({ status: "error", error: "Missing required field: CONTACT" }, 400);
-      }
-
-      galaSheet.appendRow([
-        galaName,
-        galaRegNo,
-        galaYear,
-        galaContact,
-        galaCourse || "Engineering General",
-        galaMembership,
-        galaDietary,
-        galaPresSummary,
-        galaPresCat,
-        galaPresDesc,
-        galaPaymentStatus,
-        galaDate,
-        galaRegTime
-      ]);
-
-      return jsonResponse({
-        status: "success",
-        message: "Gala registration recorded successfully",
-        entry: {
-          Name: galaName,
-          "Reg Number": galaRegNo,
-          "Year of Study": galaYear,
-          CONTACT: galaContact,
-          COURSE: galaCourse,
-          MEMBERSHIP: galaMembership,
-          DIETARY: galaDietary,
-          "Presentation Showcase": galaPresSummary,
-          "Presentation Category": galaPresCat,
-          "Presentation Details": galaPresDesc,
-          "Payment Commitment": galaPaymentStatus,
-          Date: galaDate,
-          RegTime: galaRegTime
-        }
-      });
-    }
-
-    return jsonResponse({ status: "error", error: "Unknown action: " + action }, 400);
-
-  } catch (err) {
-    return jsonResponse({ status: "error", error: err.toString() }, 500);
+    var result = syncSupabaseRecord(SpreadsheetApp.getActiveSpreadsheet(), payload);
+    return jsonResponse({ status: "success", result: result });
+  } catch (error) {
+    console.error("Supabase outbox delivery failed: " + error);
+    return jsonResponse({ status: "error", error: "Could not mirror database record." }, 500);
   } finally {
-    if (hasLock) {
-      lock.releaseLock();
-    }
+    lock.releaseLock();
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
 // Helpers: Sheet Initializer & JSON Formatter
 // ─────────────────────────────────────────────────────────────────────
+function syncSupabaseRecord(ss, payload) {
+  var recordType = String(payload.recordType || "");
+  var recordId = String(payload.recordId || "");
+  var operation = String(payload.operation || "");
+  var record = payload.record || {};
+  var sheetConfig = getSupabaseSheetConfig(recordType, record);
+
+  if (!recordId || !sheetConfig || (operation !== "upsert" && operation !== "delete")) {
+    throw new Error("Invalid Supabase sync event.");
+  }
+
+  var sheet = getOrCreateSheet(ss, sheetConfig.name, sheetConfig.headers);
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var idHeader = "SupabaseRecordID";
+  var idColumn = headers.indexOf(idHeader) + 1;
+
+  if (idColumn === 0) {
+    idColumn = sheet.getLastColumn() + 1;
+    sheet.getRange(1, idColumn).setValue(idHeader);
+  }
+
+  var lastRow = sheet.getLastRow();
+  var matchingRow = 0;
+  if (lastRow > 1) {
+    var ids = sheet.getRange(2, idColumn, lastRow - 1, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (String(ids[i][0]) === recordId) {
+        matchingRow = i + 2;
+        break;
+      }
+    }
+  }
+
+  if (operation === "delete") {
+    if (matchingRow) sheet.deleteRow(matchingRow);
+    return { operation: "delete", recordId: recordId, deleted: Boolean(matchingRow) };
+  }
+
+  var values = new Array(sheet.getLastColumn()).fill("");
+  Object.keys(sheetConfig.values).forEach(function(header) {
+    var column = headers.indexOf(header);
+    if (column >= 0) {
+      values[column] = safeSheetValue(sheetConfig.values[header]);
+    }
+  });
+  values[idColumn - 1] = safeSheetValue(recordId);
+
+  if (matchingRow) {
+    sheet.getRange(matchingRow, 1, 1, values.length).setValues([values]);
+  } else {
+    sheet.appendRow(values);
+  }
+
+  return { operation: "upsert", recordId: recordId, sheet: sheetConfig.name };
+}
+
+function safeSheetValue(value) {
+  if (typeof value !== "string") return value;
+  return /^[\s]*[=+\-@]/.test(value) ? "'" + value : value;
+}
+
+function getSupabaseSheetConfig(recordType, record) {
+  if (recordType === "membership" || recordType === "registration") {
+    return {
+      name: "Members",
+      headers: ["RegNo", "FullName", "Department", "Year", "Phone", "Email", "MembershipStatus", "PaymentStatus", "MemberID", "DateRegistered"],
+      values: {
+        RegNo: record.regNumber || "",
+        FullName: record.fullName || "",
+        Department: record.department || "",
+        Year: record.yearOfStudy || "",
+        Phone: record.phone || "",
+        Email: record.email || "",
+        MembershipStatus: record.membershipStatus || record.status || "Active",
+        PaymentStatus: record.paymentStatus || record.contribution || "Unpaid",
+        MemberID: record.memberId || "",
+        DateRegistered: record.registrationDate || ""
+      }
+    };
+  }
+
+  if (recordType === "contact") {
+    return {
+      name: "Tickets",
+      headers: ["TicketID", "Date", "Name", "RegNo", "Email", "Category", "Subject", "Message", "Status", "SecretariatReply"],
+      values: {
+        TicketID: record.ticketId || "",
+        Date: [record.date, record.timestamp].filter(Boolean).join(" "),
+        Name: record.name || "",
+        RegNo: record.regNumber || "",
+        Email: record.email || "",
+        Category: record.category || "",
+        Subject: record.subject || "",
+        Message: record.message || "",
+        Status: record.status || "New / Unread",
+        SecretariatReply: ""
+      }
+    };
+  }
+
+  if (recordType === "roll_call") {
+    return {
+      name: "RollCall",
+      headers: ["Record ID", "Meeting ID", "Date", "Timestamp", "Registration Number", "Full Name", "Department", "Year of Study", "Session / Topic"],
+      values: {
+        "Record ID": record.id || "",
+        "Meeting ID": record.meetingId || "",
+        Date: record.sessionDate || "",
+        Timestamp: record.timestamp || "",
+        "Registration Number": record.regNumber || "",
+        "Full Name": record.fullName || "",
+        Department: record.department || "",
+        "Year of Study": record.yearOfStudy || "",
+        "Session / Topic": record.sessionTopic || "General Assembly"
+      }
+    };
+  }
+
+  if (recordType === "meeting") {
+    return {
+      name: "Meetings",
+      headers: ["Title", "Date", "Location", "Description", "Status"],
+      values: {
+        Title: record.title || "",
+        Date: record.sessionDate || "",
+        Location: record.location || "",
+        Description: record.description || "",
+        Status: record.status || "Draft"
+      }
+    };
+  }
+
+  if (recordType === "article") {
+    return {
+      name: "Innovations",
+      headers: ["SubmissionID", "Date", "Title", "Author", "RegNo", "Department", "Category", "Summary", "Content", "Highlights", "ImageUrl", "ProjectUrl", "Status"],
+      values: {
+        SubmissionID: record.id || "",
+        Date: record.date || "",
+        Title: record.title || "",
+        Author: record.author || "",
+        RegNo: record.regNumber || "",
+        Department: record.department || "",
+        Category: record.category || "",
+        Summary: record.summary || "",
+        Content: record.content || "",
+        Highlights: Array.isArray(record.highlights) ? record.highlights.join("; ") : "",
+        ImageUrl: record.imageUrl || "",
+        ProjectUrl: record.externalLink || "",
+        Status: record.status || "Pending Review"
+      }
+    };
+  }
+
+  if (recordType === "gala") {
+    return {
+      name: "GalaRegistrations",
+      headers: ["SubmissionID", "Timestamp", "Full Name", "Attendee Type", "Reg Number", "Year of Study", "Phone / WhatsApp", "Email", "Course / Program", "DESA Membership", "Payment Pledge", "Dietary Requirements", "Presentation Showcase", "Presentation Category", "Presentation Details", "M-Pesa Reference", "SupabaseRecordID"],
+      values: {
+        SubmissionID: record.id || "",
+        Timestamp: [record.date, record.regTime].filter(Boolean).join(" "),
+        "Full Name": record.name || "",
+        "Attendee Type": record.attendeeType || "",
+        "Reg Number": record.regNumber || "",
+        "Year of Study": record.yearOfStudy || "",
+        "Phone / WhatsApp": record.contact || "",
+        Email: record.email || "",
+        "Course / Program": record.course || "",
+        "DESA Membership": record.membership || "",
+        "Payment Pledge": record.paymentPledge || "",
+        "Dietary Requirements": record.dietary || "",
+        "Presentation Showcase": record.presentation || "No",
+        "Presentation Category": record.presentationCategory || "",
+        "Presentation Details": record.presentationDesc || "",
+        "M-Pesa Reference": record.mpesaRef || ""
+      }
+    };
+  }
+
+  if (recordType === "news") {
+    return {
+      name: "NewsEvents",
+      headers: ["ID", "Date", "Type", "Slug", "Title", "EventDate", "Location", "Excerpt", "Content", "CoverImage", "RecapPhotos", "IsPast"],
+      values: {
+        ID: record.id || "",
+        Date: record.date || "",
+        Type: record.type || "",
+        Slug: record.slug || "",
+        Title: record.title || "",
+        EventDate: record.eventDate || "",
+        Location: record.location || "",
+        Excerpt: record.excerpt || "",
+        Content: record.content || "",
+        CoverImage: record.coverImage || "",
+        RecapPhotos: Array.isArray(record.recapPhotos) ? record.recapPhotos.join("; ") : "",
+        IsPast: record.isPast || false
+      }
+    };
+  }
+
+  if (recordType === "gallery") {
+    return {
+      name: "Gallery",
+      headers: ["ID", "Title", "Category", "Department", "Location", "Date", "Description", "Image"],
+      values: {
+        ID: record.id || "",
+        Title: record.title || "",
+        Category: record.category || "",
+        Department: record.department || "",
+        Location: record.location || "",
+        Date: record.date || "",
+        Description: record.description || "",
+        Image: record.image || ""
+      }
+    };
+  }
+
+  return null;
+}
+
 function getOrCreateSheet(ss, sheetName, headers) {
   var sheet = ss.getSheetByName(sheetName);
   if (!sheet) {
@@ -504,6 +294,22 @@ function getOrCreateSheet(ss, sheetName, headers) {
     headerRange.setFontColor("#e5a93c"); // Gold
     headerRange.setHorizontalAlignment("center");
     sheet.setFrozenRows(1);
+  } else if (headers && headers.length) {
+    var lastColumn = sheet.getLastColumn();
+    var existingHeaders = lastColumn
+      ? sheet.getRange(1, 1, 1, lastColumn).getValues()[0].map(String)
+      : [];
+    var missingHeaders = headers.filter(function(header) {
+      return existingHeaders.indexOf(header) === -1;
+    });
+    if (missingHeaders.length) {
+      var addedHeaderRange = sheet.getRange(1, lastColumn + 1, 1, missingHeaders.length);
+      addedHeaderRange.setValues([missingHeaders]);
+      addedHeaderRange.setFontWeight("bold");
+      addedHeaderRange.setBackground("#071325");
+      addedHeaderRange.setFontColor("#e5a93c");
+      addedHeaderRange.setHorizontalAlignment("center");
+    }
   }
   return sheet;
 }

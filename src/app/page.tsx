@@ -1,7 +1,6 @@
 import React from "react";
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
-import LivePulseTicker from "@/components/LivePulseTicker";
 import ThreePillars from "@/components/ThreePillars";
 import LatestDispatches from "@/components/LatestDispatches";
 import CommandCtaBanner from "@/components/CommandCtaBanner";
@@ -39,26 +38,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
-  const posts = getAllPosts();
-  const upcomingEvents = posts.filter((p) => p.type === "event" && !p.isPast);
-  const nextEvent = upcomingEvents.length > 0 ? upcomingEvents[0] : null;
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const posts = await getAllPosts();
 
   return (
     <>
-      {/* 1. Hero with Dual Command Buttons (Explore Events & Check Membership) */}
       <Hero />
-
-      {/* 2. Live Pulse Ticker: Next Event, Student Innovations Blog, Secretariat Notice */}
-      <LivePulseTicker nextEvent={nextEvent} />
-
-      {/* 3. Why DESA: The 3 Pillars (Innovate, Network, Lead) */}
       <ThreePillars />
-
-      {/* 4. Latest Dispatches: 2 Newest Upcoming Events + 1 Concluded Recap */}
       <LatestDispatches posts={posts} />
-
-      {/* 5. One Closing CTA Banner → /membership */}
       <CommandCtaBanner />
     </>
   );
