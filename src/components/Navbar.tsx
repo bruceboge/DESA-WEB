@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -9,6 +9,19 @@ import { MenuIcon, CloseIcon, ChevronRightIcon } from "./Icons";
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [mobileMenuOpen]);
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -27,7 +40,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-[0_4px_0_0_#e5a93c]">
+    <header className="sticky top-0 z-50 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-[0_4px_0_0_#e5a93c]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo & University Identity */}
@@ -107,43 +120,48 @@ export default function Navbar() {
 
       {/* Mobile Drawer (Visible < lg) */}
       {mobileMenuOpen && (
-        <div id="mobile-navigation" className="lg:hidden max-h-[calc(100svh-4rem)] overflow-y-auto bg-[#071325] border-b border-slate-800 px-4 pt-3 pb-6 space-y-3">
-          <div className="flex flex-col space-y-1.5">
-            {navLinks.map((link) => {
-              const active = isActive(link.href);
-              return (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`min-h-11 text-sm font-semibold px-3 py-2.5 rounded-lg transition-colors flex items-center justify-between ${active
-                    ? "text-[#e5a93c] bg-[#0c1a32] border border-[#e5a93c]/30"
-                    : "text-slate-200 hover:text-[#e5a93c] hover:bg-slate-800/60"
-                    }`}
-                >
-                  <span>{link.label}</span>
-                  {active && <span className="w-2 h-2 rounded-full bg-[#e5a93c]"></span>}
-                </Link>
-              );
-            })}
-          </div>
-          <div className="pt-3 border-t border-slate-800 flex flex-col gap-2">
-            <Link
-              href="/membership#register"
-              onClick={() => setMobileMenuOpen(false)}
-              className="min-h-11 w-full bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-sm py-3 rounded-lg text-center shadow transition-colors block"
-            >
-              Register as DESA Member
-            </Link>
-            <a
-              href="https://www.dkut.ac.ke"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-center text-slate-400 hover:text-[#e5a93c] py-1 transition-colors"
-            >
-              Visit DeKUT University Main Website →
-            </a>
-          </div>
+        <div className="fixed inset-x-0 bottom-0 top-16 z-[60] lg:hidden sm:top-20">
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="absolute inset-0 h-full w-full bg-[#071325]/35"
+          />
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+            className="relative max-h-[calc(100svh-4rem)] overflow-y-auto border-b-2 border-[#071325] bg-white px-4 pb-6 pt-3 shadow-[0_8px_0_0_#e5a93c] sm:max-h-[calc(100svh-5rem)]"
+          >
+            <div className="flex flex-col gap-1.5">
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-11 items-center justify-between border px-3 py-2.5 text-sm font-semibold transition-colors ${active
+                      ? "border-[#e5a93c] bg-amber-50 text-[#071325]"
+                      : "border-transparent text-slate-700 hover:border-slate-200 hover:bg-slate-50 hover:text-[#071325]"
+                      }`}
+                  >
+                    <span>{link.label}</span>
+                    {active && <span className="h-2 w-2 bg-[#e5a93c]"></span>}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="mt-3 border-t border-slate-200 pt-3">
+              <Link
+                href="/membership#register"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block min-h-11 w-full border-2 border-[#071325] bg-[#e5a93c] px-4 py-3 text-center text-sm font-bold text-[#071325] shadow-[3px_3px_0_0_#071325] transition-colors hover:bg-[#d48b12]"
+              >
+                Register as DESA Member
+              </Link>
+            </div>
+          </nav>
         </div>
       )}
     </header>
