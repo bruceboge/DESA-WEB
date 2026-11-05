@@ -1,14 +1,12 @@
 import React from "react";
-import Link from "next/link";
 import {
   CpuIcon,
   UsersIcon,
   GraduationCapIcon,
   ShieldCheckIcon,
   BuildingIcon,
-  ChevronRightIcon,
-  ArrowRightIcon,
 } from "@/components/Icons";
+import CommandCtaBanner from "@/components/CommandCtaBanner";
 
 const points = [
   {
@@ -35,17 +33,16 @@ const points = [
     icon: BuildingIcon,
     title: "Build Your Future",
     desc: "Unlock industrial attachments, corporate plant tours, professional accreditation pathways, and career mentorship for seamless post-graduation success.",
-    href: "/membership#register",
-    linkText: "Register Now",
   },
 ];
 
 export default function ThreePillars() {
   return (
     <section className="py-12 sm:py-16 bg-white border-b border-slate-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.72fr)] gap-8 lg:gap-10 items-start">
+        <div>
         {/* Simple Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="max-w-2xl mb-8">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#b87a14] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
             Why You Should Join
           </span>
@@ -89,16 +86,8 @@ export default function ThreePillars() {
           })}
         </div>
 
-        {/* Subtle CTA link */}
-        <div className="text-center pt-8">
-          <Link
-            href="/membership#register"
-            className="inline-flex items-center gap-2 bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] text-xs font-bold px-6 py-2.5 rounded-xl transition-colors shadow-xs"
-          >
-            <span>Become a DESA Member</span>
-            <ArrowRightIcon className="w-3.5 h-3.5" />
-          </Link>
         </div>
+        <CommandCtaBanner />
       </div>
     </section>
   );

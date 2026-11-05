@@ -4,29 +4,25 @@ import { ArrowRightIcon, ShieldCheckIcon, ChevronRightIcon } from "@/components/
 
 export default function CommandCtaBanner() {
   return (
-    <section className="py-14 sm:py-16 bg-[#071325] text-white relative overflow-hidden">
-      {/* Decorative gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#071325] via-[#0c1a32] to-[#071325] opacity-90" />
-      <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#e5a93c]/10 blur-3xl" />
-
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#e5a93c]/15 border border-[#e5a93c]/30 text-[#e5a93c] text-xs font-bold uppercase tracking-wider">
+    <aside className="lg:sticky lg:top-24 bg-[#071325] text-white rounded-2xl border border-[#e5a93c]/40 p-5 sm:p-6 shadow-xl shadow-[#071325]/15">
+      <div className="space-y-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e5a93c] text-[#071325] text-[10px] font-extrabold uppercase tracking-wider">
           <ShieldCheckIcon className="w-4 h-4" />
-          <span> DESA</span>
+          <span>DESA Membership</span>
         </div>
 
-        <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight max-w-2xl mx-auto">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight leading-tight">
           Ready to Elevate Your Engineering Journey?
         </h2>
 
-        <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-          Join the DeKUT Engineering Students Association (DESA) today and unlock your full potential as an engineer. Gain access to exclusive project groups, industry insights, and mentorship opportunities that will shape your professional future. Let&apos;s innovate, collaborate, and build something extraordinary together.
+        <p className="text-sm text-slate-300 leading-relaxed">
+          Join DESA for hands-on projects, industry insights, and mentorship that help shape your engineering career.
         </p>
 
-        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5">
+        <div className="pt-1 flex flex-col items-stretch gap-2.5">
           <Link
             href="/membership#register"
-            className="min-h-11 justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-[#e5a93c] hover:bg-[#f0bd5c] text-[#071325] text-xs font-extrabold px-4 py-3 rounded-xl transition-colors flex items-center gap-2"
           >
             <span>Register as a Member</span>
             <ArrowRightIcon className="w-4 h-4" />
@@ -34,13 +30,13 @@ export default function CommandCtaBanner() {
 
           <Link
             href="/membership#lookup"
-            className="min-h-11 justify-center bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-semibold px-6 py-3.5 rounded-xl border border-white/15 transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-[#0c1a32] hover:bg-[#142744] text-white text-xs font-semibold px-4 py-3 rounded-xl border border-slate-700 transition-colors flex items-center gap-2"
           >
             <span>Check Registration Status</span>
             <ChevronRightIcon className="w-4 h-4" />
           </Link>
         </div>
       </div>
-    </section>
+    </aside>
   );
 }

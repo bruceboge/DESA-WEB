@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Hero from "@/components/Hero";
 import ThreePillars from "@/components/ThreePillars";
 import LatestDispatches from "@/components/LatestDispatches";
-import CommandCtaBanner from "@/components/CommandCtaBanner";
 import { getAllPosts } from "@/lib/posts";
 
 export const metadata: Metadata = {
@@ -48,7 +47,6 @@ export default async function HomePage() {
       <Hero />
       <ThreePillars />
       <LatestDispatches posts={posts} />
-      <CommandCtaBanner />
     </>
   );
 }
