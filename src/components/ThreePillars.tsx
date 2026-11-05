@@ -43,7 +43,7 @@ export default function ThreePillars() {
         <div>
         {/* Simple Header */}
         <div className="max-w-2xl mb-8">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#b87a14] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
+          <span className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#071325] bg-[#e5a93c] px-3 py-1.5 border-2 border-[#071325] inline-block mb-4">
             Why You Should Join
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#071325] tracking-tight">
@@ -58,13 +58,13 @@ export default function ThreePillars() {
         </div>
 
         {/* Compact, Clean List — No Big Cards */}
-        <div className="divide-y divide-slate-100 border-y border-slate-200">
+        <div className="divide-y-2 divide-slate-200 border-2 border-[#071325] shadow-[6px_6px_0_0_#e5a93c] bg-white">
           {points.map((pt) => {
             const Icon = pt.icon;
             return (
               <div
                 key={pt.title}
-                className="py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6 hover:bg-slate-50/70 px-2 sm:px-4 rounded-xl transition-colors group"
+                className="py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6 hover:bg-[#fff9e9] px-3 sm:px-4 transition-colors group"
               >
                 <div className="flex items-start gap-3.5 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">

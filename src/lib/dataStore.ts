@@ -1,6 +1,7 @@
 import "server-only";
 import { randomUUID } from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getNairobiDate } from "@/lib/antiSpam";
 
 export interface BlogArticle {
   id: string;
@@ -79,6 +80,36 @@ export interface AdminPortalStats {
   news: number;
   gallery: number;
   total: number;
+}
+
+export interface AdminDashboardOverview {
+  stats: AdminPortalStats;
+  upcomingMeetings: Array<{
+    id: string;
+    title: string;
+    sessionDate: string;
+    location: string;
+    status: string;
+  }>;
+  recentActivity: Array<{
+    id: number;
+    actorEmail: string;
+    action: string;
+    resourceType: string;
+    resourceId: string;
+    createdAt: string;
+  }>;
+  sheetsSync: {
+    queued: number;
+    processing: number;
+    failed: number;
+    recentFailures: Array<{
+      recordType: string;
+      attempts: number;
+      lastError: string;
+      createdAt: string;
+    }>;
+  };
 }
 
 export async function nextPortalReference(
@@ -252,6 +283,80 @@ export async function getAdminPortalStats(): Promise<AdminPortalStats> {
 
   const total = recordTypes.reduce((sum, recordType) => sum + byType[recordType], 0);
   return { ...stats, total };
+}
+
+export async function getAdminDashboardOverview(): Promise<AdminDashboardOverview> {
+  const supabase = getSupabaseAdmin();
+  const today = getNairobiDate();
+  const [stats, meetings, activityResult, queuedResult, processingResult, failuresResult] =
+    await Promise.all([
+      getAdminPortalStats(),
+      getAllMeetings(),
+      supabase
+        .from("portal_admin_audit_events")
+        .select("id,actor_email,action,resource_type,resource_id,created_at")
+        .order("created_at", { ascending: false })
+        .limit(6),
+      supabase
+        .from("sheet_sync_outbox")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending")
+        .eq("attempts", 0),
+      supabase
+        .from("sheet_sync_outbox")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "processing"),
+      supabase
+        .from("sheet_sync_outbox")
+        .select("record_type,attempts,last_error,created_at", { count: "exact" })
+        .eq("status", "pending")
+        .gt("attempts", 0)
+        .order("created_at", { ascending: false })
+        .limit(3),
+    ]);
+
+  if (activityResult.error) throw new Error(`Could not load admin activity: ${activityResult.error.message}`);
+  if (queuedResult.error) throw new Error(`Could not load pending sheet syncs: ${queuedResult.error.message}`);
+  if (processingResult.error) throw new Error(`Could not load active sheet syncs: ${processingResult.error.message}`);
+  if (failuresResult.error) throw new Error(`Could not load failed sheet syncs: ${failuresResult.error.message}`);
+
+  const upcomingMeetings = meetings
+    .map((meeting) => ({
+      id: meeting.id,
+      title: String(meeting.data.title || "Untitled meeting"),
+      sessionDate: String(meeting.data.sessionDate || ""),
+      location: String(meeting.data.location || ""),
+      status: String(meeting.data.status || "Draft"),
+    }))
+    .filter((meeting) =>
+      meeting.sessionDate >= today && meeting.status !== "Closed" && meeting.sessionDate
+    )
+    .sort((first, second) => first.sessionDate.localeCompare(second.sessionDate))
+    .slice(0, 4);
+
+  return {
+    stats,
+    upcomingMeetings,
+    recentActivity: (activityResult.data || []).map((event) => ({
+      id: event.id,
+      actorEmail: event.actor_email,
+      action: event.action,
+      resourceType: event.resource_type || "",
+      resourceId: event.resource_id || "",
+      createdAt: event.created_at,
+    })),
+    sheetsSync: {
+      queued: queuedResult.count || 0,
+      processing: processingResult.count || 0,
+      failed: failuresResult.count || 0,
+      recentFailures: (failuresResult.data || []).map((failure) => ({
+        recordType: failure.record_type,
+        attempts: failure.attempts,
+        lastError: failure.last_error || "Sync attempt failed.",
+        createdAt: failure.created_at,
+      })),
+    },
+  };
 }
 
 export async function getPortalRecord(

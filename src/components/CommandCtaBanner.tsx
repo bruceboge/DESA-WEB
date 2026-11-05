@@ -4,7 +4,7 @@ import { ArrowRightIcon, ShieldCheckIcon, ChevronRightIcon } from "@/components/
 
 export default function CommandCtaBanner() {
   return (
-    <aside className="lg:sticky lg:top-24 bg-[#071325] text-white rounded-2xl border border-[#e5a93c]/40 p-5 sm:p-6 shadow-xl shadow-[#071325]/15">
+    <aside className="lg:sticky lg:top-24 bg-[#071325] text-white border-2 border-[#071325] p-5 sm:p-6 shadow-[8px_8px_0_0_#e5a93c]">
       <div className="space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e5a93c] text-[#071325] text-[10px] font-extrabold uppercase tracking-wider">
           <ShieldCheckIcon className="w-4 h-4" />
@@ -22,7 +22,7 @@ export default function CommandCtaBanner() {
         <div className="pt-1 flex flex-col items-stretch gap-2.5">
           <Link
             href="/membership#register"
-            className="min-h-11 justify-center bg-[#e5a93c] hover:bg-[#f0bd5c] text-[#071325] text-xs font-extrabold px-4 py-3 rounded-xl transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-[#e5a93c] hover:bg-white text-[#071325] text-xs font-extrabold px-4 py-3 border-2 border-[#e5a93c] transition-colors flex items-center gap-2"
           >
             <span>Register as a Member</span>
             <ArrowRightIcon className="w-4 h-4" />
@@ -30,7 +30,7 @@ export default function CommandCtaBanner() {
 
           <Link
             href="/membership#lookup"
-            className="min-h-11 justify-center bg-[#0c1a32] hover:bg-[#142744] text-white text-xs font-semibold px-4 py-3 rounded-xl border border-slate-700 transition-colors flex items-center gap-2"
+            className="min-h-11 justify-center bg-[#0c1a32] hover:bg-[#142744] text-white text-xs font-semibold px-4 py-3 border-2 border-slate-600 transition-colors flex items-center gap-2"
           >
             <span>Check Registration Status</span>
             <ChevronRightIcon className="w-4 h-4" />

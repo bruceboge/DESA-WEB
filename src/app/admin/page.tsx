@@ -1,20 +1,17 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import {
-  LockIcon,
-  ShieldCheckIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  CloseIcon,
-  ExternalLinkIcon,
-} from "@/components/Icons";
-import type { BlogArticle, GalleryPhoto, NewsEventItem } from "@/lib/dataStore";
+import AdminOverviewPanel from "@/components/admin/AdminOverview";
+import AdminBlogManagerPanel from "@/components/admin/AdminBlogManager";
+import AdminNewsManagerPanel from "@/components/admin/AdminNewsManager";
+import AdminGalleryManagerPanel from "@/components/admin/AdminGalleryManager";
+import AdminArticlePreviewDialog from "@/components/admin/AdminArticlePreviewDialog";
+import { LockIcon, ShieldCheckIcon, AlertCircleIcon } from "@/components/Icons";
+import type { AdminDashboardOverview, BlogArticle, GalleryPhoto, NewsEventItem } from "@/lib/dataStore";
+import type { NewsFormDraft, GalleryFormDraft } from "@/lib/adminTypes";
 import { convertImageToWebP, WebPConversionResult } from "@/lib/imageOptimization";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
-import AdminRecordsManager from "@/components/AdminRecordsManager";
+import AdminRecordsManager, { type RecordGroup } from "@/components/AdminRecordsManager";
 import AdminMeetingsManager from "@/components/AdminMeetingsManager";
 import AdminSectionErrorBoundary from "@/components/AdminSectionErrorBoundary";
 
@@ -27,27 +24,6 @@ const GALLERY_CATEGORIES = [
 ];
 
 type AdminDashboardSection = "overview" | "blog" | "news" | "gallery";
-
-interface NewsFormDraft {
-  title: string;
-  type: "event" | "news";
-  eventDate: string;
-  date: string;
-  location: string;
-  coverImage: string;
-  excerpt: string;
-  content: string;
-}
-
-interface GalleryFormDraft {
-  title: string;
-  category: string;
-  department: string;
-  location: string;
-  date: string;
-  description: string;
-  image: string;
-}
 
 const NEWS_DRAFT_KEY = "desa-admin-news-draft";
 const GALLERY_DRAFT_KEY = "desa-admin-gallery-draft";
@@ -118,6 +94,10 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [dashboardLoadError, setDashboardLoadError] = useState<{
+    section: AdminDashboardSection;
+    message: string;
+  } | null>(null);
 
   // Active Admin Tab
   const [activeTab, setActiveTab] = useState<
@@ -140,6 +120,15 @@ export default function AdminPage() {
     gallery: 0,
     total: 0,
   });
+  const [upcomingMeetings, setUpcomingMeetings] = useState<AdminDashboardOverview["upcomingMeetings"]>([]);
+  const [recentActivity, setRecentActivity] = useState<AdminDashboardOverview["recentActivity"]>([]);
+  const [sheetsSync, setSheetsSync] = useState<AdminDashboardOverview["sheetsSync"]>({
+    queued: 0,
+    processing: 0,
+    failed: 0,
+    recentFailures: [],
+  });
+  const [recordsInitialGroup, setRecordsInitialGroup] = useState<RecordGroup>("members");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   // Blog Review State
@@ -173,22 +162,33 @@ export default function AdminPage() {
       if (res.status === 401) {
         loadedSections.current.clear();
         setHasLoadedBlog(false);
+        setDashboardLoadError(null);
         setIsAuthenticated(false);
         return;
       }
       if (!res.ok) throw new Error(data.error || "Could not load data.");
 
-      if (section === "overview") setStats(data.stats);
+      if (section === "overview") {
+        setStats(data.stats);
+        setUpcomingMeetings(data.upcomingMeetings || []);
+        setRecentActivity(data.recentActivity || []);
+        setSheetsSync(data.sheetsSync || { queued: 0, processing: 0, failed: 0, recentFailures: [] });
+      }
       if (section === "blog") {
         setArticles(data.articles || []);
         setHasLoadedBlog(true);
       }
       if (section === "news") setNewsList(data.news || []);
       if (section === "gallery") setPhotos(data.photos || []);
+      setDashboardLoadError((current) => current?.section === section ? null : current);
       loadedSections.current.add(section);
       setIsAuthenticated(true);
     } catch (err) {
       console.error(`Failed to load admin ${section} data:`, err);
+      setDashboardLoadError({
+        section,
+        message: err instanceof Error ? err.message : "Could not load dashboard data.",
+      });
     }
   }, []);
 
@@ -668,6 +668,19 @@ export default function AdminPage() {
             </div>
           )}
 
+          {dashboardLoadError && (
+            <div role="alert" className="flex flex-col gap-3 border border-red-800 bg-red-950/40 p-3.5 text-xs text-red-200 sm:flex-row sm:items-center sm:justify-between">
+              <span>Could not restore the admin session. {dashboardLoadError.message}</span>
+              <button
+                type="button"
+                onClick={() => void loadDashboardData(dashboardLoadError.section, true)}
+                className="min-h-11 border border-red-700 bg-[#071325] px-3 py-2 font-bold text-white hover:bg-red-950"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -761,6 +774,12 @@ export default function AdminPage() {
       detail: "Publish scheduled meetings and review their attendance in one place.",
     },
   }[activeTab === "overview" ? "records" : activeTab];
+  const activeDataSection: AdminDashboardSection | null =
+    activeTab === "overview" || activeTab === "records"
+      ? "overview"
+      : activeTab === "meetings"
+        ? null
+        : activeTab;
 
   return (
     <div className="min-h-screen bg-[#f3f6fa] text-slate-800">
@@ -790,13 +809,13 @@ export default function AdminPage() {
                   activeTab === "records" || activeTab === "meetings" ? "overview" : activeTab;
                 void loadDashboardData(section, true);
               }}
-              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              className="min-h-11 rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               Refresh
             </button>
             <button
               onClick={handleLogout}
-              className="rounded-xl border border-rose-300/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20"
+              className="min-h-11 rounded-xl border border-rose-300/20 bg-rose-400/10 px-4 py-2.5 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/20"
             >
               Lock console
             </button>
@@ -813,7 +832,7 @@ export default function AdminPage() {
       <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <nav
           aria-label="Administration sections"
-          className="mx-auto flex max-w-[1440px] gap-2 overflow-x-auto px-4 py-3 sm:px-6 lg:px-10"
+          className="mx-auto grid max-w-[1440px] grid-cols-2 gap-2 px-4 py-3 sm:flex sm:overflow-x-auto sm:px-6 lg:px-10"
         >
           {[
             { id: "overview", label: "Overview" },
@@ -832,7 +851,7 @@ export default function AdminPage() {
               type="button"
               onClick={() => setActiveTab(item.id as typeof activeTab)}
               aria-current={activeTab === item.id ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-3 py-2.5 text-center text-xs font-semibold transition sm:w-auto sm:text-sm ${
                 activeTab === item.id
                   ? "bg-[#071325] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -852,141 +871,21 @@ export default function AdminPage() {
       </div>
 
       <main className="mx-auto max-w-[1440px] px-4 py-7 sm:px-6 lg:px-10 lg:py-9">
+        {dashboardLoadError && dashboardLoadError.section === activeDataSection && (
+          <div role="alert" className="mb-6 flex flex-col gap-3 border border-red-200 bg-red-50 p-4 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between">
+            <span>Could not load this section: {dashboardLoadError.message}</span>
+            <button
+              type="button"
+              onClick={() => void loadDashboardData(dashboardLoadError.section, true)}
+              className="min-h-11 self-start border border-red-300 bg-white px-3 py-2 text-xs font-bold text-red-800 hover:bg-red-100 sm:self-auto"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         <AdminSectionErrorBoundary resetKey={activeTab}>
         {activeTab === "overview" && (
-          <div className="space-y-7">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b87a14]">
-                  System overview
-                </p>
-                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-[1.75rem]">
-                  Overview
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  ESA records and operations, at a glance.
-                </p>
-              </div>
-              <span className="inline-flex w-fit items-center gap-2 text-xs font-medium text-slate-500">
-                <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
-                Admin session
-              </span>
-            </div>
-
-            <section
-              aria-label="System record counts"
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-            >
-              <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-900">Managed records</h3>
-                  <p className="mt-0.5 text-xs text-slate-500">Records stored across the portal</p>
-                </div>
-                <p className="text-right">
-                  <span className="text-2xl font-bold tracking-tight text-slate-900">
-                    {stats.total.toLocaleString()}
-                  </span>
-                  <span className="ml-2 text-xs font-medium text-slate-500">total</span>
-                </p>
-              </div>
-              <div className="grid sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { label: "Members & registrations", value: stats.members, accent: "text-[#0a5c36]", tab: "records" },
-                  { label: "Contact messages", value: stats.contacts, accent: "text-sky-700", tab: "records" },
-                  { label: "Gala registrations", value: stats.gala, accent: "text-violet-700", tab: "records" },
-                  { label: "Attendance entries", value: stats.attendance, accent: "text-amber-700", tab: "records" },
-                  { label: "Meetings", value: stats.meetings, accent: "text-emerald-700", tab: "records" },
-                  { label: "Articles", value: stats.articles, accent: "text-blue-700", tab: "blog" },
-                  { label: "News & events", value: stats.news, accent: "text-indigo-700", tab: "news" },
-                  { label: "Gallery items", value: stats.gallery, accent: "text-rose-700", tab: "gallery" },
-                ].map((metric, index) => (
-                  <button
-                    key={metric.label}
-                    type="button"
-                    onClick={() => setActiveTab(metric.tab as typeof activeTab)}
-                    className={`group flex min-h-14 items-center justify-between gap-4 border-b border-slate-100 px-5 py-3 text-left transition hover:bg-slate-50 ${
-                      index % 2 === 0 ? "sm:border-r sm:border-slate-100" : ""
-                    } ${
-                      index % 4 !== 3
-                        ? "xl:border-r xl:border-slate-100"
-                        : "xl:border-r-0"
-                    }`}
-                  >
-                    <span className="text-sm font-medium text-slate-600 transition group-hover:text-slate-900">
-                      {metric.label}
-                    </span>
-                    <span className={`text-lg font-semibold tabular-nums ${metric.accent}`}>
-                      {metric.value.toLocaleString()}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <div className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
-              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">Needs attention</h3>
-                    <p className="mt-1 text-sm text-slate-500">Keep submissions and updates moving.</p>
-                  </div>
-                  <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">
-                    {pendingArticles.length} pending
-                  </span>
-                </div>
-                <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-900">Article submissions</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Review, approve, or reject content waiting for publication.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("blog")}
-                    className="shrink-0 rounded-xl bg-[#071325] px-4 py-2.5 text-sm font-bold text-[#f6c867] transition hover:bg-[#102242]"
-                  >
-                    Review queue
-                  </button>
-                </div>
-                <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-900">Database-first operations</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      New and edited records are saved to Supabase. Sheets mirrors asynchronously.
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-emerald-700">
-                    Supabase source
-                  </span>
-                </div>
-              </section>
-
-              <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#b87a14]">
-                  Quick actions
-                </p>
-                <h3 className="mt-1 text-lg font-bold text-slate-900">Manage the portal</h3>
-                <div className="mt-5 grid gap-3">
-                  {[
-                    { label: "Add a member", detail: "Update the active register", tab: "records" },
-                    { label: "Publish an announcement", detail: "Create news or an event", tab: "news" },
-                    { label: "Upload event photos", detail: "Manage the official gallery", tab: "gallery" },
-                  ].map((action) => (
-                    <button
-                      key={action.label}
-                      type="button"
-                      onClick={() => setActiveTab(action.tab as typeof activeTab)}
-                      className="rounded-2xl border border-slate-200 p-4 text-left transition hover:border-[#e5a93c]/60 hover:bg-amber-50/40"
-                    >
-                      <span className="block text-sm font-bold text-slate-900">{action.label}</span>
-                      <span className="mt-1 block text-xs text-slate-500">{action.detail}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            </div>
-          </div>
+          <AdminOverviewPanel stats={stats} pendingArticleCount={pendingArticles.length} upcomingMeetings={upcomingMeetings} recentActivity={recentActivity} sheetsSync={sheetsSync} onNavigate={(tab, group) => { if (group) setRecordsInitialGroup(group); setActiveTab(tab); }} />
         )}
         {activeTab !== "overview" && activeTab !== "records" && (
           <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
@@ -1008,579 +907,33 @@ export default function AdminPage() {
         {/* ─────────────────────────────────────────────────────────────
             TAB 1: BLOG ARTICLE REVIEW QUEUE
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "blog" && (
-          <div className="space-y-8">
-            {/* Pending Submissions Queue */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
-                <div>
-                  <h2 className="text-lg font-bold text-[#071325]">
-                    Pending Article Submissions ({pendingArticles.length})
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Articles submitted by students. Review content, verify, and approve to publish on the Innovation Blog.
-                  </p>
-                </div>
-              </div>
-
-              {pendingArticles.length > 0 ? (
-                <div className="space-y-3">
-                  {pendingArticles.map((art) => (
-                    <div
-                      key={art.id}
-                      className="p-4 sm:p-5 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50/70 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white px-2 py-0.5 rounded">
-                            Pending Review
-                          </span>
-                          <span className="text-xs font-semibold text-[#b87a14]">
-                            {art.category}
-                          </span>
-                          <span className="text-[11px] text-slate-500">• {art.department}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            Reg: {art.regNumber}
-                          </span>
-                        </div>
-                        <h3 className="text-base font-bold text-[#071325]">{art.title}</h3>
-                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                          {art.summary}
-                        </p>
-                        <span className="text-[11px] text-slate-500 block">
-                          By <strong>{art.author}</strong> on {art.date}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => setInspectArticle(art)}
-                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                        >
-                          Inspect Article
-                        </button>
-                        <button
-                          onClick={() => handleApproveArticle(art.id)}
-                          className="px-4 py-2 bg-[#0a5c36] hover:bg-[#074729] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
-                        >
-                          Approve & Publish
-                        </button>
-                        <button
-                          onClick={() => handleDeleteArticle(art.id)}
-                          className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
-                  <CheckCircleIcon className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                  <span>No pending article submissions waiting for review.</span>
-                </div>
-              )}
-            </div>
-
-            {/* Published Articles List */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
-              <h2 className="text-lg font-bold text-[#071325]">
-                Published Blog Articles ({publishedArticles.length})
-              </h2>
-              <div className="space-y-3">
-                {publishedArticles.map((art) => (
-                  <div
-                    key={art.id}
-                    className="p-4 rounded-xl border border-slate-200 bg-white hover:border-[#e5a93c] transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-[#0a5c36] px-2 py-0.5 rounded">
-                          Live on Blog
-                        </span>
-                        <span className="text-xs text-slate-500">{art.category}</span>
-                      </div>
-                      <h4 className="text-sm font-bold text-[#071325] truncate">{art.title}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        By {art.author} ({art.department})
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        href="/innovations"
-                        target="_blank"
-                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors inline-flex items-center gap-1"
-                      >
-                        <span>View Live</span>
-                        <ExternalLinkIcon className="w-3 h-3" />
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteArticle(art.id)}
-                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-                      >
-                        Unpublish
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
+        {activeTab === "blog" && <AdminBlogManagerPanel pendingArticles={pendingArticles} publishedArticles={publishedArticles} onInspect={setInspectArticle} onApprove={handleApproveArticle} onDelete={handleDeleteArticle} />}
         {/* ─────────────────────────────────────────────────────────────
             TAB 2: NEWS & EVENTS PUBLISHER
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "news" && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Publisher Form */}
-            <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
-              <div>
-                <h2 className="text-lg font-bold text-[#071325]">
-                  Publish News or Event
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Only accessible through this admin portal.
-                </p>
-              </div>
-
-              <form onSubmit={handleNewsSubmit} className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p role="status" aria-live="polite" className="text-[11px] text-slate-500">
-                    {newsDraftStatus || "Draft autosaves in this tab."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={discardNewsDraft}
-                    className="text-[11px] font-semibold text-slate-500 underline hover:text-red-700"
-                  >
-                    Discard draft
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Announcement Title <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Annual DeKUT Engineering Week 2026"
-                    value={newsForm.title}
-                    onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Publication Type
-                    </label>
-                    <select
-                      value={newsForm.type}
-                      onChange={(e) => setNewsForm({ ...newsForm, type: e.target.value as "event" | "news" })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    >
-                      <option value="event">Upcoming Event</option>
-                      <option value="news">News Article</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Event Date (if applicable)
-                    </label>
-                    <input
-                      type="date"
-                      value={newsForm.eventDate}
-                      onChange={(e) => setNewsForm({ ...newsForm, eventDate: e.target.value })}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Venue / Campus Location
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Resource Centre Auditorium, DeKUT"
-                    value={newsForm.location}
-                    onChange={(e) => setNewsForm({ ...newsForm, location: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  />
-                </div>
-
-                {/* Cover Image Upload */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Cover Poster / Photo (Auto-WebP to Supabase Storage)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/png, image/jpeg, image/webp"
-                    onChange={handleNewsImageSelect}
-                    className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#071325] file:text-[#e5a93c] hover:file:bg-[#0c1a32] cursor-pointer"
-                  />
-                  {isUploadingNewsImage && (
-                    <span className="text-[11px] text-slate-500 mt-1 block">
-                      Saving...
-                    </span>
-                  )}
-                  {newsImagePreview && (
-                    <div className="relative w-full h-36 rounded-xl overflow-hidden mt-2 border border-slate-200">
-                      <Image src={newsImagePreview} alt="Preview" fill sizes="100vw" className="object-contain" unoptimized />
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Summary<span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    required
-                    rows={2}
-                    placeholder="Brief 1-2 sentence overview for social cards and previews..."
-                    value={newsForm.excerpt}
-                    onChange={(e) => setNewsForm({ ...newsForm, excerpt: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Markdown Content & Schedule <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    required
-                    rows={6}
-                    placeholder="Write detailed event overview, ticket details, schedule, and speaker announcements..."
-                    value={newsForm.content}
-                    onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
-                    className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isPublishingNews}
-                  className="w-full bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] font-bold text-xs py-3 rounded-xl transition-colors shadow cursor-pointer disabled:opacity-50"
-                >
-                  {isPublishingNews ? "Publishing to News & Events..." : "Publish Official Announcement"}
-                </button>
-              </form>
-            </div>
-
-            {/* Existing Announcements List */}
-            <div className="lg:col-span-5 space-y-4">
-              <h3 className="text-base font-bold text-[#071325]">
-                Active News & Event Articles ({newsList.length})
-              </h3>
-              <div className="space-y-3">
-                {newsList.map((item) => (
-                  <div
-                    key={item.id || item.slug}
-                    className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-start justify-between gap-3"
-                  >
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#b87a14]">
-                        {item.type} • {item.eventDate || item.date}
-                      </span>
-                      <h4 className="text-xs sm:text-sm font-bold text-[#071325] line-clamp-1 mt-0.5">
-                        {item.title}
-                      </h4>
-                      <p className="text-[11px] text-slate-500 line-clamp-2 mt-1">{item.excerpt}</p>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 shrink-0">
-                      <Link
-                        href={`/news-events/${item.slug}`}
-                        target="_blank"
-                        className="px-2.5 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 rounded text-slate-700 font-semibold text-center"
-                      >
-                        View
-                      </Link>
-                      <button
-                        onClick={() => handleDeleteNews(item.id || item.slug)}
-                        className="px-2.5 py-1 text-[11px] bg-red-50 hover:bg-red-100 rounded text-red-600 font-semibold cursor-pointer"
-                      >
-                        Move to Trash
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
+        {activeTab === "news" && <AdminNewsManagerPanel newsForm={newsForm} setNewsForm={setNewsForm} newsDraftStatus={newsDraftStatus} discardNewsDraft={discardNewsDraft} handleNewsImageSelect={handleNewsImageSelect} newsImagePreview={newsImagePreview} isUploadingNewsImage={isUploadingNewsImage} handleNewsSubmit={handleNewsSubmit} isPublishingNews={isPublishingNews} newsList={newsList} handleDeleteNews={handleDeleteNews} />}
         {/* ─────────────────────────────────────────────────────────────
             TAB 3: OFFICIAL GALLERY MANAGER
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "gallery" && (
-          <div className="space-y-8">
-            {/* Upload New Official Photo */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
-              <div>
-                <h2 className="text-lg font-bold text-[#071325]">
-                  Upload Photos to Gallery
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Only admins can publish official photos to the campus gallery.
-                </p>
-              </div>
-
-              <form onSubmit={handleGallerySubmit} className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p role="status" aria-live="polite" className="text-[11px] text-slate-500">
-                    {galleryDraftStatus || "Draft autosaves in this tab."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={discardGalleryDraft}
-                    className="text-[11px] font-semibold text-slate-500 underline hover:text-red-700"
-                  >
-                    Discard draft
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Photo File */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Event Photo <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="file"
-                      required
-                      accept="image/png, image/jpeg, image/webp"
-                      onChange={handleGalleryPhotoSelect}
-                      className="w-full text-xs text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#071325] file:text-[#e5a93c] hover:file:bg-[#0c1a32] cursor-pointer"
-                    />
-                    {isUploadingGalleryImage && (
-                      <span className="text-[11px] text-slate-500 mt-1 block">
-                        Saving...
-                      </span>
-                    )}
-                    {galleryImagePreview && (
-                      <div className="mt-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center gap-3">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-emerald-300">
-                          <Image src={galleryImagePreview} alt="Preview" fill sizes="48px" className="object-contain" unoptimized />
-                        </div>
-                        <div className="text-[11px] text-slate-600">
-                          {galleryCompressionStats ? (
-                            <>
-                              <strong className="text-[#0a5c36] block">WebP Uploaded</strong>
-                              <span>{galleryCompressionStats.originalSize} &rarr; {galleryCompressionStats.webpSize} ({galleryCompressionStats.reductionPercentage}% smaller)</span>
-                            </>
-                          ) : (
-                            <strong className="text-[#0a5c36] block">Uploaded image restored from draft</strong>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Event / Photo Title <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Masquerade Dinner 2026 Red Carpet"
-                      value={galleryForm.title}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Category
-                    </label>
-                    <select
-                      value={galleryForm.category}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    >
-                      {GALLERY_CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Department / Group
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. School of Engineering"
-                      value={galleryForm.department}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, department: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Golden Gates Hotel, Nyeri"
-                      value={galleryForm.location}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, location: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Date
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 20 November 2026"
-                      value={galleryForm.date}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, date: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Caption / Narrative <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      required
-                      rows={2}
-                      placeholder="Official caption describing the moment..."
-                      value={galleryForm.description}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, description: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isAddingGalleryPhoto || !galleryForm.image}
-                  className="bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] font-bold text-xs px-6 py-3 rounded-xl transition-colors shadow cursor-pointer disabled:opacity-50"
-                >
-                  {isAddingGalleryPhoto ? "Adding to Official Gallery..." : "Add to Official Gallery"}
-                </button>
-              </form>
-            </div>
-
-            {/* Existing Photos Grid */}
-            <div className="space-y-4">
-              <h3 className="text-base font-bold text-[#071325]">
-                Current Official Gallery Photos ({photos.length})
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {photos.map((p) => (
-                  <div
-                    key={p.id}
-                    className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="relative h-44 w-full bg-slate-900">
-                        <Image src={p.image} alt={p.title} fill sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" className="object-contain" unoptimized />
-                        <span className="absolute top-2 left-2 bg-[#071325]/90 text-[#e5a93c] text-[10px] font-bold px-2 py-0.5 rounded">
-                          {p.category}
-                        </span>
-                      </div>
-                      <div className="p-3.5">
-                        <h4 className="text-xs font-bold text-[#071325] line-clamp-1">{p.title}</h4>
-                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">{p.description}</p>
-                      </div>
-                    </div>
-
-                    <div className="p-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[10px] text-slate-400">{p.date}</span>
-                      <button
-                        onClick={() => handleDeletePhoto(p.id)}
-                        className="text-[11px] font-bold text-red-600 hover:underline cursor-pointer"
-                      >
-                        Move to Trash
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {activeTab === "gallery" && <AdminGalleryManagerPanel galleryForm={galleryForm} setGalleryForm={setGalleryForm} galleryDraftStatus={galleryDraftStatus} discardGalleryDraft={discardGalleryDraft} handleGalleryPhotoSelect={handleGalleryPhotoSelect} isUploadingGalleryImage={isUploadingGalleryImage} galleryImagePreview={galleryImagePreview} galleryCompressionStats={galleryCompressionStats} handleGallerySubmit={handleGallerySubmit} isAddingGalleryPhoto={isAddingGalleryPhoto} photos={photos} handleDeletePhoto={handleDeletePhoto} categories={GALLERY_CATEGORIES} />}
+        {activeTab === "records" && (
+          <AdminRecordsManager
+            key={recordsInitialGroup}
+            initialGroup={recordsInitialGroup}
+          />
         )}
-
-        {activeTab === "records" && <AdminRecordsManager />}
         {activeTab === "meetings" && <AdminMeetingsManager />}
         </AdminSectionErrorBoundary>
       </main>
 
       {/* Inspect Article Modal */}
       {inspectArticle && (
-        <div className="fixed inset-0 z-50 bg-[#071325]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#b87a14] bg-[#e5a93c]/15 px-2.5 py-0.5 rounded">
-                {inspectArticle.category}
-              </span>
-              <button
-                onClick={() => setInspectArticle(null)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg cursor-pointer"
-              >
-                <CloseIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            {inspectArticle.imageUrl && (
-              <div className="relative w-full h-56 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                <Image src={inspectArticle.imageUrl} alt={inspectArticle.title} fill sizes="(max-width: 672px) calc(100vw - 3rem), 672px" className="object-contain" unoptimized />
-              </div>
-            )}
-
-            <div>
-              <h2 className="text-xl font-bold text-[#071325]">{inspectArticle.title}</h2>
-              <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-3">
-                <span>By <strong>{inspectArticle.author}</strong></span>
-                <span>Reg: {inspectArticle.regNumber}</span>
-                <span>Dept: {inspectArticle.department}</span>
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-slate-700 italic">
-              {inspectArticle.summary}
-            </div>
-
-            <div className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-              <MarkdownRenderer content={inspectArticle.content} />
-            </div>
-
-            <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => handleDeleteArticle(inspectArticle.id)}
-                className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-              >
-                Reject & Move to Trash
-              </button>
-              {inspectArticle.status === "Pending Review" && (
-                <button
-                  onClick={() => handleApproveArticle(inspectArticle.id)}
-                  className="px-5 py-2 bg-[#0a5c36] hover:bg-[#074729] text-white text-xs font-bold rounded-xl transition-colors shadow cursor-pointer"
-                >
-                  Approve & Publish to Blog
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <AdminArticlePreviewDialog
+          article={inspectArticle}
+          onClose={() => setInspectArticle(null)}
+          onApprove={handleApproveArticle}
+          onDelete={handleDeleteArticle}
+        />
       )}
     </div>
   );

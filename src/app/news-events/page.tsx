@@ -47,10 +47,10 @@ export default async function NewsEventsPage() {
 
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-[#e5a93c] bg-[#e5a93c]/15 px-3 py-1 rounded-full border border-[#e5a93c]/30 inline-block mb-3">
+              <span className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#071325] bg-[#e5a93c] px-3 py-1.5 border border-[#e5a93c] inline-block mb-3">
                 Events & Dispatches
               </span>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              <h1 className="text-3xl sm:text-5xl font-black uppercase text-white tracking-tight leading-[0.95]">
                 News, Events & Living Recaps
               </h1>
               <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
@@ -61,13 +61,13 @@ export default async function NewsEventsPage() {
             <div className="flex items-center gap-2">
               <a
                 href="#upcoming"
-                className="px-3.5 py-1.5 rounded-lg bg-[#e5a93c] text-[#071325] text-xs font-bold hover:bg-[#d48b12] transition-colors"
+                className="px-3.5 py-2 border-2 border-[#e5a93c] bg-[#e5a93c] text-[#071325] text-xs font-extrabold uppercase tracking-wide hover:bg-white transition-colors"
               >
                 Upcoming Events ({upcomingEvents.length})
               </a>
               <a
                 href="#recaps"
-                className="px-3.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold hover:text-white transition-colors"
+                className="px-3.5 py-2 border-2 border-slate-500 bg-[#071325] text-white text-xs font-bold uppercase tracking-wide hover:border-[#e5a93c] transition-colors"
               >
                 Archives & Recaps
               </a>
@@ -80,27 +80,27 @@ export default async function NewsEventsPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-12">
         {/* Section 1: Upcoming Events */}
         <section id="upcoming" className="space-y-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="flex items-center justify-between pb-4 border-b-2 border-[#071325]">
             <div>
-              <h2 className="text-xl font-bold text-[#071325]">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase text-[#071325] tracking-tight">
                 Upcoming Engineering Events & Sessions
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Register early to secure lab workstation capacity and industrial excursion slots.
               </p>
             </div>
-            <span className="text-xs font-bold text-[#b87a14] bg-[#e5a93c]/15 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-extrabold uppercase tracking-wide text-[#071325] bg-[#e5a93c] border-2 border-[#071325] px-3 py-2">
               {upcomingEvents.length} Scheduled
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {upcomingEvents.map((post) => (
               <article
                 key={post.slug}
-                className="bg-white rounded-2xl border border-slate-200 hover:border-[#e5a93c] transition-all shadow-sm overflow-hidden flex flex-col group"
+                className="bg-white border-2 border-[#071325] shadow-[5px_5px_0_0_#071325] hover:shadow-[7px_7px_0_0_#e5a93c] hover:border-[#b87a14] transition-all overflow-hidden flex flex-col group"
               >
-                <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
+                <div className="relative h-52 w-full bg-[#071325] border-b-2 border-[#071325] overflow-hidden">
                   <Image
                     src={post.coverImage || "/images/dekut-campus.jpg"}
                     alt={post.title}
@@ -109,38 +109,38 @@ export default async function NewsEventsPage() {
                     className="object-contain"
                   />
                   <div className="absolute top-3 left-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5a93c] text-[#071325] px-2.5 py-1 rounded-md shadow-sm">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#e5a93c] text-[#071325] px-2.5 py-1.5 border border-[#071325]">
                       {post.type}
                     </span>
                   </div>
                   {post.eventDate && (
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-md bg-[#071325]/85 px-2 py-1 text-xs text-white font-medium">
+                    <div className="absolute bottom-0 right-0 flex items-center gap-1.5 border-t-2 border-l-2 border-[#e5a93c] bg-[#071325] px-3 py-2 text-xs text-white font-bold">
                       <CalendarIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
                       <span>{post.eventDate}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="p-5 flex-1 flex flex-col justify-between">
+                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
                   <div>
                     {post.location && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-2">
-                        <MapPinIcon className="w-3.5 h-3.5 text-[#e5a93c]" />
+                    <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-2">
+                        <MapPinIcon className="w-3.5 h-3.5 text-[#b87a14]" />
                         <span className="truncate">{post.location}</span>
                       </div>
                     )}
-                    <h3 className="text-base font-bold text-[#071325] group-hover:text-[#0a5c36] transition-colors leading-snug">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase text-[#071325] group-hover:text-[#b87a14] transition-colors leading-[1.05] tracking-tight">
                       <Link href={`/news-events/${post.slug}`}>{post.title}</Link>
                     </h3>
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-sm text-slate-700 mt-3 line-clamp-3 leading-relaxed">
                       {post.excerpt}
                     </p>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="pt-4 mt-4 border-t-2 border-[#071325] flex items-center justify-between">
                     <Link
                       href={`/news-events/${post.slug}`}
-                      className="text-xs font-bold text-[#071325] hover:text-[#b87a14] flex items-center gap-1 transition-colors"
+                      className="text-xs font-extrabold uppercase tracking-wide text-[#071325] hover:text-[#b87a14] flex items-center gap-1 transition-colors"
                     >
                       <span>Event Details & RSVP</span>
                       <ChevronRightIcon className="w-3.5 h-3.5" />
@@ -150,7 +150,7 @@ export default async function NewsEventsPage() {
                       href={`/api/og/${post.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] font-semibold text-slate-500 hover:text-[#071325] flex items-center gap-1"
+                      className="text-[11px] font-bold uppercase tracking-wide text-slate-600 hover:text-[#b87a14] flex items-center gap-1"
                       title="Download or preview designed event poster"
                     >
                       <DownloadIcon className="w-3.5 h-3.5" />
@@ -165,16 +165,16 @@ export default async function NewsEventsPage() {
 
         {/* Section 2: Past Recaps & Photographic Archive (Folds Gallery into News & Events!) */}
         <section id="recaps" className="space-y-6 pt-6">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <div className="flex items-center justify-between pb-4 border-b-2 border-[#071325]">
             <div>
-              <h2 className="text-xl font-bold text-[#071325]">
+              <h2 className="text-2xl sm:text-3xl font-black uppercase text-[#071325] tracking-tight">
                 Event Recaps & Photographic Archives
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Living history of DESA engineering visits, workshop outcomes, and student achievements.
               </p>
             </div>
-            <span className="text-xs font-bold text-slate-600 bg-slate-200 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-extrabold uppercase tracking-wide text-[#071325] bg-slate-200 border-2 border-[#071325] px-3 py-2">
               Living Archive
             </span>
           </div>
@@ -183,10 +183,10 @@ export default async function NewsEventsPage() {
             {pastRecaps.map((post) => (
               <article
                 key={post.slug}
-                className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm hover:border-[#e5a93c] transition-all"
+                className="bg-white border-2 border-[#071325] p-5 sm:p-6 shadow-[5px_5px_0_0_#071325] hover:shadow-[7px_7px_0_0_#e5a93c] hover:border-[#b87a14] transition-all"
               >
                 <div className="flex flex-col lg:flex-row gap-6 items-start">
-                  <div className="relative w-full lg:w-72 h-44 rounded-xl overflow-hidden shrink-0 bg-slate-100">
+                  <div className="relative w-full lg:w-72 h-44 border-2 border-[#071325] overflow-hidden shrink-0 bg-slate-100">
                     <Image
                       src={post.coverImage || "/images/hero-concept.jpg"}
                       alt={post.title}
@@ -230,7 +230,7 @@ export default async function NewsEventsPage() {
                           {post.recapPhotos.map((imgSrc, i) => (
                             <div
                               key={i}
-                              className="relative w-24 h-16 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-slate-100"
+                              className="relative w-24 h-16 overflow-hidden shrink-0 border-2 border-[#071325] bg-slate-100"
                             >
                               <Image
                                 src={imgSrc}
@@ -248,7 +248,7 @@ export default async function NewsEventsPage() {
                     <div className="mt-4 flex items-center justify-between">
                       <Link
                         href={`/news-events/${post.slug}`}
-                        className="text-xs font-bold text-[#b87a14] hover:underline flex items-center gap-1"
+                        className="text-xs font-extrabold uppercase tracking-wide text-[#071325] hover:text-[#b87a14] flex items-center gap-1"
                       >
                         <span>Read Full Dispatch & Gallery</span>
                         <ChevronRightIcon className="w-3.5 h-3.5" />
@@ -258,7 +258,7 @@ export default async function NewsEventsPage() {
                         href={`/api/og/${post.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] font-semibold text-slate-500 hover:text-[#071325] flex items-center gap-1"
+                        className="text-[11px] font-bold uppercase tracking-wide text-slate-600 hover:text-[#b87a14] flex items-center gap-1"
                       >
                         <ExternalLinkIcon className="w-3.5 h-3.5" />
                         <span>Poster Card</span>

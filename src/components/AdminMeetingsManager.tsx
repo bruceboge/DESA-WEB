@@ -196,7 +196,7 @@ export default function AdminMeetingsManager() {
           <button
             type="button"
             onClick={() => setReloadToken((current) => current + 1)}
-            className="rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="min-h-11 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Refresh
           </button>
@@ -206,7 +206,7 @@ export default function AdminMeetingsManager() {
               setError(null);
               setIsCreateOpen((open) => !open);
             }}
-            className="rounded-xl bg-[#e5a93c] px-4 py-2 text-sm font-bold text-[#071325] hover:bg-[#d48b12]"
+            className="min-h-11 rounded-xl bg-[#e5a93c] px-4 py-2 text-sm font-bold text-[#071325] hover:bg-[#d48b12]"
           >
             {isCreateOpen ? "Close form" : "+ Create meeting"}
           </button>
@@ -284,14 +284,14 @@ export default function AdminMeetingsManager() {
             <button
               type="button"
               onClick={() => setIsCreateOpen(false)}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              className="min-h-11 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isPublishing}
-              className="rounded-xl bg-[#071325] px-5 py-2 text-sm font-bold text-[#e5a93c] hover:bg-[#0c1a32] disabled:opacity-50"
+              className="min-h-11 rounded-xl bg-[#071325] px-5 py-2 text-sm font-bold text-[#e5a93c] hover:bg-[#0c1a32] disabled:opacity-50"
             >
               {isPublishing ? "Publishing…" : "Publish meeting"}
             </button>
@@ -344,18 +344,18 @@ export default function AdminMeetingsManager() {
                         {status}
                       </span>
                     </button>
-                    <div className="flex shrink-0 flex-col gap-1">
+                    <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
                         onClick={() => void changeMeetingStatus(meeting, status === "Open" ? "Closed" : "Open")}
-                        className="rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100"
+                        className="min-h-10 min-w-14 rounded-lg px-2 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100"
                       >
                         {status === "Open" ? "Close" : "Open"}
                       </button>
                       <button
                         type="button"
                         onClick={() => void moveMeetingToTrash(meeting)}
-                        className="rounded-lg px-2 py-1 text-[11px] font-semibold text-red-600 hover:bg-red-50"
+                        className="min-h-10 min-w-14 rounded-lg px-2 py-2 text-[11px] font-semibold text-red-600 hover:bg-red-50"
                       >
                         Trash
                       </button>
@@ -392,13 +392,14 @@ export default function AdminMeetingsManager() {
               ) : attendees.length === 0 ? (
                 <p className="p-6 text-sm text-slate-500">No one has recorded roll call for this meeting yet.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <>
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 text-[10px] uppercase tracking-wide text-slate-500">
                       <tr>
                         <th className="px-4 py-3">Name</th>
                         <th className="px-4 py-3">Registration number</th>
-                        <th className="px-4 py-3">Department / year</th>
+                        <th className="px-4 py-3">Year of study</th>
                         <th className="px-4 py-3">Time</th>
                       </tr>
                     </thead>
@@ -422,6 +423,21 @@ export default function AdminMeetingsManager() {
                     </tbody>
                   </table>
                 </div>
+                <div className="divide-y divide-slate-200 md:hidden">
+                  {attendees.map((attendee) => (
+                    <article key={attendee.id} className="space-y-2 p-4">
+                      <h4 className="text-sm font-bold text-slate-900">{recordText(attendee, "fullName")}</h4>
+                      <p className="break-all font-mono text-xs text-slate-600">{recordText(attendee, "regNumber")}</p>
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-xs">
+                        <span className="font-semibold text-[#071325]">
+                          {recordText(attendee, "yearOfStudy") || recordText(attendee, "department") || "Year not recorded"}
+                        </span>
+                        <span className="text-slate-500">{recordText(attendee, "timestamp")}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+                </>
               )}
             </>
           ) : (

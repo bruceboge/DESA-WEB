@@ -19,7 +19,7 @@ import {
   getDynamicNewsEvents,
   addNewsEvent,
   deleteNewsEvent,
-  getAdminPortalStats,
+  getAdminDashboardOverview,
   getAllMeetings,
   getMeetingAttendees,
   addMeeting,
@@ -67,9 +67,9 @@ export async function GET(request: Request) {
     }
 
     if (section === "overview") {
-      const stats = await getAdminPortalStats();
+      const overview = await getAdminDashboardOverview();
       return NextResponse.json(
-        { stats },
+        overview,
         { headers: { "Cache-Control": "no-store" } }
       );
     }

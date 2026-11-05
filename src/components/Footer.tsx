@@ -7,7 +7,7 @@ import { MapPinIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, Insta
 
 export default function Footer() {
   return (
-    <footer className="bg-[#050d1a] text-slate-300 border-t border-slate-800 relative z-10">
+    <footer className="bg-[#050d1a] text-slate-300 border-t-2 border-[#e5a93c] relative z-10 shadow-[0_-4px_0_0_#e5a93c]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-24 md:pb-12">
 
         {/* Main Content Grid: 2 columns on mobile, 12 columns on desktop */}

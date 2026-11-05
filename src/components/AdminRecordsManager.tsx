@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import type { AdminPortalRecord, PortalRecordType } from "@/lib/dataStore";
 import { engineeringPrograms } from "@/data/programs";
 
-type RecordGroup =
+export type RecordGroup =
   | "members"
   | "contacts"
   | "gala"
@@ -202,8 +202,8 @@ function getRecordSubtitle(record: AdminPortalRecord): string {
   return typeof detail === "string" ? detail : record.recordType;
 }
 
-export default function AdminRecordsManager() {
-  const [group, setGroup] = useState<RecordGroup>("members");
+export default function AdminRecordsManager({ initialGroup = "members" }: { initialGroup?: RecordGroup }) {
+  const [group, setGroup] = useState<RecordGroup>(initialGroup);
   const [viewMode, setViewMode] = useState<"table" | "split">("table");
   const [page, setPage] = useState(0);
   const [records, setRecords] = useState<AdminPortalRecord[]>([]);
@@ -218,9 +218,36 @@ export default function AdminRecordsManager() {
   const [memberDraft, setMemberDraft] = useState<MemberDraft>(EMPTY_MEMBER_DRAFT);
   const [isCreatingMember, setIsCreatingMember] = useState(false);
   const [isChangingTrashState, setIsChangingTrashState] = useState(false);
+  const [pendingDeleteRecord, setPendingDeleteRecord] = useState<AdminPortalRecord | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(false);
+
+  const recordStatus = (record: AdminPortalRecord) =>
+    String(record.data.status || record.data.membershipStatus || (record.data.verified ? "Verified" : "") || "No status");
+  const availableStatuses = Array.from(new Set(records.map(recordStatus))).sort();
+  const visibleRecords = statusFilter === "all"
+    ? records
+    : records.filter((record) => recordStatus(record) === statusFilter);
+
+  function exportCurrentPage() {
+    const columns = ["id", "recordType", ...Array.from(new Set(visibleRecords.flatMap((record) => Object.keys(record.data))))];
+    const escapeCsv = (value: unknown) => {
+      const text = Array.isArray(value) ? value.join("; ") : String(value ?? "");
+      return `"${text.replace(/"/g, '""')}"`;
+    };
+    const rows = visibleRecords.map((record) => columns.map((column) =>
+      escapeCsv(column === "id" ? record.id : column === "recordType" ? record.recordType : record.data[column])
+    ).join(","));
+    const csv = [columns.map(escapeCsv).join(","), ...rows].join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `desa-${group}-page-${page + 1}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -270,6 +297,7 @@ export default function AdminRecordsManager() {
 
   const selectGroup = (nextGroup: RecordGroup) => {
     setGroup(nextGroup);
+    setStatusFilter("all");
     setPage(0);
     setSelectedId(null);
     setDraft({});
@@ -315,12 +343,6 @@ export default function AdminRecordsManager() {
     record: AdminPortalRecord,
     action: "trash" | "restore" | "permanentDelete"
   ) => {
-    if (
-      action === "permanentDelete" &&
-      !window.confirm(`Permanently delete “${getRecordTitle(record)}”? This cannot be undone.`)
-    ) {
-      return;
-    }
     setIsChangingTrashState(true);
     setError(null);
     setStatusMessage(null);
@@ -341,12 +363,25 @@ export default function AdminRecordsManager() {
       );
       setSelectedId(null);
       setDraftRecordId(null);
+      if (action === "permanentDelete") setPendingDeleteRecord(null);
       setReloadToken((current) => current + 1);
     } catch (actionError: unknown) {
       setError(actionError instanceof Error ? actionError.message : "Could not update record.");
     } finally {
       setIsChangingTrashState(false);
     }
+  };
+
+  const requestRecordAction = (
+    record: AdminPortalRecord,
+    action: "trash" | "restore" | "permanentDelete"
+  ) => {
+    if (action === "permanentDelete") {
+      setError(null);
+      setPendingDeleteRecord(record);
+      return;
+    }
+    void changeTrashState(record, action);
   };
 
   const saveRecord = async (event: React.FormEvent) => {
@@ -486,7 +521,7 @@ export default function AdminRecordsManager() {
                   setError(null);
                   setStatusMessage(null);
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold transition shadow-sm"
+                className="inline-flex min-h-11 items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold transition shadow-sm"
               >
                 <span>{memberFormOpen ? "Close Form" : "+ Add Member"}</span>
               </button>
@@ -499,7 +534,7 @@ export default function AdminRecordsManager() {
                 setDraftRecordId(null);
                 setReloadToken((c) => c + 1);
               }}
-              className="px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition"
+              className="min-h-11 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition"
             >
               Refresh
             </button>
@@ -507,7 +542,7 @@ export default function AdminRecordsManager() {
         </div>
 
         {/* Record Group Navigation Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+        <div className="grid grid-cols-2 gap-2 pb-1 pt-0.5 sm:flex sm:overflow-x-auto sm:gap-1.5 sm:scrollbar-thin">
           {RECORD_GROUPS.map((item) => {
             const isActive = group === item.value;
             return (
@@ -515,7 +550,7 @@ export default function AdminRecordsManager() {
                 key={item.value}
                 type="button"
                 onClick={() => selectGroup(item.value)}
-                className={`whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 shrink-0 ${
+                className={`min-h-11 w-full whitespace-nowrap px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 sm:w-auto sm:shrink-0 ${
                   isActive
                     ? "bg-[#071325] text-[#e5a93c] shadow-sm font-bold"
                     : "bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/60"
@@ -529,7 +564,8 @@ export default function AdminRecordsManager() {
         </div>
 
         {/* Search Bar */}
-        <div className="relative">
+        <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative min-w-0 flex-1">
           <input
             type="search"
             value={search}
@@ -564,6 +600,20 @@ export default function AdminRecordsManager() {
             </button>
           )}
         </div>
+        <label className="sr-only" htmlFor="record-status-filter">Filter this page by status</label>
+        <select
+          id="record-status-filter"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="min-h-11 border border-slate-200 bg-white px-3 text-sm text-slate-700"
+        >
+          <option value="all">All statuses on this page</option>
+          {availableStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
+        </select>
+        <button type="button" onClick={exportCurrentPage} disabled={!visibleRecords.length} className="min-h-11 border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
+          Export page CSV
+        </button>
+      </div>
       </div>
 
       {/* Notifications */}
@@ -687,7 +737,7 @@ export default function AdminRecordsManager() {
          ───────────────────────────────────────────────────────────── */}
       {viewMode === "table" && (
         <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-left text-xs text-slate-700 border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold uppercase tracking-wider text-slate-600">
@@ -705,14 +755,14 @@ export default function AdminRecordsManager() {
                       Loading records from database…
                     </td>
                   </tr>
-                ) : records.length === 0 ? (
+                ) : visibleRecords.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-slate-400">
-                      {search ? "No records match your search." : "No records found in this category."}
+                      {statusFilter !== "all" ? "No records on this page match that status." : search ? "No records match your search." : "No records found in this category."}
                     </td>
                   </tr>
                 ) : (
-                  records.map((record) => {
+                  visibleRecords.map((record) => {
                     const isSelected = record.id === selectedId;
                     const data = record.data;
                     const statusStr = String(data.status || data.membershipStatus || (data.verified ? "Verified" : "") || "");
@@ -785,7 +835,7 @@ export default function AdminRecordsManager() {
                                 <button
                                   type="button"
                                   disabled={isChangingTrashState}
-                                  onClick={() => changeTrashState(record, "trash")}
+                                  onClick={() => requestRecordAction(record, "trash")}
                                   className="px-2.5 py-1 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 font-semibold text-[11px] transition"
                                   title="Move to Trash"
                                 >
@@ -797,7 +847,7 @@ export default function AdminRecordsManager() {
                                 <button
                                   type="button"
                                   disabled={isChangingTrashState}
-                                  onClick={() => changeTrashState(record, "restore")}
+                                  onClick={() => requestRecordAction(record, "restore")}
                                   className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] transition"
                                 >
                                   Restore
@@ -805,7 +855,7 @@ export default function AdminRecordsManager() {
                                 <button
                                   type="button"
                                   disabled={isChangingTrashState}
-                                  onClick={() => changeTrashState(record, "permanentDelete")}
+                                  onClick={() => requestRecordAction(record, "permanentDelete")}
                                   className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-[11px] transition"
                                 >
                                   Delete
@@ -822,9 +872,87 @@ export default function AdminRecordsManager() {
             </table>
           </div>
 
+          <div className="divide-y divide-slate-200 md:hidden">
+            {isLoading ? (
+              <p className="p-6 text-center text-sm text-slate-500">Loading records from database…</p>
+            ) : visibleRecords.length === 0 ? (
+              <p className="p-6 text-center text-sm text-slate-500">
+                {statusFilter !== "all" ? "No records on this page match that status." : search ? "No records match your search." : "No records found in this category."}
+              </p>
+            ) : visibleRecords.map((record) => {
+              const data = record.data;
+              const statusStr = String(data.status || data.membershipStatus || (data.verified ? "Verified" : "") || "");
+              const isPositiveStatus = ["Active", "Paid", "Published", "Open", "Verified"].includes(statusStr);
+              const isPendingStatus = ["Pending Review", "Draft", "Unpaid", "New / Unread"].includes(statusStr);
+              const primaryDetail = String(data.regNumber || data.email || data.eventDate || data.sessionDate || "—");
+              const groupDetail = String(data.department || data.category || data.course || data.location || "");
+
+              return (
+                <article key={`${record.recordType}:${record.id}`} className={`p-4 ${selectedId === record.id ? "bg-amber-50/50" : "bg-white"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="break-words text-sm font-bold text-slate-900">{getRecordTitle(record)}</h3>
+                      <p className="mt-1 break-all font-mono text-[10px] text-slate-500">{record.recordType} · {record.id.slice(0, 18)}</p>
+                    </div>
+                    {statusStr ? (
+                      <span className={`shrink-0 border px-2 py-1 text-[10px] font-bold ${
+                        isPositiveStatus
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : isPendingStatus
+                            ? "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-slate-200 bg-slate-100 text-slate-600"
+                      }`}>
+                        {statusStr}
+                      </span>
+                    ) : null}
+                  </div>
+                  <dl className="mt-3 grid grid-cols-1 gap-2 text-xs">
+                    <div>
+                      <dt className="font-semibold uppercase tracking-wide text-slate-500">Details</dt>
+                      <dd className="mt-0.5 break-words text-slate-800">{primaryDetail}</dd>
+                    </div>
+                    {groupDetail && (
+                      <div>
+                        <dt className="font-semibold uppercase tracking-wide text-slate-500">Department / group</dt>
+                        <dd className="mt-0.5 break-words text-slate-800">{groupDetail}</dd>
+                      </div>
+                    )}
+                    {typeof data.phone === "string" && data.phone && (
+                      <div>
+                        <dt className="font-semibold uppercase tracking-wide text-slate-500">Phone</dt>
+                        <dd className="mt-0.5 text-slate-800">{data.phone}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
+                    {!isTrashView ? (
+                      <>
+                        <button type="button" onClick={() => openEditorFor(record)} className="min-h-11 border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-50">
+                          Edit record
+                        </button>
+                        <button type="button" disabled={isChangingTrashState} onClick={() => requestRecordAction(record, "trash")} className="min-h-11 border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">
+                          Move to Trash
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" disabled={isChangingTrashState} onClick={() => requestRecordAction(record, "restore")} className="min-h-11 border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">
+                          Restore
+                        </button>
+                        <button type="button" disabled={isChangingTrashState} onClick={() => requestRecordAction(record, "permanentDelete")} className="min-h-11 border border-rose-200 bg-white px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50">
+                          Delete permanently
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
           {/* Table Footer with Pagination */}
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 bg-slate-50/50">
-            <span className="text-xs text-slate-500 font-medium">
+          <div className="flex flex-col items-start justify-between gap-3 border-t border-slate-100 bg-slate-50/50 px-4 py-3 sm:flex-row sm:items-center">
+            <span className="text-xs font-medium text-slate-500">
               Showing page {page + 1} of {totalPages} ({total.toLocaleString()} records)
             </span>
             <div className="flex items-center gap-2">
@@ -835,7 +963,7 @@ export default function AdminRecordsManager() {
                   setSelectedId(null);
                   setPage((c) => Math.max(0, c - 1));
                 }}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition"
+                className="min-h-11 min-w-24 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition"
               >
                 Previous
               </button>
@@ -846,7 +974,7 @@ export default function AdminRecordsManager() {
                   setSelectedId(null);
                   setPage((c) => c + 1);
                 }}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition"
+                className="min-h-11 min-w-24 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition"
               >
                 Next
               </button>
@@ -876,10 +1004,10 @@ export default function AdminRecordsManager() {
             <div className="flex-1 overflow-y-auto max-h-[60vh] divide-y divide-slate-100">
               {isLoading ? (
                 <p className="p-6 text-xs text-slate-400 text-center">Loading records…</p>
-              ) : records.length === 0 ? (
+              ) : visibleRecords.length === 0 ? (
                 <p className="p-6 text-xs text-slate-400 text-center">No records in this section.</p>
               ) : (
-                records.map((record) => {
+                visibleRecords.map((record) => {
                   const isSelected = record.id === selectedId;
                   return (
                     <button
@@ -979,7 +1107,7 @@ export default function AdminRecordsManager() {
                     <button
                       type="button"
                       disabled={isChangingTrashState}
-                      onClick={() => changeTrashState(selectedRecord, "trash")}
+                      onClick={() => requestRecordAction(selectedRecord, "trash")}
                       className="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:underline"
                     >
                       Move to Trash
@@ -988,7 +1116,7 @@ export default function AdminRecordsManager() {
                     <button
                       type="button"
                       disabled={isChangingTrashState}
-                      onClick={() => changeTrashState(selectedRecord, "restore")}
+                      onClick={() => requestRecordAction(selectedRecord, "restore")}
                       className="text-xs font-bold text-emerald-600 hover:underline"
                     >
                       Restore Record
@@ -1097,6 +1225,49 @@ export default function AdminRecordsManager() {
                 )}
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {pendingDeleteRecord && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#071325]/70 p-0 sm:items-center sm:p-4">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="permanent-delete-title"
+            aria-describedby="permanent-delete-description"
+            className="w-full max-w-md border-2 border-[#071325] bg-white p-5 shadow-[6px_6px_0_0_#e5a93c] sm:p-6"
+          >
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-700">Permanent action</p>
+            <h2 id="permanent-delete-title" className="mt-2 text-lg font-black text-slate-900">
+              Delete this record permanently?
+            </h2>
+            <p id="permanent-delete-description" className="mt-2 break-words text-sm text-slate-600">
+              “{getRecordTitle(pendingDeleteRecord)}” will be removed permanently and cannot be restored.
+            </p>
+            {error && <p role="alert" className="mt-3 border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{error}</p>}
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                autoFocus
+                disabled={isChangingTrashState}
+                onClick={() => {
+                  setPendingDeleteRecord(null);
+                  setError(null);
+                }}
+                className="min-h-11 border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isChangingTrashState}
+                onClick={() => void changeTrashState(pendingDeleteRecord, "permanentDelete")}
+                className="min-h-11 border-2 border-rose-800 bg-rose-700 px-3 py-2 text-sm font-extrabold text-white hover:bg-rose-800 disabled:opacity-50"
+              >
+                {isChangingTrashState ? "Deleting…" : "Delete permanently"}
+              </button>
+            </div>
           </div>
         </div>
       )}

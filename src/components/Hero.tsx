@@ -4,12 +4,8 @@ import Link from "next/link";
 import {
   ArrowRightIcon,
   ShieldCheckIcon,
-  CogIcon,
   CpuIcon,
-  ZapIcon,
-  BuildingIcon,
   AwardIcon,
-  FlaskIcon,
 } from "./Icons";
 
 
@@ -34,22 +30,22 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
 
           {/* Left Column: Headline, Description & CTAs */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+          <div className="lg:col-span-10 lg:col-start-2 space-y-4 sm:space-y-6">
 
             {/* Top Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1a32]/90 border border-[#e5a93c]/40 text-[#e5a93c] text-xs font-semibold shadow-sm">
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#e5a93c] border-2 border-[#071325] text-[#071325] text-xs font-extrabold uppercase tracking-[0.16em] shadow-[4px_4px_0_0_#071325]">
               <span className="w-2 h-2 rounded-full bg-[#e5a93c] animate-pulse"></span>
               <span>Official SOE Students Body</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-white leading-tight">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white leading-[0.92]">
               Inspiring Engineering Minds. <br className="hidden sm:block" />
               <span className="text-[#e5a93c]">Shaping Kenya&apos;s Future.</span>
             </h1>
 
             {/* University SEO Paragraph */}
-            <p className="text-sm sm:text-lg text-slate-300 max-w-2xl leading-relaxed text-left">
+            <p className="text-sm sm:text-lg text-slate-300 max-w-4xl leading-relaxed text-left">
               <span className="sm:hidden">
                 Empowering visionary student engineers at Dedan Kimathi University of Technology across Mechatronics, Mechanical, Electrical, Civil, and Chemical disciplines.
               </span>
@@ -62,7 +58,7 @@ export default function Hero() {
             <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 pt-1 sm:pt-2">
               <Link
                 href="/news-events"
-                className="min-h-11 justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs sm:text-sm font-bold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow transition-colors flex items-center gap-1.5 sm:gap-2 cursor-pointer text-center"
+                className="min-h-12 justify-center bg-[#e5a93c] hover:bg-white text-[#071325] text-xs sm:text-sm font-extrabold uppercase tracking-wide px-4 sm:px-6 py-3 border-2 border-[#071325] shadow-[5px_5px_0_0_#e5a93c] hover:shadow-[7px_7px_0_0_#ffffff] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer text-center"
               >
                 <span>Explore Events</span>
                 <ArrowRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -70,14 +66,14 @@ export default function Hero() {
 
               <Link
                 href="/membership#lookup"
-                className="min-h-11 justify-center bg-[#0c1a32] hover:bg-[#142646] text-white text-xs sm:text-sm font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl border border-slate-700 hover:border-[#e5a93c]/50 transition-colors shadow flex items-center gap-1.5 sm:gap-2 text-center"
+                className="min-h-12 justify-center bg-[#071325] hover:bg-[#142646] text-white text-xs sm:text-sm font-bold uppercase tracking-wide px-4 sm:px-6 py-3 border-2 border-white hover:border-[#e5a93c] shadow-[5px_5px_0_0_#ffffff] hover:shadow-[7px_7px_0_0_#e5a93c] transition-all flex items-center gap-1.5 sm:gap-2 text-center"
               >
                 <span>Membership</span>
               </Link>
             </div>
 
             {/* Quick Accreditation Badges */}
-            <div className="pt-4 sm:pt-5 flex flex-wrap items-center gap-y-2.5 gap-x-4 sm:gap-x-8 text-xs text-slate-300 border-t border-slate-800/80">
+            <div className="pt-4 sm:pt-5 flex flex-wrap items-center gap-y-2.5 gap-x-4 sm:gap-x-8 text-xs text-slate-200 border-t-2 border-[#e5a93c]">
               <div className="flex items-center gap-2">
                 <ShieldCheckIcon className="w-4 h-4 text-[#e5a93c] shrink-0" />
                 <span>Official Student Body</span>

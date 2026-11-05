@@ -27,7 +27,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-lg">
+    <header className="sticky top-0 z-40 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-[0_4px_0_0_#e5a93c]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo & University Identity */}
@@ -63,7 +63,7 @@ export default function Navbar() {
                   href={link.href}
                   className={`text-[11px] xl:text-xs font-semibold px-2 xl:px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
                     active
-                      ? "bg-[#0c1a32] text-[#e5a93c] border border-[#e5a93c]/40 shadow-sm"
+                      ? "bg-[#0c1a32] text-[#e5a93c] border border-[#e5a93c]/40 shadow-[3px_3px_0_0_#e5a93c]"
                       : "text-slate-200 hover:text-[#e5a93c] hover:bg-white/5"
                   }`}
                 >
@@ -77,7 +77,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-2 shrink-0">
             <Link
               href="/membership#register"
-              className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold px-3.5 py-2 rounded-lg shadow transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              className="bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] text-xs font-bold px-3.5 py-2 border-2 border-[#071325] shadow-[3px_3px_0_0_#e5a93c] transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               <span>Join DESA</span>
               <ChevronRightIcon className="w-3.5 h-3.5" />
@@ -88,7 +88,7 @@ export default function Navbar() {
           <div className="flex lg:hidden items-center gap-2">
             <Link
               href="/membership#register"
-              className="min-h-11 inline-flex items-center justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-xs font-bold px-4 rounded-lg shadow transition-colors"
+              className="min-h-11 inline-flex items-center justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-xs font-bold px-4 border-2 border-[#071325] shadow-[3px_3px_0_0_#e5a93c] transition-colors"
             >
               Join
             </Link>
