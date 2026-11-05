@@ -272,12 +272,12 @@ export default function AdminPage() {
       try {
         const hasDraft = Boolean(
           newsForm.title ||
-            newsForm.type !== "event" ||
-            newsForm.eventDate ||
-            newsForm.coverImage ||
-            newsForm.excerpt ||
-            newsForm.content ||
-            newsForm.location !== "DeKUT Main Campus, Nyeri"
+          newsForm.type !== "event" ||
+          newsForm.eventDate ||
+          newsForm.coverImage ||
+          newsForm.excerpt ||
+          newsForm.content ||
+          newsForm.location !== "DeKUT Main Campus, Nyeri"
         );
         if (hasDraft) {
           sessionStorage.setItem(NEWS_DRAFT_KEY, JSON.stringify(newsForm));
@@ -300,11 +300,11 @@ export default function AdminPage() {
       try {
         const hasDraft = Boolean(
           galleryForm.title ||
-            galleryForm.image ||
-            galleryForm.description ||
-            galleryForm.category !== GALLERY_CATEGORIES[0] ||
-            galleryForm.department !== "School of Engineering" ||
-            galleryForm.location !== "Golden Gates Hotel, Nyeri"
+          galleryForm.image ||
+          galleryForm.description ||
+          galleryForm.category !== GALLERY_CATEGORIES[0] ||
+          galleryForm.department !== "School of Engineering" ||
+          galleryForm.location !== "Golden Gates Hotel, Nyeri"
         );
         if (hasDraft) {
           sessionStorage.setItem(GALLERY_DRAFT_KEY, JSON.stringify(galleryForm));
@@ -851,17 +851,15 @@ export default function AdminPage() {
               type="button"
               onClick={() => setActiveTab(item.id as typeof activeTab)}
               aria-current={activeTab === item.id ? "page" : undefined}
-              className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-3 py-2.5 text-center text-xs font-semibold transition sm:w-auto sm:text-sm ${
-                activeTab === item.id
-                  ? "bg-[#071325] text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
+              className={`inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-3 py-2.5 text-center text-xs font-semibold transition sm:w-auto sm:text-sm ${activeTab === item.id
+                ? "bg-[#071325] text-white shadow-sm"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                }`}
             >
               {item.label}
               {item.count !== undefined && (
-                <span className={`rounded-full px-2 py-0.5 text-xs ${
-                  activeTab === item.id ? "bg-white/15 text-[#f6c867]" : "bg-slate-100 text-slate-500"
-                }`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${activeTab === item.id ? "bg-white/15 text-[#f6c867]" : "bg-slate-100 text-slate-500"
+                  }`}>
                   {item.count}
                 </span>
               )}
@@ -884,45 +882,45 @@ export default function AdminPage() {
           </div>
         )}
         <AdminSectionErrorBoundary resetKey={activeTab}>
-        {activeTab === "overview" && (
-          <AdminOverviewPanel stats={stats} pendingArticleCount={pendingArticles.length} upcomingMeetings={upcomingMeetings} recentActivity={recentActivity} sheetsSync={sheetsSync} onNavigate={(tab, group) => { if (group) setRecordsInitialGroup(group); setActiveTab(tab); }} />
-        )}
-        {activeTab !== "overview" && activeTab !== "records" && (
-          <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b87a14]">
-                Manage DESA
-              </p>
-              <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-                {activeSection.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">{activeSection.detail}</p>
+          {activeTab === "overview" && (
+            <AdminOverviewPanel stats={stats} pendingArticleCount={pendingArticles.length} upcomingMeetings={upcomingMeetings} recentActivity={recentActivity} sheetsSync={sheetsSync} onNavigate={(tab, group) => { if (group) setRecordsInitialGroup(group); setActiveTab(tab); }} />
+          )}
+          {activeTab !== "overview" && activeTab !== "records" && (
+            <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#b87a14]">
+                  Manage DESA
+                </p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                  {activeSection.title}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">{activeSection.detail}</p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
+                <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+                Direct Supabase Database View
+              </span>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm">
-              <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
-              Direct Supabase Database View
-            </span>
-          </div>
-        )}
-        {/* ─────────────────────────────────────────────────────────────
+          )}
+          {/* ─────────────────────────────────────────────────────────────
             TAB 1: BLOG ARTICLE REVIEW QUEUE
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "blog" && <AdminBlogManagerPanel pendingArticles={pendingArticles} publishedArticles={publishedArticles} onInspect={setInspectArticle} onApprove={handleApproveArticle} onDelete={handleDeleteArticle} />}
-        {/* ─────────────────────────────────────────────────────────────
+          {activeTab === "blog" && <AdminBlogManagerPanel pendingArticles={pendingArticles} publishedArticles={publishedArticles} onInspect={setInspectArticle} onApprove={handleApproveArticle} onDelete={handleDeleteArticle} />}
+          {/* ─────────────────────────────────────────────────────────────
             TAB 2: NEWS & EVENTS PUBLISHER
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "news" && <AdminNewsManagerPanel newsForm={newsForm} setNewsForm={setNewsForm} newsDraftStatus={newsDraftStatus} discardNewsDraft={discardNewsDraft} handleNewsImageSelect={handleNewsImageSelect} newsImagePreview={newsImagePreview} isUploadingNewsImage={isUploadingNewsImage} handleNewsSubmit={handleNewsSubmit} isPublishingNews={isPublishingNews} newsList={newsList} handleDeleteNews={handleDeleteNews} />}
-        {/* ─────────────────────────────────────────────────────────────
+          {activeTab === "news" && <AdminNewsManagerPanel newsForm={newsForm} setNewsForm={setNewsForm} newsDraftStatus={newsDraftStatus} discardNewsDraft={discardNewsDraft} handleNewsImageSelect={handleNewsImageSelect} newsImagePreview={newsImagePreview} isUploadingNewsImage={isUploadingNewsImage} handleNewsSubmit={handleNewsSubmit} isPublishingNews={isPublishingNews} newsList={newsList} handleDeleteNews={handleDeleteNews} />}
+          {/* ─────────────────────────────────────────────────────────────
             TAB 3: OFFICIAL GALLERY MANAGER
            ───────────────────────────────────────────────────────────── */}
-        {activeTab === "gallery" && <AdminGalleryManagerPanel galleryForm={galleryForm} setGalleryForm={setGalleryForm} galleryDraftStatus={galleryDraftStatus} discardGalleryDraft={discardGalleryDraft} handleGalleryPhotoSelect={handleGalleryPhotoSelect} isUploadingGalleryImage={isUploadingGalleryImage} galleryImagePreview={galleryImagePreview} galleryCompressionStats={galleryCompressionStats} handleGallerySubmit={handleGallerySubmit} isAddingGalleryPhoto={isAddingGalleryPhoto} photos={photos} handleDeletePhoto={handleDeletePhoto} categories={GALLERY_CATEGORIES} />}
-        {activeTab === "records" && (
-          <AdminRecordsManager
-            key={recordsInitialGroup}
-            initialGroup={recordsInitialGroup}
-          />
-        )}
-        {activeTab === "meetings" && <AdminMeetingsManager />}
+          {activeTab === "gallery" && <AdminGalleryManagerPanel galleryForm={galleryForm} setGalleryForm={setGalleryForm} galleryDraftStatus={galleryDraftStatus} discardGalleryDraft={discardGalleryDraft} handleGalleryPhotoSelect={handleGalleryPhotoSelect} isUploadingGalleryImage={isUploadingGalleryImage} galleryImagePreview={galleryImagePreview} galleryCompressionStats={galleryCompressionStats} handleGallerySubmit={handleGallerySubmit} isAddingGalleryPhoto={isAddingGalleryPhoto} photos={photos} handleDeletePhoto={handleDeletePhoto} categories={GALLERY_CATEGORIES} />}
+          {activeTab === "records" && (
+            <AdminRecordsManager
+              key={recordsInitialGroup}
+              initialGroup={recordsInitialGroup}
+            />
+          )}
+          {activeTab === "meetings" && <AdminMeetingsManager />}
         </AdminSectionErrorBoundary>
       </main>
 
