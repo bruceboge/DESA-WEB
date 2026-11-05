@@ -8,14 +8,11 @@ import {
   CheckCircleIcon,
   ChevronRightIcon,
 } from "@/components/Icons";
-import { engineeringPrograms } from "@/data/programs";
 
 interface SubmittedReceipt {
   id: string;
   regNumber: string;
   fullName: string;
-  department: string;
-  yearOfStudy: string;
   sessionDate: string;
   sessionTopic: string;
   timestamp: string;
@@ -29,26 +26,10 @@ interface OpenMeeting {
   location: string;
 }
 
-const rollCallPrograms = [
-  ...engineeringPrograms,
-  "Other / Guest Scholar",
-];
-
-const yearLevels = [
-  "Year 1",
-  "Year 2",
-  "Year 3",
-  "Year 4",
-  "Year 5",
-  "Postgraduate",
-];
-
 export default function RollCallPage() {
   const [formData, setFormData] = useState({
     fullName: "",
     regNumber: "",
-    department: engineeringPrograms[0] as string,
-    yearOfStudy: "Year 1",
     meetingId: "",
     website: "", // Honeypot field for bot trapping
   });
@@ -66,7 +47,11 @@ export default function RollCallPage() {
       .then(async (response) => {
         const result = (await response.json()) as { meetings?: OpenMeeting[]; error?: string };
         if (!response.ok) throw new Error(result.error || "Could not load open meetings.");
-        setOpenMeetings(result.meetings || []);
+        const meetings = result.meetings || [];
+        setOpenMeetings(meetings);
+        if (meetings.length) {
+          setFormData((previous) => ({ ...previous, meetingId: meetings[0].id }));
+        }
       })
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
@@ -112,8 +97,6 @@ export default function RollCallPage() {
           id: result.entry.id,
           regNumber: result.entry.regNumber,
           fullName: result.entry.fullName,
-          department: result.entry.department,
-          yearOfStudy: result.entry.yearOfStudy,
           sessionDate: result.entry.sessionDate,
           sessionTopic: result.entry.sessionTopic,
           timestamp: result.entry.timestamp || timeFormatted,
@@ -236,41 +219,19 @@ export default function RollCallPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="rollcall-meeting" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Open meeting <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="rollcall-meeting"
-                    required
-                    value={formData.meetingId}
-                    disabled={isLoadingMeetings || openMeetings.length === 0}
-                    onChange={(event) =>
-                      setFormData({ ...formData, meetingId: event.target.value })
-                    }
-                    className="w-full min-h-11 rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c] disabled:opacity-60"
-                  >
-                    <option value="">
-                      {isLoadingMeetings
-                        ? "Loading open meetings…"
-                        : openMeetings.length
-                          ? "Choose the meeting you are attending"
-                          : "No meetings are scheduled for roll call today"}
-                    </option>
-                    {openMeetings.map((meeting) => (
-                      <option key={meeting.id} value={meeting.id}>
-                        {meeting.title} · {meeting.sessionDate}
-                        {meeting.location ? ` · ${meeting.location}` : ""}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    Scheduled meeting
+                  </span>
                   {meetingLoadError ? (
                     <span role="alert" className="mt-1 block text-xs text-red-700">
                       {meetingLoadError}
                     </span>
+                  ) : isLoadingMeetings ? (
+                    <div className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-sm text-slate-500">Loading scheduled meeting…</div>
                   ) : selectedMeeting ? (
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Attendance will be recorded for this meeting only.
-                    </span>
+                    <div className="w-full rounded-xl border border-[#e5a93c]/40 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-[#071325]">
+                      {selectedMeeting.title} <span className="font-normal text-slate-600">· {selectedMeeting.sessionDate}{selectedMeeting.location ? ` · ${selectedMeeting.location}` : ""}</span>
+                    </div>
                   ) : (
                     <span className="mt-1 block text-xs text-slate-500">
                       Roll call only opens in the event of a scheduled meeting.
@@ -316,45 +277,6 @@ export default function RollCallPage() {
                   />
                 </div>
 
-                {/* Academic Program & Year of Study */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="rollcall-program" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Program <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="rollcall-program"
-                      value={formData.department}
-                      onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    >
-                      {rollCallPrograms.map((prog) => (
-                        <option key={prog} value={prog}>
-                          {prog}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="rollcall-year" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                      Year of Study <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="rollcall-year"
-                      value={formData.yearOfStudy}
-                      onChange={(e) => setFormData({ ...formData, yearOfStudy: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    >
-                      {yearLevels.map((yr) => (
-                        <option key={yr} value={yr}>
-                          {yr}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
                 {/* Submit Button */}
                 <button
                   type="submit"
@@ -398,14 +320,6 @@ export default function RollCallPage() {
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                     <span className="text-slate-500 font-medium">Registration Number</span>
                     <span className="font-mono font-bold text-[#071325]">{lastReceipt.regNumber}</span>
-                  </div>
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                    <span className="text-slate-500 font-medium">Program</span>
-                    <span className="font-semibold text-[#071325]">{lastReceipt.department}</span>
-                  </div>
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                    <span className="text-slate-500 font-medium">Year of Study</span>
-                    <span className="font-semibold text-[#071325]">{lastReceipt.yearOfStudy}</span>
                   </div>
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                     <span className="text-slate-500 font-medium">Session Date</span>

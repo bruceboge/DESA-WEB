@@ -8,56 +8,7 @@ import { MapPinIcon, MailIcon, ExternalLinkIcon, TikTokIcon, LinkedInIcon, Insta
 export default function Footer() {
   return (
     <footer className="bg-[#050d1a] text-slate-300 border-t border-slate-800 relative z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-8 sm:pb-12">
-        {/* Official Social Channels Strip - Compact on Mobile */}
-        <div className="mb-8 sm:mb-12 p-4 sm:p-6 rounded-2xl bg-gradient-to-r from-[#0a182e] via-slate-900 to-[#0a182e] border border-slate-800/90 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shadow-xl">
-          <div className="text-center lg:text-left">
-            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#e5a93c] block">
-              DESA Social Channels
-            </span>
-            <h3 className="text-sm sm:text-base lg:text-lg font-bold text-white mt-0.5">
-              Connect with us
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full lg:w-auto">
-            {/* TikTok */}
-            <a
-              href="https://www.tiktok.com/@desa_dekut"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-white transition-all duration-200 group hover:border-[#e5a93c]/50 hover:shadow-lg"
-            >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-black flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform border border-slate-800">
-                <TikTokIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </a>
-
-            {/* LinkedIn */}
-            <a
-              href="https://ke.linkedin.com/in/dekut-engineering-students-association-118aa22b5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-white transition-all duration-200 group hover:border-[#0a66c2]/60 hover:shadow-lg"
-            >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#0a66c2] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
-                <LinkedInIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </a>
-
-            {/* Instagram */}
-            <a
-              href="https://www.instagram.com/dekut_engineeringstudents"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 sm:gap-2.5 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-white transition-all duration-200 group hover:border-[#e4405f]/60 hover:shadow-lg"
-            >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
-                <InstagramIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </a>
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-24 md:pb-12">
 
         {/* Main Content Grid: 2 columns on mobile, 12 columns on desktop */}
         <div className="grid grid-cols-2 lg:grid-cols-12 gap-x-5 sm:gap-x-8 gap-y-8 pb-10 border-b border-slate-800">
@@ -271,6 +222,12 @@ export default function Footer() {
             <Link href="/cookies" className="text-slate-400 hover:text-[#e5a93c] transition-colors">Cookie Policy</Link>
             <span className="text-slate-700">•</span>
             <Link href="/refund-policy" className="text-slate-400 hover:text-[#e5a93c] transition-colors">Refund & Dues Policy</Link>
+          </div>
+          <div className="w-full text-center md:text-right">
+            Designed for the Engineering Community by{" "}
+            <a href="https://bruceboge.me" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-[#e5a93c] transition-colors">
+              BRUCE BOGE
+            </a>
           </div>
         </div>
       </div>

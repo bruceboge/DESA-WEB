@@ -215,7 +215,7 @@ export default function GalaRegistrationPage() {
                 <CalendarIcon className="w-3.5 h-3.5 text-[#e5a93c]" /> Date
               </span>
               <span className="text-xs sm:text-sm font-bold text-white block mt-0.5">
-                20 Nov 2026
+                11 Dec 2026
               </span>
             </div>
             <div className="bg-[#050d1a] p-3 rounded-xl border border-slate-800 text-center">
@@ -264,13 +264,19 @@ export default function GalaRegistrationPage() {
             </p>
             <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
               <span className="bg-[#050d1a] border border-[#e5a93c]/40 text-slate-200 px-3 py-1 rounded-lg">
-                Students (Early Bird): <strong className="text-[#e5a93c]">Ksh 1,300</strong>
+                Students: <strong className="text-[#e5a93c]">Ksh 800</strong>
               </span>
               <span className="bg-[#050d1a] border border-slate-700 text-slate-200 px-3 py-1 rounded-lg">
-                Alumni: <strong className="text-white">Ksh 2,000</strong>
+                Alumni: <strong className="text-white">Ksh 1,000</strong>
               </span>
               <span className="bg-[#050d1a] border border-slate-700 text-slate-200 px-3 py-1 rounded-lg">
-                Staff: <strong className="text-white">Ksh 2,500</strong>
+                Staff: <strong className="text-white">Ksh 1,500</strong>
+              </span>
+              <span className="bg-[#050d1a] border border-slate-700 text-slate-200 px-3 py-1 rounded-lg">
+                Group of 5 (students): <strong className="text-white">Ksh 3,700</strong>
+              </span>
+              <span className="bg-[#050d1a] border border-slate-700 text-slate-200 px-3 py-1 rounded-lg">
+                Couple (students): <strong className="text-white">Ksh 1,500</strong>
               </span>
             </div>
           </div>
@@ -326,9 +332,11 @@ export default function GalaRegistrationPage() {
                 </div>
 
                 <div className="text-[11px] text-slate-400 border-t border-slate-800/80 pt-2">
-                  <span>EARLY BIRD Ticket Price: <strong className="text-white font-bold">Ksh 1,300</strong></span>
-                  <span>ALUMNI Ticket Price: <strong className="text-white font-bold">Ksh 2,000</strong></span>
-                  <span>STAFF Ticket Price: <strong className="text-white font-bold">Ksh 2,500</strong></span>
+                  <span>Student Ticket Price: <strong className="text-white font-bold">Ksh 800</strong></span>
+                  <span>Alumni Ticket Price: <strong className="text-white font-bold">Ksh 1,000</strong></span>
+                  <span>Staff Ticket Price: <strong className="text-white font-bold">Ksh 1,500</strong></span>
+                  <span>Group of 5 (students): <strong className="text-white font-bold">Ksh 3,700</strong></span>
+                  <span>Couple (students): <strong className="text-white font-bold">Ksh 1,500</strong></span>
                 </div>
               </div>
             </div>

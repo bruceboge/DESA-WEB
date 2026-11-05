@@ -123,18 +123,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!department || typeof department !== "string" || department.trim().length > 100) {
-      return NextResponse.json(
-        { success: false, error: "Please select a valid engineering program." },
-        { status: 400 }
-      );
+    if (department !== undefined && (typeof department !== "string" || department.trim().length > 100)) {
+      return NextResponse.json({ success: false, error: "Invalid department." }, { status: 400 });
     }
-
-    if (!yearOfStudy || typeof yearOfStudy !== "string" || yearOfStudy.trim().length > 30) {
-      return NextResponse.json(
-        { success: false, error: "Please select your year of study." },
-        { status: 400 }
-      );
+    if (yearOfStudy !== undefined && (typeof yearOfStudy !== "string" || yearOfStudy.trim().length > 30)) {
+      return NextResponse.json({ success: false, error: "Invalid year of study." }, { status: 400 });
     }
 
     const meeting = await getOpenMeeting(meetingId);
@@ -163,8 +156,8 @@ export async function POST(request: Request) {
       meetingId,
       regNumber: normalizeInputText(regNumber.toUpperCase()),
       fullName: normalizeInputText(fullName),
-      department: normalizeInputText(department),
-      yearOfStudy: normalizeInputText(yearOfStudy),
+      department: typeof department === "string" ? normalizeInputText(department) : "Not collected",
+      yearOfStudy: typeof yearOfStudy === "string" ? normalizeInputText(yearOfStudy) : "Not collected",
       sessionDate: meeting.sessionDate,
       sessionTopic: meeting.title,
       timestamp: timeString,

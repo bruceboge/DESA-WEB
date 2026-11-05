@@ -180,7 +180,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]" suppressHydrationWarning>
         <TopBar />
         <Navbar />
-        <main className="flex-1 pb-16 md:pb-0">
+        <main className="flex-1 pb-20 md:pb-0">
           {children}
         </main>
         <Footer />

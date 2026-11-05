@@ -27,7 +27,7 @@ interface LookupMember {
 }
 
 export default function MembershipHubPage() {
-  const [activeTab, setActiveTab] = useState<"lookup" | "register" | "dues" | "roll-call" | "services">("lookup");
+  const [activeTab, setActiveTab] = useState<"lookup" | "register" | "dues" | "roll-call" | "services">("roll-call");
 
   const [searchReg, setSearchReg] = useState("");
   const [isSearching, setIsSearching] = useState(false);
