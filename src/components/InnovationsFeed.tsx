@@ -4,13 +4,10 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { BlogArticle } from "@/lib/dataStore";
-import MarkdownRenderer from "@/components/MarkdownRenderer";
 import {
   SearchIcon,
-  CloseIcon,
   CheckCircleIcon,
   ArrowRightIcon,
-  ExternalLinkIcon,
   FileTextIcon,
 } from "./Icons";
 
@@ -32,7 +29,6 @@ const DEFAULT_CATEGORIES = [
 export default function InnovationsFeed({ initialArticles }: InnovationsFeedProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>("All Articles");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeModalArticle, setActiveModalArticle] = useState<BlogArticle | null>(null);
 
   // Derive all available categories dynamically from existing articles + defaults
   const availableCategories = useMemo(() => {
@@ -184,13 +180,13 @@ export default function InnovationsFeed({ initialArticles }: InnovationsFeedProp
                   <span className="text-xs text-slate-500 font-medium truncate max-w-[150px]">
                     By {article.author}
                   </span>
-                  <button
-                    onClick={() => setActiveModalArticle(article)}
+                  <Link
+                    href={`/innovations/${encodeURIComponent(article.id)}`}
                     className="text-xs font-bold text-[#071325] hover:text-[#b87a14] flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span>Read Article</span>
                     <ArrowRightIcon className="w-3.5 h-3.5" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             </article>
@@ -219,97 +215,6 @@ export default function InnovationsFeed({ initialArticles }: InnovationsFeedProp
         )}
       </div>
 
-      {/* Reader Modal */}
-      {activeModalArticle && (
-        <div className="fixed inset-0 z-50 bg-[#071325]/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-[#e5a93c]/15 text-[#b87a14] px-2.5 py-0.5 rounded border border-[#e5a93c]/30">
-                  {activeModalArticle.category}
-                </span>
-                <span className="text-xs text-slate-500 font-medium">
-                  {activeModalArticle.department}
-                </span>
-              </div>
-              <button
-                onClick={() => setActiveModalArticle(null)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                aria-label="Close modal"
-              >
-                <CloseIcon className="w-5 h-5" />
-              </button>
-            </div>
-
-            {activeModalArticle.imageUrl && (
-              <div className="relative w-full h-72 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
-                <Image
-                  src={activeModalArticle.imageUrl}
-                  alt={activeModalArticle.title}
-                  fill
-                  sizes="(max-width: 768px) calc(100vw - 3rem), 672px"
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-            )}
-
-            <div>
-              <h2 className="text-xl sm:text-2xl font-extrabold text-[#071325] leading-tight">
-                {activeModalArticle.title}
-              </h2>
-              <p className="text-xs text-slate-500 mt-2">
-                Authored by <strong>{activeModalArticle.author}</strong> • Published {activeModalArticle.date}
-              </p>
-            </div>
-
-            <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-xs text-slate-700 leading-relaxed italic">
-              {activeModalArticle.summary}
-            </div>
-
-            {activeModalArticle.highlights && activeModalArticle.highlights.length > 0 && (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-xs font-bold text-[#071325] block mb-2">
-                  Technical Specifications & Highlights:
-                </span>
-                <ul className="list-disc list-inside space-y-1 text-xs text-slate-600">
-                  {activeModalArticle.highlights.map((hl: string, i: number) => (
-                    <li key={i}>{hl}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Formatted Article Body */}
-            <div className="pt-2">
-              <MarkdownRenderer content={activeModalArticle.content} />
-            </div>
-
-            {activeModalArticle.externalLink && (
-              <div className="pt-4 border-t border-slate-200">
-                <a
-                  href={activeModalArticle.externalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#071325] hover:text-[#b87a14] transition-colors"
-                >
-                  <span>External Reference / Repository Link</span>
-                  <ExternalLinkIcon className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
-              <button
-                onClick={() => setActiveModalArticle(null)}
-                className="bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] text-xs font-bold px-5 py-2.5 rounded-xl transition-colors cursor-pointer"
-              >
-                Close Article
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
