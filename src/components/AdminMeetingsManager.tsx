@@ -412,10 +412,7 @@ export default function AdminMeetingsManager() {
                             {recordText(attendee, "regNumber")}
                           </td>
                           <td className="px-4 py-3 text-slate-600">
-                            {recordText(attendee, "department")}
-                            {recordText(attendee, "yearOfStudy")
-                              ? ` · ${recordText(attendee, "yearOfStudy")}`
-                              : ""}
+                            {recordText(attendee, "yearOfStudy") || recordText(attendee, "department") || "—"}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                             {recordText(attendee, "timestamp")}

@@ -91,7 +91,6 @@ const RECORD_FIELDS: Record<PortalRecordType, FieldDefinition[]> = {
   roll_call: [
     { key: "fullName", label: "Full name" },
     { key: "regNumber", label: "Registration number" },
-    { key: "department", label: "Department" },
     { key: "yearOfStudy", label: "Year of study" },
     { key: "sessionDate", label: "Session date" },
     { key: "sessionTopic", label: "Session / topic" },

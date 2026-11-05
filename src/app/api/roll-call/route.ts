@@ -23,7 +23,6 @@ export interface RollCallRecord {
   id: string;
   regNumber: string;
   fullName: string;
-  department: string;
   yearOfStudy: string;
   meetingId: string;
   sessionDate: string; // YYYY-MM-DD
@@ -61,7 +60,7 @@ export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
     const body = await request.json();
-    const { regNumber, fullName, department, yearOfStudy, meetingId, website } = body;
+    const { regNumber, fullName, yearOfStudy, meetingId, website } = body;
 
     if (typeof meetingId !== "string" || !meetingId || meetingId.length > 200) {
       return NextResponse.json({ success: false, error: "Select an open meeting." }, { status: 400 });
@@ -96,7 +95,6 @@ export async function POST(request: Request) {
           meetingId,
           regNumber: regNumber || "C025-01-0000/2024",
           fullName: fullName || "Student Attendee",
-          department: department || "Engineering",
           yearOfStudy: yearOfStudy || "Year 1",
           sessionDate: getNairobiDate(),
           sessionTopic: "Meeting",
@@ -123,11 +121,8 @@ export async function POST(request: Request) {
       );
     }
 
-    if (department !== undefined && (typeof department !== "string" || department.trim().length > 100)) {
-      return NextResponse.json({ success: false, error: "Invalid department." }, { status: 400 });
-    }
-    if (yearOfStudy !== undefined && (typeof yearOfStudy !== "string" || yearOfStudy.trim().length > 30)) {
-      return NextResponse.json({ success: false, error: "Invalid year of study." }, { status: 400 });
+    if (typeof yearOfStudy !== "string" || !["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"].includes(yearOfStudy)) {
+      return NextResponse.json({ success: false, error: "Select a valid year of study (Year 1–5)." }, { status: 400 });
     }
 
     const meeting = await getOpenMeeting(meetingId);
@@ -156,8 +151,7 @@ export async function POST(request: Request) {
       meetingId,
       regNumber: normalizeInputText(regNumber.toUpperCase()),
       fullName: normalizeInputText(fullName),
-      department: typeof department === "string" ? normalizeInputText(department) : "Not collected",
-      yearOfStudy: typeof yearOfStudy === "string" ? normalizeInputText(yearOfStudy) : "Not collected",
+      yearOfStudy,
       sessionDate: meeting.sessionDate,
       sessionTopic: meeting.title,
       timestamp: timeString,
