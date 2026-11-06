@@ -33,7 +33,7 @@ export default async function NewsEventsPage() {
   const pastRecaps = posts.filter((p) => p.isPast || p.type === "news");
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="news-events-page min-h-screen bg-slate-50 text-slate-800">
       {/* Header Banner */}
       <section className="bg-[#071325] text-white py-12 border-b border-[#e5a93c]/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -58,7 +58,7 @@ export default async function NewsEventsPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
               <a
                 href="#upcoming"
                 className="px-3.5 py-2 border-2 border-[#e5a93c] bg-[#e5a93c] text-[#071325] text-xs font-extrabold uppercase tracking-wide hover:bg-white transition-colors"
@@ -80,7 +80,7 @@ export default async function NewsEventsPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-12">
         {/* Section 1: Upcoming Events */}
         <section id="upcoming" className="space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b-2 border-[#071325]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b-2 border-[#071325] min-w-0">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black uppercase text-[#071325] tracking-tight">
                 Upcoming Engineering Events & Sessions
@@ -121,7 +121,7 @@ export default async function NewsEventsPage() {
                   )}
                 </div>
 
-                <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between">
+                <div className="p-4 sm:p-6 flex-1 min-w-0 flex flex-col justify-between">
                   <div>
                     {post.location && (
                     <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600 mb-2">
@@ -137,7 +137,7 @@ export default async function NewsEventsPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t-2 border-[#071325] flex items-center justify-between">
+                  <div className="pt-4 mt-4 border-t-2 border-[#071325] flex flex-wrap items-center justify-between gap-3">
                     <Link
                       href={`/news-events/${post.slug}`}
                       className="text-xs font-extrabold uppercase tracking-wide text-[#071325] hover:text-[#b87a14] flex items-center gap-1 transition-colors"
@@ -165,7 +165,7 @@ export default async function NewsEventsPage() {
 
         {/* Section 2: Past Recaps & Photographic Archive (Folds Gallery into News & Events!) */}
         <section id="recaps" className="space-y-6 pt-6">
-          <div className="flex items-center justify-between pb-4 border-b-2 border-[#071325]">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b-2 border-[#071325] min-w-0">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black uppercase text-[#071325] tracking-tight">
                 Event Recaps & Photographic Archives
@@ -202,7 +202,7 @@ export default async function NewsEventsPage() {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 text-xs text-slate-500 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mb-1.5">
                       <span>{post.eventDate || post.date}</span>
                       {post.location && (
                         <>
@@ -245,7 +245,7 @@ export default async function NewsEventsPage() {
                       </div>
                     )}
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                       <Link
                         href={`/news-events/${post.slug}`}
                         className="text-xs font-extrabold uppercase tracking-wide text-[#071325] hover:text-[#b87a14] flex items-center gap-1"

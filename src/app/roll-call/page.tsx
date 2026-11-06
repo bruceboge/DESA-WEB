@@ -99,8 +99,10 @@ export default function RollCallPage() {
     return () => controller.abort();
   }, []);
 
-  const selectedMeeting = openMeetings.find((meeting) => meeting.id === formData.meetingId);
-  const selectedMeetingState = selectedMeeting ? getMeetingState(selectedMeeting) : "Closed";
+  const selectedMeeting =
+    openMeetings.find((meeting) => meeting.id === formData.meetingId && getMeetingState(meeting) === "Open") ||
+    openMeetings.find((meeting) => getMeetingState(meeting) === "Open");
+  const selectedMeetingState = selectedMeeting ? "Open" : "Closed";
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +127,7 @@ export default function RollCallPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          regNumber: formData.regNumber, meetingId: formData.meetingId, website: formData.website,
+          regNumber: formData.regNumber, meetingId: selectedMeeting.id, website: formData.website,
           checkInMode: checkInMode === "manual" ? "manual" : "member",
           fullName: manualDetails.fullName, department: manualDetails.department, yearOfStudy: manualDetails.yearOfStudy,
         }),
@@ -289,26 +291,28 @@ export default function RollCallPage() {
                   />
                 </div>
 
-                <div>
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Scheduled meeting
-                  </span>
-                  {meetingLoadError ? (
-                    <span role="alert" className="mt-1 block text-xs text-red-700">
-                      {meetingLoadError}
-                    </span>
-                  ) : isLoadingMeetings ? (
-                    <div className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-sm text-slate-500">Loading scheduled meeting…</div>
-                  ) : selectedMeeting ? (
-                    <div className="w-full rounded-xl border border-[#e5a93c]/40 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-[#071325]">
-                      {selectedMeeting.title} <span className="font-normal text-slate-600">· {selectedMeeting.sessionDate} · {selectedMeeting.opensAt}–{selectedMeeting.closesAt} EAT{selectedMeeting.location ? ` · ${selectedMeeting.location}` : ""}</span><span className={`mt-1 block text-xs font-bold ${selectedMeetingState === "Open" ? "text-emerald-700" : selectedMeetingState === "Scheduled" ? "text-amber-700" : "text-red-700"}`}>{selectedMeetingState === "Open" ? "Roll Call is open" : selectedMeetingState === "Scheduled" ? `Opens at ${selectedMeeting.opensAt} EAT` : "Roll Call is closed"}</span>
+                {meetingLoadError ? (
+                  <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {meetingLoadError}
+                  </div>
+                ) : isLoadingMeetings ? (
+                  <div className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-sm text-slate-500">
+                    Loading meeting…
+                  </div>
+                ) : !selectedMeeting || selectedMeetingState !== "Open" ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-center">
+                    <p className="text-sm font-semibold text-slate-600">No meeting available</p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <span className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                        Meeting
+                      </span>
+                      <div className="w-full rounded-xl border border-[#e5a93c]/40 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-[#071325]">
+                        {selectedMeeting.title}
+                      </div>
                     </div>
-                  ) : (
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Roll call only opens in the event of a scheduled meeting.
-                    </span>
-                  )}
-                </div>
 
                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
                   <button type="button" onClick={() => { setCheckInMode("member"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "member" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>DESA Member</button>
@@ -352,8 +356,10 @@ export default function RollCallPage() {
                   disabled={isSubmitting || isLoadingMeetings || !selectedMeeting || selectedMeetingState !== "Open" || (checkInMode === "member" ? !verifiedMember : !manualDetails.fullName.trim() || !manualDetails.department || !manualDetails.yearOfStudy)}
                   className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? "Recording attendance…" : selectedMeetingState === "Scheduled" ? `Roll Call opens at ${selectedMeeting?.opensAt} EAT` : selectedMeetingState === "Closed" ? "Roll Call is closed" : "Confirm & Record Attendance"}
+                  {isSubmitting ? "Recording attendance…" : "Confirm & Record Attendance"}
                 </button>
+                  </>
+                )}
               </form>
             </div>
           </div>

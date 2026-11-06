@@ -133,3 +133,66 @@ body {
     min-width: 44px;
   }
 }
+
+
+/* News & Events: keep long titles, links and article text inside mobile cards. */
+.news-events-page,
+.news-events-detail {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.news-events-page *,
+.news-events-detail * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.news-events-page img,
+.news-events-detail img,
+.news-events-detail iframe {
+  max-width: 100%;
+}
+
+.news-article-content {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.news-article-content pre,
+.news-article-content code,
+.news-article-content a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 639px) {
+  .news-events-page section,
+  .news-events-detail section,
+  .news-events-detail article {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .news-events-page h1 {
+    font-size: clamp(1.65rem, 8vw, 2.25rem);
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .news-events-page h2,
+  .news-events-page h3,
+  .news-events-detail h1,
+  .news-events-detail h2,
+  .news-events-detail h3 {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .news-events-page article,
+  .news-events-detail article {
+    max-width: 100%;
+  }
+}
