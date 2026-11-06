@@ -5,13 +5,14 @@ import {
   getOpenMeetings,
   nextPortalReference,
   recordMeetingAttendance,
+  findMemberByRegistration,
 } from "@/lib/dataStore";
 import {
   checkRateLimit,
   getClientIp,
   isHoneypotTriggered,
-  isValidName,
   isValidRegNumber,
+  isValidName,
   normalizeInputText,
   getNairobiDate,
   getNairobiTime,
@@ -24,6 +25,7 @@ export interface RollCallRecord {
   regNumber: string;
   fullName: string;
   yearOfStudy: string;
+  department?: string;
   meetingId: string;
   sessionDate: string; // YYYY-MM-DD
   sessionTopic?: string;
@@ -44,6 +46,8 @@ export async function GET() {
           title: String(data.title || "DESA meeting"),
           sessionDate: String(data.sessionDate || ""),
           location: String(data.location || ""),
+          opensAt: typeof data.opensAt === "string" ? data.opensAt : "00:00",
+          closesAt: typeof data.closesAt === "string" ? data.closesAt : "23:59",
         })),
         today,
       },
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
     const body = await request.json();
-    const { regNumber, fullName, yearOfStudy, meetingId, website } = body;
+    const { regNumber, meetingId, website, checkInMode, fullName, department, yearOfStudy } = body;
 
     if (typeof meetingId !== "string" || !meetingId || meetingId.length > 200) {
       return NextResponse.json({ success: false, error: "Select an open meeting." }, { status: 400 });
@@ -94,8 +98,8 @@ export async function POST(request: Request) {
           id: "RC-0000-000000",
           meetingId,
           regNumber: regNumber || "C025-01-0000/2024",
-          fullName: fullName || "Student Attendee",
-          yearOfStudy: yearOfStudy || "Year 1",
+          fullName: "Student Attendee",
+          yearOfStudy: "Year 1",
           sessionDate: getNairobiDate(),
           sessionTopic: "Meeting",
           timestamp: "12:00 PM",
@@ -104,15 +108,8 @@ export async function POST(request: Request) {
       });
     }
 
-    // 3. Strict Input Validations
-    const nameCheck = isValidName(fullName);
-    if (!nameCheck.valid) {
-      return NextResponse.json(
-        { success: false, error: nameCheck.reason || "Invalid full name" },
-        { status: 400 }
-      );
-    }
-
+    // 3. Validate the registration number. Registered members use the membership register;
+    // guests/non-members can enter their details manually. All values are validated server-side.
     const regCheck = isValidRegNumber(regNumber);
     if (!regCheck.valid) {
       return NextResponse.json(
@@ -121,8 +118,78 @@ export async function POST(request: Request) {
       );
     }
 
-    if (typeof yearOfStudy !== "string" || !["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"].includes(yearOfStudy)) {
-      return NextResponse.json({ success: false, error: "Select a valid year of study (Year 1–5)." }, { status: 400 });
+    if (checkInMode !== "member" && checkInMode !== "manual") {
+      return NextResponse.json(
+        { success: false, error: "Select a valid check-in method." },
+        { status: 400 }
+      );
+    }
+
+    const normalizedRegNumber = normalizeInputText(regNumber.toUpperCase());
+    const allowedYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Postgraduate"];
+    let memberName = "";
+    let memberYear = "";
+    let memberDepartment = "";
+    let isVerifiedMember = false;
+
+    if (checkInMode === "manual") {
+      const nameCheck = isValidName(fullName);
+      if (!nameCheck.valid) {
+        return NextResponse.json({ success: false, error: nameCheck.reason || "Enter your full name." }, { status: 400 });
+      }
+      if (typeof yearOfStudy !== "string" || !allowedYears.includes(yearOfStudy)) {
+        return NextResponse.json({ success: false, error: "Select a valid year of study." }, { status: 400 });
+      }
+      if (typeof department !== "string" || !department.trim() || department.length > 150) {
+        return NextResponse.json({ success: false, error: "Select your programme." }, { status: 400 });
+      }
+      memberName = normalizeInputText(fullName);
+      memberYear = yearOfStudy;
+      memberDepartment = normalizeInputText(department);
+    } else {
+      let member: Record<string, unknown> | null;
+      try {
+        member = await findMemberByRegistration(normalizedRegNumber);
+      } catch (error) {
+        console.error("Roll-call membership lookup failed:", error);
+        return NextResponse.json(
+          { success: false, error: "Membership verification is temporarily unavailable. Please retry." },
+          { status: 503 }
+        );
+      }
+
+      if (!member) {
+        return NextResponse.json(
+          { success: false, error: "Membership not found. Choose manual check-in if you are not a DESA member." },
+          { status: 404 }
+        );
+      }
+
+      const membershipStatus = String(member.membershipStatus || member.status || "Active").trim().toLowerCase();
+      if (!["active", "active registered member", "verified"].includes(membershipStatus)) {
+        return NextResponse.json(
+          { success: false, error: "Your DESA membership is not currently active. Choose manual check-in if you are attending as a non-member." },
+          { status: 403 }
+        );
+      }
+
+      memberName = normalizeInputText(String(member.fullName || ""));
+      memberYear = normalizeInputText(String(member.yearOfStudy || ""));
+      memberDepartment = normalizeInputText(String(member.department || ""));
+      if (!memberName || !memberYear) {
+        return NextResponse.json(
+          { success: false, error: "Your membership record is incomplete. Please contact the DESA Secretariat." },
+          { status: 422 }
+        );
+      }
+      isVerifiedMember = true;
+    }
+
+    if (!allowedYears.includes(memberYear)) {
+      return NextResponse.json(
+        { success: false, error: "Your membership record has an invalid year of study. Please contact the DESA Secretariat." },
+        { status: 422 }
+      );
     }
 
     const meeting = await getOpenMeeting(meetingId);
@@ -144,18 +211,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const now = new Date();
+    const currentTime = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Africa/Nairobi", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+    }).format(now);
+    if (currentTime < meeting.opensAt || currentTime >= meeting.closesAt) {
+      return NextResponse.json(
+        { success: false, error: currentTime < meeting.opensAt
+          ? `Roll call opens at ${meeting.opensAt} EAT.`
+          : `Roll call closed at ${meeting.closesAt} EAT.` },
+        { status: 409 }
+      );
+    }
+
     const timeString = getNairobiTime();
 
     const newRecord: RollCallRecord = {
       id: await nextPortalReference("roll-call"),
       meetingId,
-      regNumber: normalizeInputText(regNumber.toUpperCase()),
-      fullName: normalizeInputText(fullName),
-      yearOfStudy,
+      regNumber: normalizedRegNumber,
+      fullName: memberName,
+      yearOfStudy: memberYear,
+      department: memberDepartment,
+      verified: isVerifiedMember,
       sessionDate: meeting.sessionDate,
       sessionTopic: meeting.title,
       timestamp: timeString,
-      verified: true,
     };
 
     try {
@@ -176,6 +257,12 @@ export async function POST(request: Request) {
       if (error instanceof Error && error.message.includes("only valid on its scheduled date")) {
         return NextResponse.json(
           { success: false, error: "Roll call registration is only available on the scheduled meeting date." },
+          { status: 409 }
+        );
+      }
+      if (error instanceof Error && error.message.includes("outside its scheduled time window")) {
+        return NextResponse.json(
+          { success: false, error: "Roll call is outside its scheduled opening hours." },
           { status: 409 }
         );
       }

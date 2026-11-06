@@ -8,6 +8,8 @@ interface MeetingDraft {
   sessionDate: string;
   location: string;
   description: string;
+  opensAt: string;
+  closesAt: string;
 }
 
 function getNairobiDateInput(): string {
@@ -27,6 +29,8 @@ function createEmptyMeetingDraft(): MeetingDraft {
     sessionDate: getNairobiDateInput(),
     location: "",
     description: "",
+    opensAt: "08:00",
+    closesAt: "10:00",
   };
 }
 
@@ -47,6 +51,34 @@ export default function AdminMeetingsManager() {
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [clockTick, setClockTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick((value) => value + 1), 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const nairobiDateTime = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Africa/Nairobi", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date());
+  const clockParts = Object.fromEntries(nairobiDateTime.map(({ type, value }) => [type, value]));
+  const currentNairobiDate = `${clockParts.year}-${clockParts.month}-${clockParts.day}`;
+  const currentNairobiTime = `${clockParts.hour}:${clockParts.minute}`;
+
+  const getMeetingWindowStatus = (meeting: AdminPortalRecord): "Scheduled" | "Open" | "Closed" => {
+    void clockTick;
+    const date = recordText(meeting, "sessionDate");
+    const manualStatus = recordText(meeting, "status");
+    if (manualStatus !== "Open") return "Closed";
+    if (date > currentNairobiDate) return "Scheduled";
+    if (date < currentNairobiDate) return "Closed";
+    const opensAt = recordText(meeting, "opensAt") || "00:00";
+    const closesAt = recordText(meeting, "closesAt") || "23:59";
+    if (currentNairobiTime < opensAt) return "Scheduled";
+    if (currentNairobiTime >= closesAt) return "Closed";
+    return "Open";
+  };
 
   const selectedMeeting =
     meetings.find((meeting) => meeting.id === selectedMeetingId) || null;
@@ -129,7 +161,7 @@ export default function AdminMeetingsManager() {
       setIsCreateOpen(false);
       setAttendees([]);
       setSelectedMeetingId(result.meeting?.id || null);
-      setStatusMessage("Meeting published. Roll call will be available on its scheduled date.");
+      setStatusMessage("Meeting scheduled. Roll call will open and close automatically at the configured times (Kenya time).");
       setReloadToken((current) => current + 1);
     } catch (publishError) {
       setError(
@@ -232,7 +264,7 @@ export default function AdminMeetingsManager() {
           <div>
             <h3 className="font-bold text-slate-900">Create and publish meeting</h3>
             <p className="mt-1 text-xs text-slate-500">
-              The meeting will appear on the public roll-call page on the scheduled day.
+              Set the date and Kenya-time window. Roll call opens and closes automatically.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -255,6 +287,27 @@ export default function AdminMeetingsManager() {
                 min={getNairobiDateInput()}
                 value={draft.sessionDate}
                 onChange={(event) => setDraft({ ...draft, sessionDate: event.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+              />
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Roll Call Opens *
+              <input
+                required
+                type="time"
+                value={draft.opensAt}
+                onChange={(event) => setDraft({ ...draft, opensAt: event.target.value })}
+                className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+              />
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Roll Call Closes *
+              <input
+                required
+                type="time"
+                min={draft.opensAt}
+                value={draft.closesAt}
+                onChange={(event) => setDraft({ ...draft, closesAt: event.target.value })}
                 className="mt-1 w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
               />
             </label>
@@ -313,7 +366,7 @@ export default function AdminMeetingsManager() {
             ) : (
               meetings.map((meeting) => {
                 const title = recordText(meeting, "title") || "Untitled meeting";
-                const status = recordText(meeting, "status") || "Unknown";
+                const status = getMeetingWindowStatus(meeting);
                 return (
                   <div
                     key={meeting.id}
@@ -331,7 +384,7 @@ export default function AdminMeetingsManager() {
                     >
                       <span className="block truncate text-sm font-bold text-slate-900">{title}</span>
                       <span className="mt-1 block text-xs text-slate-500">
-                        {recordText(meeting, "sessionDate")}
+                        {recordText(meeting, "sessionDate")} · {recordText(meeting, "opensAt") || "12:00 AM"}–{recordText(meeting, "closesAt") || "11:59 PM"} (EAT)
                         {recordText(meeting, "location") ? ` · ${recordText(meeting, "location")}` : ""}
                       </span>
                       <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -347,10 +400,10 @@ export default function AdminMeetingsManager() {
                     <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
-                        onClick={() => void changeMeetingStatus(meeting, status === "Open" ? "Closed" : "Open")}
+                        onClick={() => void changeMeetingStatus(meeting, recordText(meeting, "status") === "Open" ? "Closed" : "Open")}
                         className="min-h-10 min-w-14 rounded-lg px-2 py-2 text-[11px] font-semibold text-slate-600 hover:bg-slate-100"
                       >
-                        {status === "Open" ? "Close" : "Open"}
+                        {recordText(meeting, "status") === "Open" ? "Disable" : "Enable"}
                       </button>
                       <button
                         type="button"
@@ -375,7 +428,7 @@ export default function AdminMeetingsManager() {
                   {recordText(selectedMeeting, "title")}
                 </h3>
                 <p className="mt-1 text-xs text-slate-500">
-                  {recordText(selectedMeeting, "sessionDate")}
+                  {recordText(selectedMeeting, "sessionDate")} · {recordText(selectedMeeting, "opensAt") || "00:00"}–{recordText(selectedMeeting, "closesAt") || "23:59"} EAT
                   {recordText(selectedMeeting, "location")
                     ? ` · ${recordText(selectedMeeting, "location")}`
                     : ""}

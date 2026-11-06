@@ -305,7 +305,7 @@ export async function POST(request: Request) {
 
     // Action 8: Quick Create & Publish Meeting for Roll Call
     if (body.action === "createMeeting") {
-      const { title, sessionDate, location, description } = body;
+      const { title, sessionDate, opensAt, closesAt, location, description } = body;
       if (
         typeof title !== "string" ||
         !title.trim() ||
@@ -318,6 +318,14 @@ export async function POST(request: Request) {
       }
       if (typeof sessionDate !== "string" || !isValidMeetingDate(sessionDate)) {
         return NextResponse.json({ error: "Valid meeting date (YYYY-MM-DD) is required." }, { status: 400 });
+      }
+      const validTime = (value: unknown): value is string =>
+        typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+      if (!validTime(opensAt) || !validTime(closesAt) || closesAt <= opensAt) {
+        return NextResponse.json(
+          { error: "Enter a valid opening and closing time. Closing time must be later than opening time." },
+          { status: 400 }
+        );
       }
       if (
         (location !== undefined && (typeof location !== "string" || location.length > 200)) ||
@@ -338,6 +346,8 @@ export async function POST(request: Request) {
         sessionDate: sessionDate.trim(),
         location: typeof location === "string" && location.trim() ? location.trim() : "DeKUT Main Campus",
         description: typeof description === "string" ? description.trim() : "",
+        opensAt,
+        closesAt,
         status: "Open",
       });
 

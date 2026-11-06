@@ -497,6 +497,8 @@ export async function addMeeting(meeting: {
   sessionDate: string;
   location?: string;
   description?: string;
+  opensAt: string;
+  closesAt: string;
   status?: "Open" | "Closed" | "Draft";
 }): Promise<AdminPortalRecord> {
   const recordId = `meeting-${randomUUID()}`;
@@ -505,6 +507,8 @@ export async function addMeeting(meeting: {
     sessionDate: meeting.sessionDate,
     location: meeting.location || "DeKUT Main Campus",
     description: meeting.description || "",
+    opensAt: meeting.opensAt,
+    closesAt: meeting.closesAt,
     status: meeting.status || "Open",
   };
   await savePortalRecord("meeting", recordId, meetingData);
@@ -528,7 +532,7 @@ export async function updateMeetingStatus(
 
 export async function getOpenMeeting(
   id: string
-): Promise<{ title: string; sessionDate: string } | null> {
+): Promise<{ title: string; sessionDate: string; opensAt: string; closesAt: string } | null> {
   const { data, error } = await getSupabaseAdmin()
     .from("portal_records")
     .select("data")
@@ -544,6 +548,9 @@ export async function getOpenMeeting(
   return {
     title: typeof meeting.title === "string" ? meeting.title : "DESA meeting",
     sessionDate: typeof meeting.sessionDate === "string" ? meeting.sessionDate : "",
+    // Legacy meetings without a configured window remain available all day.
+    opensAt: typeof meeting.opensAt === "string" ? meeting.opensAt : "00:00",
+    closesAt: typeof meeting.closesAt === "string" ? meeting.closesAt : "23:59",
   };
 }
 
