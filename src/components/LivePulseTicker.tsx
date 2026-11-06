@@ -24,7 +24,7 @@ export default function LivePulseTicker({
               </div>
               <div className="min-w-0">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#e5a93c] block">
-                  Upcoming Event • {nextEvent?.eventDate || "20 Nov 2026"}
+                  Upcoming Event • {nextEvent?.eventDate || "4 Dec 2026"}
                 </span>
                 <p className="text-xs font-bold text-white truncate group-hover:text-[#e5a93c] transition-colors">
                   {nextEvent?.title || "DESA Masquerade Dinner 2026"}

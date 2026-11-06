@@ -3,7 +3,7 @@ title: "DESA Masquerade Dinner 2026: Structures That Stand, Standards That Endur
 date: "2026-10-01"
 type: "event"
 location: "Golden Gates Hotel, Nyeri"
-eventDate: "2026-11-20"
+eventDate: "2026-12-04"
 coverImage: "/images/events/masquerade-dinner.png"
 excerpt: "Join the Dedan Kimathi University Engineering Students Association for an evening of elegance, networking, and celebration under the theme 'Structures That Stand, Standards That Endure'. Dress code: Slits & Suits."
 ---
@@ -13,7 +13,7 @@ The Dedan Kimathi University Engineering Students Association (DESA) cordially i
 This year's theme, **"Structures That Stand, Standards That Endure"**, celebrates the dedication, engineering resilience, and technical excellence of our students and graduates across Mechatronics, Mechanical, Electrical, Civil, and Chemical engineering disciplines.
 
 ### Event Overview & Schedule
-- **Date**: Friday, 20th November 2026
+- **Date**: Friday, 4th December 2026
 - **Time**: 6:00 PM Till Late
 - **Venue**: Golden Gates Hotel, Nyeri
 - **Dress Code**: Slits & Suits (Formal Masquerade)

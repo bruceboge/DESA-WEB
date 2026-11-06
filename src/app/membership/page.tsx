@@ -14,6 +14,7 @@ import {
   ExternalLinkIcon,
 } from "@/components/Icons";
 import { engineeringPrograms } from "@/data/programs";
+import ProgramPicker from "@/components/ProgramPicker";
 
 interface LookupMember {
   regNumber: string;
@@ -47,7 +48,7 @@ export default function MembershipHubPage() {
   });
   type TabKey = "lookup" | "register" | "dues" | "roll-call" | "services";
   const [isRegistering, setIsRegistering] = useState(false);
-  const [registerSuccess, setRegisterSuccess] = useState<{ memberId: string } | null>(null);
+  const [registerSuccess, setRegisterSuccess] = useState<{ memberId?: string } | null>(null);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
   // Check URL hash for direct tab switching
@@ -352,11 +353,17 @@ export default function MembershipHubPage() {
                 <h3 className="text-base font-bold text-[#071325]">
                   Registration Successful!
                 </h3>
-                <div className="inline-block px-3 py-1 bg-[#071325] text-[#e5a93c] text-xs font-mono font-bold rounded-full border border-[#e5a93c]/30">
-                  Member ID: {registerSuccess.memberId}
-                </div>
+                {registerSuccess.memberId ? (
+                  <div className="inline-block px-3 py-1 bg-[#071325] text-[#e5a93c] text-xs font-mono font-bold rounded-full border border-[#e5a93c]/30">
+                    Member ID: {registerSuccess.memberId}
+                  </div>
+                ) : (
+                  <p className="text-xs font-semibold text-slate-700">
+                    DESA will assign your membership number after reviewing your registration.
+                  </p>
+                )}
                 <p className="text-xs text-slate-700 leading-relaxed max-w-sm mx-auto">
-                  Your registration has been Recorded. You are now a DESA member.
+                  Your registration has been recorded. The Secretariat will update your membership record.
                 </p>
                 <div className="pt-2 flex justify-center gap-3">
                   <button
@@ -416,17 +423,7 @@ export default function MembershipHubPage() {
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Engineering Program *
                     </label>
-                    <select
-                      value={regForm.department}
-                      onChange={(e) => setRegForm({ ...regForm, department: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                    >
-                      {engineeringPrograms.map((prog) => (
-                        <option key={prog} value={prog}>
-                          {prog}
-                        </option>
-                      ))}
-                    </select>
+                    <ProgramPicker label="Engineering Program" value={regForm.department} options={engineeringPrograms} required onChange={(department) => setRegForm({ ...regForm, department })} />
                   </div>
 
                   <div>

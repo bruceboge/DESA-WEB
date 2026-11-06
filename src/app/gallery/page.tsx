@@ -25,6 +25,7 @@ export default function GalleryPage() {
   const [activeCategory, setActiveCategory] = useState("All Categories");
   const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     async function loadGallery() {
@@ -33,9 +34,12 @@ export default function GalleryPage() {
         const data = await res.json();
         if (data.photos && Array.isArray(data.photos)) {
           setItems(data.photos);
+        } else if (!res.ok) {
+          setLoadError(true);
         }
       } catch (err) {
         console.warn("Could not load gallery items:", err);
+        setLoadError(true);
       } finally {
         setIsLoading(false);
       }
@@ -127,8 +131,22 @@ export default function GalleryPage() {
       {/* Gallery Grid */}
       <section className="py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {isLoading ? (
-          <div className="py-16 text-center text-xs text-slate-500">
-            Loading official gallery archives...
+          <div role="status" aria-label="Loading gallery" className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index} className="overflow-hidden border border-slate-200 bg-white">
+                <div className="h-52 animate-pulse bg-slate-200" />
+                <div className="space-y-3 p-5">
+                  <div className="h-3 w-1/3 animate-pulse bg-slate-200" />
+                  <div className="h-5 w-3/4 animate-pulse bg-slate-200" />
+                  <div className="h-3 w-full animate-pulse bg-slate-100" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : loadError ? (
+          <div role="status" className="border border-slate-200 bg-white px-6 py-12 text-center">
+            <h2 className="text-base font-bold text-[#071325]">Gallery temporarily unavailable</h2>
+            <p className="mt-2 text-sm text-slate-600">Please refresh the page to try loading the gallery again.</p>
           </div>
         ) : filteredItems.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

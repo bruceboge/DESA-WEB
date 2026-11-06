@@ -20,6 +20,7 @@ interface FieldDefinition {
   label: string;
   kind?: FieldKind;
   options?: string[];
+  readOnly?: boolean;
 }
 
 interface RecordsResponse {
@@ -42,6 +43,7 @@ const RECORD_GROUPS: { value: RecordGroup; label: string; icon: string }[] = [
 const RECORD_FIELDS: Record<PortalRecordType, FieldDefinition[]> = {
   membership: [
     { key: "fullName", label: "Full name" },
+    { key: "memberId", label: "Membership number" },
     { key: "regNumber", label: "Registration number" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
@@ -55,6 +57,7 @@ const RECORD_FIELDS: Record<PortalRecordType, FieldDefinition[]> = {
   ],
   registration: [
     { key: "fullName", label: "Full name" },
+    { key: "memberId", label: "Membership number" },
     { key: "regNumber", label: "Registration number" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
@@ -75,18 +78,18 @@ const RECORD_FIELDS: Record<PortalRecordType, FieldDefinition[]> = {
   gala: [
     { key: "name", label: "Name" },
     { key: "contact", label: "Phone / contact" },
-    { key: "email", label: "Email" },
     { key: "course", label: "Course" },
-    { key: "membership", label: "Membership" },
     { key: "regNumber", label: "Registration number" },
     { key: "yearOfStudy", label: "Year of study" },
-    { key: "attendeeType", label: "Attendee type" },
+    { key: "attendeeType", label: "Attendee category" },
+    { key: "ticketPackage", label: "Ticket option", readOnly: true },
+    { key: "attendeeCount", label: "Attendee count", readOnly: true },
+    { key: "ticketPriceKsh", label: "Ticket total (Ksh)", readOnly: true },
+    { key: "paymentName", label: "Payer name" },
+    { key: "mpesaRef", label: "M-Pesa reference" },
+    { key: "paymentStatus", label: "Payment status", kind: "select", options: ["Unpaid", "Pending verification", "Verified", "Rejected"] },
     { key: "paymentPledge", label: "Payment pledge" },
     { key: "dietary", label: "Dietary requirements", kind: "textarea" },
-    { key: "hasPresentation", label: "Has presentation", kind: "boolean" },
-    { key: "presentationCategory", label: "Presentation category" },
-    { key: "presentationDesc", label: "Presentation details", kind: "textarea" },
-    { key: "mpesaRef", label: "M-Pesa reference" },
   ],
   roll_call: [
     { key: "fullName", label: "Full name" },
@@ -144,6 +147,7 @@ type DraftValue = string | boolean;
 
 interface MemberDraft {
   fullName: string;
+  memberId: string;
   regNumber: string;
   email: string;
   phone: string;
@@ -154,6 +158,7 @@ interface MemberDraft {
 
 const EMPTY_MEMBER_DRAFT: MemberDraft = {
   fullName: "",
+  memberId: "",
   regNumber: "",
   email: "",
   phone: "",
@@ -170,8 +175,8 @@ function createDraft(record: AdminPortalRecord): Record<string, DraftValue> {
       draft[field.key] = value === true;
     } else if (field.kind === "list") {
       draft[field.key] = Array.isArray(value) ? value.join("\n") : "";
-    } else if (typeof value === "string") {
-      draft[field.key] = value;
+    } else if (typeof value === "string" || typeof value === "number") {
+      draft[field.key] = String(value);
     }
   }
   return draft;
@@ -390,6 +395,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
 
     const updates: Record<string, unknown> = {};
     for (const field of fields) {
+      if (field.readOnly) continue;
       const value = currentDraft[field.key];
       if (value === undefined) continue;
       if (field.kind === "list") {
@@ -408,10 +414,10 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
           updates[field.key] = value;
         }
       } else {
-        const previousValue =
-          typeof selectedRecord.data[field.key] === "string"
-            ? selectedRecord.data[field.key]
-            : "";
+        const storedValue = selectedRecord.data[field.key];
+        const previousValue = typeof storedValue === "string" || typeof storedValue === "number"
+          ? String(storedValue)
+          : "";
         if (value !== previousValue) updates[field.key] = value;
       }
     }
@@ -655,6 +661,16 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
               />
             </div>
             <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Membership Number</label>
+              <input
+                maxLength={50}
+                value={memberDraft.memberId}
+                onChange={(e) => setMemberDraft({ ...memberDraft, memberId: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                placeholder="Assign later if needed"
+              />
+            </div>
+            <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1">Reg Number *</label>
               <input
                 required
@@ -797,7 +813,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                         {/* Column 3: Department / Category */}
                         <td className="py-3 px-4 text-slate-600">
                           <span className="truncate max-w-[180px] block">
-                            {String(data.department || data.category || data.course || data.location || "—")}
+                            {String(record.recordType === "roll_call" ? "—" : data.department || data.category || data.course || data.location || "—")}
                           </span>
                         </td>
 
@@ -876,7 +892,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
               const isPositiveStatus = ["Active", "Paid", "Published", "Open", "Verified"].includes(statusStr);
               const isPendingStatus = ["Pending Review", "Draft", "Unpaid", "New / Unread"].includes(statusStr);
               const primaryDetail = String(data.regNumber || data.email || data.eventDate || data.sessionDate || "—");
-              const groupDetail = String(data.department || data.category || data.course || data.location || "");
+              const groupDetail = String(record.recordType === "roll_call" ? "" : data.department || data.category || data.course || data.location || "");
 
               return (
                 <article key={`${record.recordType}:${record.id}`} className={`p-4 ${selectedId === record.id ? "bg-amber-50/50" : "bg-white"}`}>
@@ -1129,7 +1145,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                             id={inputId}
                             type="checkbox"
                             checked={Boolean(value)}
-                            disabled={isTrashView}
+                            disabled={isTrashView || field.readOnly}
                             onChange={(e) => setDraft((c) => ({ ...c, [field.key]: e.target.checked }))}
                             className="w-4 h-4 rounded text-[#e5a93c] focus:ring-[#e5a93c]"
                           />
@@ -1147,7 +1163,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                           <select
                             id={inputId}
                             value={String(value || "")}
-                            disabled={isTrashView}
+                            disabled={isTrashView || field.readOnly}
                             onChange={(e) => setDraft((c) => ({ ...c, [field.key]: e.target.value }))}
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                           >
@@ -1169,7 +1185,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                             id={inputId}
                             rows={3}
                             value={String(value || "")}
-                            disabled={isTrashView}
+                            disabled={isTrashView || field.readOnly}
                             onChange={(e) => setDraft((c) => ({ ...c, [field.key]: e.target.value }))}
                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                           />
@@ -1186,7 +1202,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                           id={inputId}
                           type="text"
                           value={String(value || "")}
-                          disabled={isTrashView}
+                          disabled={isTrashView || field.readOnly}
                           onChange={(e) => setDraft((c) => ({ ...c, [field.key]: e.target.value }))}
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                         />

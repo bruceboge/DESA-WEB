@@ -135,7 +135,7 @@ export default function AdminGalleryManagerPanel(props: Props) {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. 20 November 2026"
+                      placeholder="e.g. 4 December 2026"
                       value={galleryForm.date}
                       onChange={(e) => setGalleryForm({ ...galleryForm, date: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"

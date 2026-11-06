@@ -12,14 +12,14 @@ import {
   AlertCircleIcon,
 } from "@/components/Icons";
 import { engineeringPrograms } from "@/data/programs";
+import { getGalaTicketPricing, type GalaTicketPackage } from "@/lib/galaPricing";
 
-type AttendeeType = "dekut_student" | "alumni" | "staff" | "guest";
+type AttendeeType = "dekut_student" | "alumni" | "staff";
 
 const attendeeTypeLabels: Record<AttendeeType, { label: string; desc: string }> = {
   dekut_student: { label: "Students", desc: "DeKUT & external" },
   alumni: { label: "Alumni", desc: "DeKUT graduate" },
   staff: { label: "Staff", desc: "DeKUT staff or faculty member" },
-  guest: { label: "Guest", desc: "Guest or corporate partner" },
 };
 
 const galaCourseOptions = [
@@ -44,6 +44,7 @@ export default function GalaRegistrationPage() {
   const [formData, setFormData] = useState({
     name: "",
     attendeeType: "dekut_student" as AttendeeType,
+    ticketPackage: "single" as GalaTicketPackage,
     regNumber: "",
     isOtherReg: false,
     yearOfStudy: yearLevels[1], // Default Year 2
@@ -54,6 +55,8 @@ export default function GalaRegistrationPage() {
     customCourse: "",
     dietary: "",
     paymentPledge: "",
+    paymentName: "",
+    mpesaRef: "",
     website: "", // Honeypot field
   });
 
@@ -62,6 +65,7 @@ export default function GalaRegistrationPage() {
   const [isSuccess, setIsSuccess] = useState(false);
 
   const isDeKUTStudent = formData.attendeeType === "dekut_student";
+  const ticketPricing = getGalaTicketPricing(formData.attendeeType, formData.ticketPackage);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,33 +112,26 @@ export default function GalaRegistrationPage() {
         : (formData.course === "Other (Enter Manually)" ? formData.customCourse.trim() : formData.course.trim()))
       : "N/A";
 
-    const attendeeLabel = attendeeTypeLabels[formData.attendeeType].label;
-    const effectivePledge = isDeKUTStudent
-      ? formData.paymentPledge.trim()
-      : "Full Payment / Guest";
-
     try {
       const res = await fetch("/api/gala", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name.trim(),
-          regNumber: isDeKUTStudent ? formData.regNumber.trim().toUpperCase() : "N/A",
-          yearOfStudy: isDeKUTStudent
-            ? (formData.yearOfStudy === "Other"
+          attendeeType: formData.attendeeType,
+          ticketPackage: formData.ticketPackage,
+          ...(isDeKUTStudent ? {
+            regNumber: formData.regNumber.trim().toUpperCase(),
+            yearOfStudy: formData.yearOfStudy === "Other"
               ? (formData.customYearOfStudy.trim() ? `Other (${formData.customYearOfStudy.trim()})` : "Other")
-              : formData.yearOfStudy)
-            : "N/A",
+              : formData.yearOfStudy,
+            course: effectiveCourse,
+            paymentPledge: formData.paymentPledge.trim(),
+          } : {}),
           contact: formData.contact.trim(),
-          email: "",
-          course: effectiveCourse,
-          membership: attendeeLabel,
-          attendeeType: attendeeLabel,
+          paymentName: formData.paymentName.trim(),
+          mpesaRef: formData.mpesaRef.trim().toUpperCase(),
           dietary: formData.dietary.trim() || "Standard / None",
-          paymentPledge: effectivePledge,
-          hasPresentation: false,
-          presentationCategory: "",
-          presentationDesc: "",
           website: formData.website,
         }),
       });
@@ -160,6 +157,7 @@ export default function GalaRegistrationPage() {
     setFormData({
       name: "",
       attendeeType: "dekut_student",
+      ticketPackage: "single",
       regNumber: "",
       isOtherReg: false,
       yearOfStudy: yearLevels[1],
@@ -170,6 +168,8 @@ export default function GalaRegistrationPage() {
       customCourse: "",
       dietary: "",
       paymentPledge: "",
+      paymentName: "",
+      mpesaRef: "",
       website: "",
     });
   };
@@ -215,7 +215,7 @@ export default function GalaRegistrationPage() {
                 <CalendarIcon className="w-3.5 h-3.5 text-[#e5a93c]" /> Date
               </span>
               <span className="text-xs sm:text-sm font-bold text-white block mt-0.5">
-                11 Dec 2026
+                4 Dec 2026
               </span>
             </div>
             <div className="bg-[#050d1a] p-3 rounded-xl border border-slate-800 text-center">
@@ -256,7 +256,7 @@ export default function GalaRegistrationPage() {
                 </span>
               </div>
               <span className="text-xs text-amber-300 font-medium">
-                Open to all — students, alumni, staff &amp; guests
+                Tickets for DeKUT students, alumni &amp; staff
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
@@ -354,7 +354,7 @@ export default function GalaRegistrationPage() {
                     Join the Official Gala WhatsApp Group
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Connect with fellow guests and receive event updates, seating details &amp; schedules.
+                    Connect with other attendees and receive event updates, seating details &amp; schedules.
                   </p>
                 </div>
               </div>
@@ -400,7 +400,7 @@ export default function GalaRegistrationPage() {
                   Gala Seat Reservation Form
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Open to DeKUT students, alumni, staff, and external guests.
+                  Registration for DeKUT students, alumni, and staff.
                 </p>
               </div>
             </div>
@@ -449,7 +449,7 @@ export default function GalaRegistrationPage() {
                   <span className="text-xs font-extrabold uppercase tracking-wider text-[#071325]">
                     1. Attendee Information
                   </span>
-                  <span className="text-[11px] text-slate-500 font-medium">Everyone is welcome</span>
+                  <span className="text-[11px] text-slate-500 font-medium">Choose your category</span>
                 </div>
 
                 {/* Attendee Type Selector */}
@@ -462,7 +462,7 @@ export default function GalaRegistrationPage() {
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setFormData({ ...formData, attendeeType: type })}
+                        onClick={() => setFormData({ ...formData, attendeeType: type, ticketPackage: "single", paymentName: "", mpesaRef: "" })}
                         className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${formData.attendeeType === type
                           ? "bg-amber-50/80 border-[#e5a93c] ring-2 ring-[#e5a93c] shadow-xs"
                           : "bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-700"
@@ -745,6 +745,29 @@ export default function GalaRegistrationPage() {
                   )}
                 </div>
 
+                <div className="space-y-3 border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-wide text-[#071325]">Choose ticket option</p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {(isDeKUTStudent
+                      ? [
+                          { value: "single", label: "One student", price: "Ksh 800" },
+                          { value: "couple", label: "Student couple", price: "Ksh 1,500" },
+                          { value: "group5", label: "5 students", price: "Ksh 3,700" },
+                        ]
+                      : [{ value: "single", label: formData.attendeeType === "alumni" ? "Alumni ticket" : "Staff ticket", price: `Ksh ${ticketPricing?.totalKsh?.toLocaleString()}` }]
+                    ).map((option) => (
+                      <button key={option.value} type="button" onClick={() => setFormData({ ...formData, ticketPackage: option.value as GalaTicketPackage })} aria-pressed={formData.ticketPackage === option.value} className={`min-h-14 border px-3 py-2 text-left ${formData.ticketPackage === option.value ? "border-[#071325] bg-[#071325] text-white" : "border-slate-200 bg-slate-50 text-[#071325] hover:border-[#071325]"}`}>
+                        <span className="block text-xs font-bold">{option.label}</span>
+                        <span className={`mt-0.5 block text-[11px] ${formData.ticketPackage === option.value ? "text-[#e5a93c]" : "text-slate-500"}`}>{option.price}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 text-xs">
+                    <span className="text-slate-600">Selected: {ticketPricing?.label} · {ticketPricing?.attendeeCount} {ticketPricing?.attendeeCount === 1 ? "attendee" : "attendees"}</span>
+                    <strong className="text-[#071325]">Total: {ticketPricing?.totalKsh === null ? "Confirm with DESA" : `Ksh ${ticketPricing?.totalKsh?.toLocaleString()}`}</strong>
+                  </div>
+                </div>
+
                 {/* Lipa Pole Pole and Pledge - DeKUT Students Only */}
                 {isDeKUTStudent && (
                   <div className="space-y-3">
@@ -789,13 +812,20 @@ export default function GalaRegistrationPage() {
                 <div className="bg-slate-50 rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-xs font-bold uppercase tracking-wide text-[#071325]">
-                      RESERVE A SEAT BY MAKING A DEPOSIT <span className="text-[#b87a14]">(ANY AMOUNT IS ACCEPTED)</span>
+                      Record a payment made now <span className="text-slate-500">(optional)</span>
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 leading-relaxed">
-                    PAYMENT VIA <strong>POCHI LA BIASHARA: <span className="text-[#b87a14]">0798158563</span> <span> (KAREN KYALO)</span></strong>.
-                    {isDeKUTStudent && " Lipa pole pole is allowed for students to secure your table."}
+                    Pay via <strong>POCHI LA BIASHARA: <span className="text-[#b87a14]">0798158563</span> (KAREN KYALO)</strong>. If you have already paid, enter the payer name and M-Pesa code if available. DESA will verify the payment.
                   </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs font-bold text-slate-700">Payer name (optional)
+                      <input type="text" maxLength={100} value={formData.paymentName} onChange={(event) => setFormData({ ...formData, paymentName: event.target.value })} className="mt-1 min-h-11 w-full border border-slate-300 bg-white px-3 text-sm" placeholder="Name used to send the payment" />
+                    </label>
+                    <label className="text-xs font-bold text-slate-700">M-Pesa transaction code (optional)
+                      <input type="text" maxLength={100} value={formData.mpesaRef} onChange={(event) => setFormData({ ...formData, mpesaRef: event.target.value.toUpperCase() })} className="mt-1 min-h-11 w-full border border-slate-300 bg-white px-3 text-sm font-mono uppercase" placeholder="e.g. QAB123XYZ" />
+                    </label>
+                  </div>
                 </div>
 
                 {/* Submit Button */}

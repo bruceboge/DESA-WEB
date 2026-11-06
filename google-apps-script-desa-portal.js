@@ -134,7 +134,7 @@ function getSupabaseSheetConfig(recordType, record) {
         Phone: record.phone || "",
         Email: record.email || "",
         MembershipStatus: record.membershipStatus || record.status || "Active",
-        PaymentStatus: record.paymentStatus || record.contribution || "Unpaid",
+        PaymentStatus: record.paymentStatus || "Unpaid",
         MemberID: record.memberId || "",
         DateRegistered: record.registrationDate || ""
       }
@@ -163,7 +163,7 @@ function getSupabaseSheetConfig(recordType, record) {
   if (recordType === "roll_call") {
     return {
       name: "RollCall",
-      headers: ["Record ID", "Meeting ID", "Date", "Timestamp", "Registration Number", "Full Name", "Department", "Year of Study", "Session / Topic"],
+      headers: ["Record ID", "Meeting ID", "Date", "Timestamp", "Registration Number", "Full Name", "Year of Study", "Session / Topic"],
       values: {
         "Record ID": record.id || "",
         "Meeting ID": record.meetingId || "",
@@ -171,7 +171,6 @@ function getSupabaseSheetConfig(recordType, record) {
         Timestamp: record.timestamp || "",
         "Registration Number": record.regNumber || "",
         "Full Name": record.fullName || "",
-        Department: record.department || "",
         "Year of Study": record.yearOfStudy || "",
         "Session / Topic": record.sessionTopic || "General Assembly"
       }
@@ -217,23 +216,23 @@ function getSupabaseSheetConfig(recordType, record) {
   if (recordType === "gala") {
     return {
       name: "GalaRegistrations",
-      headers: ["SubmissionID", "Timestamp", "Full Name", "Attendee Type", "Reg Number", "Year of Study", "Phone / WhatsApp", "Email", "Course / Program", "DESA Membership", "Payment Pledge", "Dietary Requirements", "Presentation Showcase", "Presentation Category", "Presentation Details", "M-Pesa Reference", "SupabaseRecordID"],
+      headers: ["SubmissionID", "Timestamp", "Full Name", "Attendee Type", "Ticket Option", "Attendee Count", "Ticket Total (Ksh)", "Payment Status", "Reg Number", "Year of Study", "Phone / WhatsApp", "Course / Program", "Payment Pledge", "Dietary Requirements", "Payer Name", "M-Pesa Reference", "SupabaseRecordID"],
       values: {
         SubmissionID: record.id || "",
         Timestamp: [record.date, record.regTime].filter(Boolean).join(" "),
         "Full Name": record.name || "",
         "Attendee Type": record.attendeeType || "",
+        "Ticket Option": record.ticketPackage || "",
+        "Attendee Count": record.attendeeCount ?? "",
+        "Ticket Total (Ksh)": record.ticketPriceKsh ?? "",
+        "Payment Status": record.paymentStatus || "Unpaid",
         "Reg Number": record.regNumber || "",
         "Year of Study": record.yearOfStudy || "",
         "Phone / WhatsApp": record.contact || "",
-        Email: record.email || "",
         "Course / Program": record.course || "",
-        "DESA Membership": record.membership || "",
         "Payment Pledge": record.paymentPledge || "",
         "Dietary Requirements": record.dietary || "",
-        "Presentation Showcase": record.presentation || "No",
-        "Presentation Category": record.presentationCategory || "",
-        "Presentation Details": record.presentationDesc || "",
+        "Payer Name": record.paymentName || "",
         "M-Pesa Reference": record.mpesaRef || ""
       }
     };
