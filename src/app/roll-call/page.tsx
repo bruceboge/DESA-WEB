@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { engineeringPrograms } from "@/data/programs";
 import {
   UsersIcon,
   ShieldCheckIcon,
@@ -15,20 +14,15 @@ interface SubmittedReceipt {
   regNumber: string;
   fullName: string;
   yearOfStudy: string;
-  sessionDate: string;
   sessionTopic: string;
   timestamp: string;
   verified: boolean;
-  department?: string;
 }
 
 interface OpenMeeting {
   id: string;
   title: string;
-  sessionDate: string;
-  location: string;
-  opensAt: string;
-  closesAt: string;
+  isOpen: boolean;
 }
 
 export default function RollCallPage() {
@@ -42,48 +36,25 @@ export default function RollCallPage() {
   const [isLoadingMeetings, setIsLoadingMeetings] = useState(true);
   const [meetingLoadError, setMeetingLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifyingMember, setIsVerifyingMember] = useState(false);
-  const [verifiedMember, setVerifiedMember] = useState<{ maskedName: string; department: string; yearOfStudy: string; membershipStatus: string } | null>(null);
   const [checkInMode, setCheckInMode] = useState<"member" | "manual">("member");
-  const [manualDetails, setManualDetails] = useState({ fullName: "", department: "", yearOfStudy: "Year 1" });
-  const [clockTick, setClockTick] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setClockTick((value) => value + 1), 15000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const getCurrentNairobiDateTime = () => {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-      timeZone: "Africa/Nairobi", year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-    }).formatToParts(new Date());
-    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-    return { date: `${values.year}-${values.month}-${values.day}`, time: `${values.hour}:${values.minute}` };
-  };
-
-  const getMeetingState = (meeting: OpenMeeting) => {
-    void clockTick;
-    const now = getCurrentNairobiDateTime();
-    if (now.date < meeting.sessionDate) return "Scheduled";
-    if (now.date > meeting.sessionDate) return "Closed";
-    if (now.time < meeting.opensAt) return "Scheduled";
-    if (now.time >= meeting.closesAt) return "Closed";
-    return "Open";
-  };
+  const [manualDetails, setManualDetails] = useState({ fullName: "", yearOfStudy: "" });
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [lastReceipt, setLastReceipt] = useState<SubmittedReceipt | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch("/api/roll-call", { cache: "no-store", signal: controller.signal })
+    let initialLoad = true;
+    const loadMeetings = () => void fetch("/api/roll-call", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const result = (await response.json()) as { meetings?: OpenMeeting[]; error?: string };
         if (!response.ok) throw new Error(result.error || "Could not load open meetings.");
+        setMeetingLoadError(null);
         const meetings = result.meetings || [];
         setOpenMeetings(meetings);
         if (meetings.length) {
           setFormData((previous) => ({ ...previous, meetingId: meetings[0].id }));
+        } else {
+          setFormData((previous) => ({ ...previous, meetingId: "" }));
         }
       })
       .catch((error: unknown) => {
@@ -94,21 +65,29 @@ export default function RollCallPage() {
         }
       })
       .finally(() => {
-        if (!controller.signal.aborted) setIsLoadingMeetings(false);
+        if (!controller.signal.aborted && initialLoad) {
+          setIsLoadingMeetings(false);
+          initialLoad = false;
+        }
       });
-    return () => controller.abort();
+    loadMeetings();
+    const refreshTimer = window.setInterval(loadMeetings, 15000);
+    return () => {
+      controller.abort();
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   const selectedMeeting = openMeetings.find((meeting) => meeting.id === formData.meetingId);
-  const selectedMeetingState = selectedMeeting ? getMeetingState(selectedMeeting) : "Closed";
+  const selectedMeetingState = selectedMeeting?.isOpen ? "Open" : "Closed";
+  const canCheckIn = Boolean(selectedMeeting?.isOpen && !isLoadingMeetings && !meetingLoadError);
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
     if (!formData.regNumber.trim()) return;
-    if (checkInMode === "member" && !verifiedMember) return;
-    if (checkInMode === "manual" && (!manualDetails.fullName.trim() || !manualDetails.department || !manualDetails.yearOfStudy)) return;
-    if (!selectedMeeting || selectedMeetingState !== "Open") return;
+    if (checkInMode === "manual" && (!manualDetails.fullName.trim() || !manualDetails.yearOfStudy)) return;
+    if (!canCheckIn) return;
 
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -127,7 +106,7 @@ export default function RollCallPage() {
         body: JSON.stringify({
           regNumber: formData.regNumber, meetingId: formData.meetingId, website: formData.website,
           checkInMode: checkInMode === "manual" ? "manual" : "member",
-          fullName: manualDetails.fullName, department: manualDetails.department, yearOfStudy: manualDetails.yearOfStudy,
+          ...(checkInMode === "manual" ? manualDetails : {}),
         }),
       });
 
@@ -139,17 +118,14 @@ export default function RollCallPage() {
           regNumber: result.entry.regNumber,
           fullName: result.entry.fullName,
           yearOfStudy: result.entry.yearOfStudy,
-          sessionDate: result.entry.sessionDate,
           sessionTopic: result.entry.sessionTopic,
           timestamp: result.entry.timestamp || timeFormatted,
           verified: Boolean(result.entry.verified),
-          department: result.entry.department || "",
         });
 
         // Reset inputs while preserving current date and topic for the next student
         setFormData((prev) => ({ ...prev, regNumber: "", website: "" }));
-        setVerifiedMember(null);
-        setManualDetails({ fullName: "", department: "", yearOfStudy: "Year 1" });
+        setManualDetails({ fullName: "", yearOfStudy: "" });
       } else {
         setSubmissionError(result.error || "Unable to submit attendance. Please try again.");
       }
@@ -157,37 +133,6 @@ export default function RollCallPage() {
       setSubmissionError("Network error. Please check your connection and retry.");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleVerifyMember = async () => {
-    const regNumber = formData.regNumber.trim().toUpperCase();
-    if (!regNumber || isVerifyingMember) return;
-    setIsVerifyingMember(true);
-    setSubmissionError(null);
-    setVerifiedMember(null);
-    try {
-      const response = await fetch(`/api/membership?reg=${encodeURIComponent(regNumber)}`, { cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Membership verification failed.");
-      if (!result.found || !result.member) {
-        throw new Error(result.message || "Membership not found. Please register with DESA first.");
-      }
-      const status = String(result.member.membershipStatus || "").trim().toLowerCase();
-      if (!["active", "active registered member", "verified"].includes(status)) {
-        throw new Error("Your DESA membership is not currently active. Please contact the Secretariat.");
-      }
-      setVerifiedMember({
-        maskedName: String(result.member.maskedName || "Verified member"),
-        department: String(result.member.department || ""),
-        yearOfStudy: String(result.member.yearOfStudy || ""),
-        membershipStatus: String(result.member.membershipStatus || "Active"),
-      });
-      setFormData((previous) => ({ ...previous, regNumber }));
-    } catch (error) {
-      setSubmissionError(error instanceof Error ? error.message : "Could not verify membership. Please retry.");
-    } finally {
-      setIsVerifyingMember(false);
     }
   };
 
@@ -240,7 +185,7 @@ export default function RollCallPage() {
 
           {/* Sign-in Form */}
           <div className={lastReceipt ? "lg:col-span-6 space-y-6" : "w-full space-y-6"}>
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-[5px_5px_0_0_#071325]">
               <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
                 <div className="w-10 h-10 rounded-xl bg-[#071325] text-[#e5a93c] flex items-center justify-center shrink-0">
                   <UsersIcon className="w-5 h-5" />
@@ -250,7 +195,7 @@ export default function RollCallPage() {
                     Session Check-In
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Enter your registration number to retrieve your DESA membership details.
+                    Record attendance for this meeting.
                   </p>
                 </div>
               </div>
@@ -289,70 +234,61 @@ export default function RollCallPage() {
                   />
                 </div>
 
-                <div>
-                  <span className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
-                    Scheduled meeting
-                  </span>
-                  {meetingLoadError ? (
-                    <span role="alert" className="mt-1 block text-xs text-red-700">
-                      {meetingLoadError}
-                    </span>
-                  ) : isLoadingMeetings ? (
-                    <div className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-3 text-sm text-slate-500">Loading scheduled meeting…</div>
-                  ) : selectedMeeting ? (
-                    <div className="w-full rounded-xl border border-[#e5a93c]/40 bg-amber-50 px-3.5 py-3 text-sm font-semibold text-[#071325]">
-                      {selectedMeeting.title} <span className="font-normal text-slate-600">· {selectedMeeting.sessionDate} · {selectedMeeting.opensAt}–{selectedMeeting.closesAt} EAT{selectedMeeting.location ? ` · ${selectedMeeting.location}` : ""}</span><span className={`mt-1 block text-xs font-bold ${selectedMeetingState === "Open" ? "text-emerald-700" : selectedMeetingState === "Scheduled" ? "text-amber-700" : "text-red-700"}`}>{selectedMeetingState === "Open" ? "Roll Call is open" : selectedMeetingState === "Scheduled" ? `Opens at ${selectedMeeting.opensAt} EAT` : "Roll Call is closed"}</span>
-                    </div>
-                  ) : (
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Roll call only opens in the event of a scheduled meeting.
+                <div className="border-l-4 border-[#071325] bg-slate-50 px-3.5 py-3 text-sm font-bold text-[#071325]" aria-live="polite" aria-label="Scheduled meeting">
+                  {selectedMeeting?.title ?? (
+                    <span className="font-medium text-slate-600">
+                      {isLoadingMeetings ? "Checking today’s schedule…" : meetingLoadError ? "Schedule temporarily unavailable" : "No meeting scheduled yet"}
                     </span>
                   )}
                 </div>
+                {!selectedMeeting && !isLoadingMeetings && !meetingLoadError && (
+                  <p className="-mt-2 text-xs text-slate-500">The form is ready. Check-in opens when a meeting is scheduled.</p>
+                )}
+                {meetingLoadError && <p role="status" className="-mt-2 text-xs text-slate-500">We couldn’t refresh the schedule. Please try again shortly.</p>}
+
+                <ol aria-label="Check-in steps" className="grid grid-cols-3 border border-slate-200 bg-white">
+                  {[
+                    { label: "Choose type", complete: true },
+                    { label: "Enter details", complete: Boolean(lastReceipt || (formData.regNumber.trim() && (checkInMode === "member" || (manualDetails.fullName.trim() && manualDetails.yearOfStudy)))) },
+                    { label: "Check in", complete: Boolean(lastReceipt) },
+                  ].map((step, index) => (
+                    <li key={step.label} className={`relative flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-center ${index < 2 ? "border-r border-slate-200" : ""}`}>
+                      <span className={`flex h-6 w-6 items-center justify-center border text-[10px] font-black ${step.complete ? "border-[#0a5c36] bg-[#0a5c36] text-white" : "border-slate-300 bg-slate-50 text-slate-500"}`} aria-hidden="true">
+                        {step.complete ? "✓" : `0${index + 1}`}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-600">{step.label}</span>
+                    </li>
+                  ))}
+                </ol>
 
                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
                   <button type="button" onClick={() => { setCheckInMode("member"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "member" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>DESA Member</button>
-                  <button type="button" onClick={() => { setCheckInMode("manual"); setVerifiedMember(null); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "manual" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>Non-Member / Guest</button>
+                  <button type="button" onClick={() => { setCheckInMode("manual"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "manual" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>Non-Member / Guest</button>
                 </div>
 
                 <div>
                   <label htmlFor="rollcall-reg" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
                     Registration Number <span className="text-red-500">*</span>
                   </label>
-                  <input id="rollcall-reg" type="text" required minLength={6} maxLength={30} autoComplete="off" placeholder="e.g. E020-01-1234/2023" value={formData.regNumber} onChange={(e) => { setFormData({ ...formData, regNumber: e.target.value.toUpperCase() }); setVerifiedMember(null); setSubmissionError(null); }} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]" />
+                  <input id="rollcall-reg" type="text" required minLength={6} maxLength={30} autoComplete="off" placeholder="e.g. E020-01-1234/2023" value={formData.regNumber} onChange={(e) => { setFormData({ ...formData, regNumber: e.target.value.toUpperCase() }); setSubmissionError(null); }} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]" />
                 </div>
 
                 {checkInMode === "member" ? (
-                  <>
-                    <button type="button" onClick={handleVerifyMember} disabled={isVerifyingMember || !formData.regNumber.trim()} className="w-full px-5 py-2.5 rounded-xl bg-[#071325] text-white text-xs font-bold uppercase tracking-wide hover:bg-slate-800 disabled:opacity-50">
-                      {isVerifyingMember ? "Checking…" : "Verify Membership"}
-                    </button>
-                    {verifiedMember && (
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-1.5" role="status">
-                        <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm"><CheckCircleIcon className="w-5 h-5" /> Membership verified</div>
-                        <p className="text-sm font-semibold text-slate-800">{verifiedMember.maskedName}</p>
-                        {verifiedMember.department && <p className="text-xs text-slate-600">Programme: {verifiedMember.department}</p>}
-                        {verifiedMember.yearOfStudy && <p className="text-xs text-slate-600">Year: {verifiedMember.yearOfStudy}</p>}
-                        <p className="text-xs text-emerald-700">Your details will be retrieved securely from the DESA membership register.</p>
-                      </div>
-                    )}
-                  </>
+                  <p className="border-l-2 border-slate-300 pl-3 text-xs text-slate-500">Your registration number is checked against the DESA register when you submit.</p>
                 ) : (
                   <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs text-slate-600">You can attend without DESA membership. Enter your details below.</p>
                     <label className="block text-xs font-bold text-slate-700">Full Name *<input required minLength={2} maxLength={70} value={manualDetails.fullName} onChange={(e) => setManualDetails({ ...manualDetails, fullName: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm" placeholder="Your full name" /></label>
-                    <label className="block text-xs font-bold text-slate-700">Programme *<select required value={manualDetails.department} onChange={(e) => setManualDetails({ ...manualDetails, department: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Select your programme</option>{engineeringPrograms.map((program) => <option key={program} value={program}>{program}</option>)}<option value="Other / Guest Scholar">Other / Guest Scholar</option></select></label>
-                    <label className="block text-xs font-bold text-slate-700">Year of Study *<select required value={manualDetails.yearOfStudy} onChange={(e) => setManualDetails({ ...manualDetails, yearOfStudy: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Year 5</option><option>Postgraduate</option></select></label>
+                    <label className="block text-xs font-bold text-slate-700">Year of Study *<select required value={manualDetails.yearOfStudy} onChange={(e) => setManualDetails({ ...manualDetails, yearOfStudy: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Select year of study</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Year 5</option></select></label>
                   </div>
                 )}
 
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || isLoadingMeetings || !selectedMeeting || selectedMeetingState !== "Open" || (checkInMode === "member" ? !verifiedMember : !manualDetails.fullName.trim() || !manualDetails.department || !manualDetails.yearOfStudy)}
+                  disabled={isSubmitting || !canCheckIn || !formData.regNumber.trim() || (checkInMode === "manual" && (!manualDetails.fullName.trim() || !manualDetails.yearOfStudy))}
                   className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? "Recording attendance…" : selectedMeetingState === "Scheduled" ? `Roll Call opens at ${selectedMeeting?.opensAt} EAT` : selectedMeetingState === "Closed" ? "Roll Call is closed" : "Confirm & Record Attendance"}
+                  {isSubmitting ? "Recording attendance…" : canCheckIn ? "Confirm & Record Attendance" : "Waiting for scheduled roll call"}
                 </button>
               </form>
             </div>
@@ -390,17 +326,12 @@ export default function RollCallPage() {
                     <span className="text-slate-500 font-medium">Registration Number</span>
                     <span className="font-mono font-bold text-[#071325]">{lastReceipt.regNumber}</span>
                   </div>
-                  {lastReceipt.department && <div className="flex items-center justify-between pb-2 border-b border-slate-200"><span className="text-slate-500 font-medium">Programme</span><span className="font-semibold text-[#071325]">{lastReceipt.department}</span></div>}
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                     <span className="text-slate-500 font-medium">Year of Study</span>
                     <span className="font-semibold text-[#071325]">{lastReceipt.yearOfStudy}</span>
                   </div>
                   <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                    <span className="text-slate-500 font-medium">Session Date</span>
-                    <span className="font-mono font-bold text-[#071325]">{lastReceipt.sessionDate}</span>
-                  </div>
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                    <span className="text-slate-500 font-medium">Topic / Event</span>
+                    <span className="text-slate-500 font-medium">Meeting</span>
                     <span className="font-semibold text-[#071325]">{lastReceipt.sessionTopic}</span>
                   </div>
                   <div className="flex items-center justify-between">

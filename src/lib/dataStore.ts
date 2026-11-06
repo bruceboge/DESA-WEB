@@ -113,15 +113,11 @@ export interface AdminDashboardOverview {
 }
 
 export async function nextPortalReference(
-  type: "member" | "contact" | "roll-call"
+  type: "contact" | "roll-call"
 ): Promise<string> {
   const year = new Date().getFullYear();
   const prefix =
-    type === "member"
-      ? "DESA-DKUT"
-      : type === "contact"
-        ? `MSG-${year}`
-        : `RC-${year}`;
+    type === "contact" ? `MSG-${year}` : `RC-${year}`;
   const { data, error } = await getSupabaseAdmin().rpc("next_portal_reference", {
     p_prefix: prefix,
   });

@@ -44,6 +44,9 @@ export default function AdminMeetingsManager() {
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [attendees, setAttendees] = useState<AdminPortalRecord[]>([]);
   const [draft, setDraft] = useState<MeetingDraft>(createEmptyMeetingDraft);
+  const [windowDraft, setWindowDraft] = useState({ sessionDate: "", opensAt: "", closesAt: "" });
+  const [isEditingWindow, setIsEditingWindow] = useState(false);
+  const [isSavingWindow, setIsSavingWindow] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingAttendees, setIsLoadingAttendees] = useState(false);
@@ -82,6 +85,19 @@ export default function AdminMeetingsManager() {
 
   const selectedMeeting =
     meetings.find((meeting) => meeting.id === selectedMeetingId) || null;
+
+  useEffect(() => {
+    if (!selectedMeeting) {
+      setIsEditingWindow(false);
+      return;
+    }
+    setWindowDraft({
+      sessionDate: recordText(selectedMeeting, "sessionDate"),
+      opensAt: recordText(selectedMeeting, "opensAt") || "00:00",
+      closesAt: recordText(selectedMeeting, "closesAt") || "23:59",
+    });
+    setIsEditingWindow(false);
+  }, [selectedMeeting]);
 
   const loadMeetings = useCallback(async () => {
     setIsLoading(true);
@@ -161,7 +177,7 @@ export default function AdminMeetingsManager() {
       setIsCreateOpen(false);
       setAttendees([]);
       setSelectedMeetingId(result.meeting?.id || null);
-      setStatusMessage("Meeting scheduled. Roll call will open and close automatically at the configured times (Kenya time).");
+      setStatusMessage("Meeting scheduled. Roll call opens and closes automatically during the configured Kenya-time window.");
       setReloadToken((current) => current + 1);
     } catch (publishError) {
       setError(
@@ -187,6 +203,37 @@ export default function AdminMeetingsManager() {
       setReloadToken((current) => current + 1);
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Could not update meeting.");
+    }
+  };
+
+  const saveMeetingWindow = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedMeeting || windowDraft.closesAt <= windowDraft.opensAt) {
+      setError("Closing time must be later than opening time.");
+      return;
+    }
+    setIsSavingWindow(true);
+    setError(null);
+    setStatusMessage(null);
+    try {
+      const response = await fetch("/api/admin/records", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recordType: "meeting",
+          id: selectedMeeting.id,
+          updates: windowDraft,
+        }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Could not update meeting schedule.");
+      setIsEditingWindow(false);
+      setStatusMessage("Meeting date and roll-call window updated.");
+      setReloadToken((current) => current + 1);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not update meeting schedule.");
+    } finally {
+      setIsSavingWindow(false);
     }
   };
 
@@ -221,7 +268,7 @@ export default function AdminMeetingsManager() {
         <div>
           <h2 className="text-lg font-bold text-[#071325]">Meetings & roll call</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Publish a meeting once. Students can check in only on its scheduled date.
+            Schedule the meeting date and check-in window. Attendance opens and closes automatically in Kenya time.
           </p>
         </div>
         <div className="flex gap-2">
@@ -439,7 +486,30 @@ export default function AdminMeetingsManager() {
                 <p className="mt-3 text-xs font-semibold text-slate-700">
                   Roll call: {attendees.length} {attendees.length === 1 ? "attendee" : "attendees"}
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingWindow((editing) => !editing)}
+                  className="mt-3 min-h-10 border border-slate-300 px-3 py-2 text-xs font-bold text-[#071325] hover:bg-slate-50"
+                >
+                  {isEditingWindow ? "Cancel schedule edit" : "Edit date & roll-call window"}
+                </button>
               </div>
+              {isEditingWindow && (
+                <form onSubmit={saveMeetingWindow} className="grid gap-3 border-b border-slate-100 bg-slate-50 p-4 sm:grid-cols-3">
+                  <label className="text-xs font-semibold text-slate-700">Meeting date
+                    <input required type="date" min={getNairobiDateInput()} value={windowDraft.sessionDate} onChange={(event) => setWindowDraft({ ...windowDraft, sessionDate: event.target.value })} className="mt-1 min-h-11 w-full border border-slate-300 bg-white px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700">Opens (EAT)
+                    <input required type="time" value={windowDraft.opensAt} onChange={(event) => setWindowDraft({ ...windowDraft, opensAt: event.target.value })} className="mt-1 min-h-11 w-full border border-slate-300 bg-white px-3 text-sm" />
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700">Closes (EAT)
+                    <input required type="time" min={windowDraft.opensAt} value={windowDraft.closesAt} onChange={(event) => setWindowDraft({ ...windowDraft, closesAt: event.target.value })} className="mt-1 min-h-11 w-full border border-slate-300 bg-white px-3 text-sm" />
+                  </label>
+                  <div className="flex justify-end sm:col-span-3">
+                    <button type="submit" disabled={isSavingWindow} className="min-h-10 bg-[#071325] px-4 py-2 text-xs font-bold text-[#e5a93c] disabled:opacity-50">{isSavingWindow ? "Saving…" : "Save schedule"}</button>
+                  </div>
+                </form>
+              )}
               {isLoadingAttendees ? (
                 <p className="p-6 text-sm text-slate-500">Loading roll call…</p>
               ) : attendees.length === 0 ? (
@@ -466,7 +536,7 @@ export default function AdminMeetingsManager() {
                             {recordText(attendee, "regNumber")}
                           </td>
                           <td className="px-4 py-3 text-slate-600">
-                            {recordText(attendee, "yearOfStudy") || recordText(attendee, "department") || "—"}
+                            {recordText(attendee, "yearOfStudy") || "—"}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-slate-600">
                             {recordText(attendee, "timestamp")}
@@ -483,7 +553,7 @@ export default function AdminMeetingsManager() {
                       <p className="break-all font-mono text-xs text-slate-600">{recordText(attendee, "regNumber")}</p>
                       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-2 text-xs">
                         <span className="font-semibold text-[#071325]">
-                          {recordText(attendee, "yearOfStudy") || recordText(attendee, "department") || "Year not recorded"}
+                          {recordText(attendee, "yearOfStudy") || "Year not recorded"}
                         </span>
                         <span className="text-slate-500">{recordText(attendee, "timestamp")}</span>
                       </div>

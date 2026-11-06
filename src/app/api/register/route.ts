@@ -13,12 +13,12 @@ import {
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
-import { nextPortalReference, savePortalRecord } from "@/lib/dataStore";
+import { savePortalRecord } from "@/lib/dataStore";
+import { engineeringPrograms } from "@/data/programs";
 
 export const dynamic = "force-dynamic";
 
 export interface MemberRegistrationRecord {
-  memberId: string;
   registrationDate: string; // YYYY-MM-DD
   timestamp: string;
   fullName: string;
@@ -29,6 +29,7 @@ export interface MemberRegistrationRecord {
   yearOfStudy: string;
   interest: string;
   contribution: string;
+  paymentStatus: string;
   status: string;
 }
 
@@ -74,7 +75,6 @@ export async function POST(request: Request) {
       console.warn("Spam bot trapped by registration honeypot.");
       return NextResponse.json({
         success: true,
-        memberId: "DESA-DKUT-000000",
         issuedDate: getNairobiHumanDate(),
       });
     }
@@ -112,16 +112,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!department || typeof department !== "string") {
+    const allowedYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
+    if (
+      typeof department !== "string" ||
+      !engineeringPrograms.includes(department as (typeof engineeringPrograms)[number]) ||
+      typeof yearOfStudy !== "string" ||
+      !allowedYears.includes(yearOfStudy)
+    ) {
       return NextResponse.json(
-        { success: false, error: "Please select your engineering program." },
-        { status: 400 }
-      );
-    }
-
-    if (!yearOfStudy || typeof yearOfStudy !== "string") {
-      return NextResponse.json(
-        { success: false, error: "Please select your current year of study." },
+        { success: false, error: "Choose a valid engineering program and year of study." },
         { status: 400 }
       );
     }
@@ -129,11 +128,8 @@ export async function POST(request: Request) {
     const todayDate = getNairobiDate();
     const timeString = getNairobiTime();
 
-    const memberId = await nextPortalReference("member");
-
     // Preserve the submitted values in the database; Sheets formula safety is applied at sync time.
     const newRecord: MemberRegistrationRecord = {
-      memberId,
       registrationDate: todayDate,
       timestamp: timeString,
       fullName: normalizeInputText(fullName),
@@ -144,6 +140,7 @@ export async function POST(request: Request) {
       yearOfStudy: normalizeInputText(yearOfStudy),
       interest: normalizeInputText(interest || "General Engineering"),
       contribution: "Ksh 200 / yr",
+      paymentStatus: "Unpaid",
       status: "Active Registered Member",
     };
 
@@ -155,7 +152,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      memberId,
       issuedDate: getNairobiHumanDate(),
       entry: newRecord,
     });

@@ -35,6 +35,13 @@ delivered. It also stores a SupabaseRecordID in each tab to make updates and
 deletes target the same row. The script sanitizes text beginning with formula
 characters before writing it to Sheets.
 
+Membership numbers are assigned or edited by an administrator; public member
+registration submissions leave MemberID blank until then. Those edits are
+mirrored through the outbox to the Members tab. Gala rows include payer name
+and an optional M-Pesa reference; deposit amounts and presentation fields are
+no longer synced. Existing tabs may retain old, unused columns because sync
+updates matching headers but does not delete spreadsheet columns.
+
 REQUIRED CONFIGURATION
 ----------------------
 Google Apps Script:

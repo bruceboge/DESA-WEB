@@ -12,7 +12,8 @@ import {
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
-import { findMemberByRegistration, nextPortalReference, savePortalRecord } from "@/lib/dataStore";
+import { findMemberByRegistration, savePortalRecord } from "@/lib/dataStore";
+import { engineeringPrograms } from "@/data/programs";
 import { randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -140,7 +141,6 @@ export async function POST(request: Request) {
     if (isHoneypotTriggered(website)) {
       return NextResponse.json({
         success: true,
-        memberId: "DESA-DKUT-000000",
         issuedDate: getNairobiHumanDate(),
       });
     }
@@ -166,21 +166,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: phoneCheck.reason }, { status: 400 });
     }
 
+    const allowedYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
+    if (
+      typeof department !== "string" ||
+      !engineeringPrograms.includes(department as (typeof engineeringPrograms)[number]) ||
+      typeof yearOfStudy !== "string" ||
+      !allowedYears.includes(yearOfStudy)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Choose a valid engineering program and year of study." },
+        { status: 400 }
+      );
+    }
+
     const todayDate = getNairobiDate();
     const timeString = getNairobiTime();
-    const memberId = await nextPortalReference("member");
-
     const record = {
       action: "register",
-      memberId,
       registrationDate: todayDate,
       timestamp: timeString,
       fullName: normalizeInputText(fullName),
       regNumber: normalizeInputText(regNumber.toUpperCase()),
       email: email.trim().toLowerCase(),
       phone: normalizeInputText(phone ? phone.trim() : "Not provided"),
-      department: normalizeInputText(department || "Engineering"),
-      yearOfStudy: normalizeInputText(yearOfStudy || "Year 1"),
+      department: normalizeInputText(department),
+      yearOfStudy: normalizeInputText(yearOfStudy),
       membershipStatus: "Active",
       paymentStatus: "Unpaid",
     };
@@ -189,7 +199,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      memberId,
       issuedDate: getNairobiHumanDate(),
     });
   } catch (err) {

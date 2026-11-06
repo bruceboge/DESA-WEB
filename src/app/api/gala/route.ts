@@ -4,13 +4,13 @@ import {
   checkRateLimit,
   getClientIp,
   isHoneypotTriggered,
-  isValidEmail,
   normalizeInputText,
   getNairobiDate,
   getNairobiTime,
   getNairobiHumanDate,
 } from "@/lib/antiSpam";
 import { savePortalRecord } from "@/lib/dataStore";
+import { getGalaTicketPricing, type GalaAttendeeCategory, type GalaTicketPackage } from "@/lib/galaPricing";
 
 export const dynamic = "force-dynamic";
 
@@ -20,16 +20,17 @@ export interface GalaRegistrationRecord {
   course: string;
   date: string;
   regTime: string;
-  membership: string;
   regNumber: string;
   yearOfStudy?: string;
   attendeeType?: string;
   paymentPledge?: string;
   dietary?: string;
-  hasPresentation?: boolean;
-  presentationCategory?: string;
-  presentationDesc?: string;
+  paymentName?: string;
   mpesaRef?: string;
+  ticketPackage?: string;
+  attendeeCount?: number;
+  ticketPriceKsh?: number;
+  paymentStatus?: string;
 }
 
 function text(value: unknown, fallback = ""): string {
@@ -55,41 +56,31 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       name,
-      fullName,
       attendeeType,
+      ticketPackage,
       contact,
-      phone,
-      email,
       course,
-      department,
-      membership,
       regNumber,
       yearOfStudy,
       paymentPledge,
       dietary,
-      dietaryDetails,
-      hasPresentation,
-      presentationCategory,
-      presentationDesc,
+      paymentName,
       mpesaRef,
       website,
     } = body;
 
-    const rawName = text(name || fullName);
-    const rawAttendeeType = text(attendeeType, "DeKUT Student");
-    let rawContact = text(contact || phone);
-    const rawEmail = text(email).toLowerCase();
-    const rawCourse = text(course || department, "N/A");
-    const rawMembership = text(membership, "Non-Member / Guest");
-    const rawRegNumber = text(regNumber, "N/A").toUpperCase();
-    const rawYear = text(yearOfStudy, "N/A");
-    const rawPaymentPledge = text(paymentPledge, "Lipa pole pole allowed");
+    const rawName = text(name);
+    const rawAttendeeType = text(attendeeType);
+    const rawContact = text(contact);
+    const rawCourse = text(course);
+    const rawRegNumber = text(regNumber).toUpperCase();
+    const rawYear = text(yearOfStudy);
+    const rawPaymentPledge = text(paymentPledge);
     const rawDietary = text(dietary, "Standard");
-    const rawDietaryDetails = text(dietaryDetails);
-    const rawHasPresentation = hasPresentation === true || hasPresentation === "true";
-    const rawPresentationCat = text(presentationCategory);
-    const rawPresentationDesc = text(presentationDesc);
+    const rawPaymentName = text(paymentName);
     const rawMpesaRef = text(mpesaRef).toUpperCase();
+    const allowedCategories: GalaAttendeeCategory[] = ["dekut_student", "alumni", "staff"];
+    const packageValue = typeof ticketPackage === "string" ? ticketPackage : "single";
 
     // 1. Rate Limiting: protect the registration endpoint from bot floods
     const rateCheck = checkRateLimit(ip, "gala", 100, 60, rawContact || rawName, 3);
@@ -120,53 +111,50 @@ export async function POST(request: Request) {
     }
 
     // 3. Field Validations
-    if (!rawName || rawName.length < 3 || rawName.length > 200) {
+    if (!rawName || rawName.length < 2 || rawName.length > 80) {
       return NextResponse.json(
-        { success: false, error: "Please enter a valid full name (3 to 200 characters)." },
+        { success: false, error: "Please enter a valid full name (2 to 80 characters)." },
         { status: 400 }
       );
     }
 
     if (
       rawContact.length > 300 ||
-      rawEmail.length > 254 ||
-      (rawEmail && !isValidEmail(rawEmail).valid) ||
       rawCourse.length > 120 ||
-      rawMembership.length > 100 ||
       rawRegNumber.length > 50 ||
       rawYear.length > 30 ||
       rawAttendeeType.length > 100 ||
       rawPaymentPledge.length > 200 ||
       rawDietary.length > 500 ||
-      rawDietaryDetails.length > 1000 ||
-      rawPresentationCat.length > 200 ||
-      rawPresentationDesc.length > 3000 ||
+      rawPaymentName.length > 100 ||
       rawMpesaRef.length > 100
     ) {
       return NextResponse.json({ success: false, error: "One or more Gala fields are invalid or too long." }, { status: 400 });
     }
 
-    if (!rawContact && !rawEmail) {
+    if (
+      !allowedCategories.includes(rawAttendeeType as GalaAttendeeCategory) ||
+      !["single", "couple", "group5"].includes(packageValue)
+    ) {
+      return NextResponse.json({ success: false, error: "Choose a valid attendee type and ticket option." }, { status: 400 });
+    }
+    const ticketPricing = getGalaTicketPricing(
+      rawAttendeeType as GalaAttendeeCategory,
+      packageValue as GalaTicketPackage,
+    );
+    if (!ticketPricing) {
+      return NextResponse.json({ success: false, error: "That ticket option is not available for this attendee type." }, { status: 400 });
+    }
+    if (rawAttendeeType === "dekut_student" && (!rawRegNumber || !rawYear || !rawCourse || !rawPaymentPledge)) {
+      return NextResponse.json({ success: false, error: "Complete the required student details and payment pledge." }, { status: 400 });
+    }
+
+    if (!rawContact) {
       return NextResponse.json(
-        { success: false, error: "Please provide a valid phone or WhatsApp contact." },
+        { success: false, error: "Please provide a phone or WhatsApp contact." },
         { status: 400 }
       );
     }
-
-    // If an email was provided and isn't already inside rawContact, append it cleanly
-    if (rawEmail && !rawContact.includes(rawEmail)) {
-      rawContact = rawContact ? `${rawContact} | ${rawEmail}` : rawEmail;
-    }
-
-    // Format dietary summary
-    const combinedDietary = rawDietaryDetails
-      ? `${rawDietary} (${rawDietaryDetails})`
-      : rawDietary;
-
-    // Presentation summary string
-    const presentationSummary = rawHasPresentation
-      ? `YES: [${rawPresentationCat || "Talent/Presentation"}] - ${rawPresentationDesc}`
-      : "No";
 
     // Timestamps in official Africa/Nairobi timezone (EAT)
     const todayDate = getNairobiDate(); // YYYY-MM-DD
@@ -177,12 +165,11 @@ export async function POST(request: Request) {
     const normalizedAttendeeType = normalizeInputText(rawAttendeeType);
     const normalizedContact = normalizeInputText(rawContact);
     const normalizedCourse = normalizeInputText(rawCourse);
-    const normalizedMembership = normalizeInputText(rawMembership);
     const normalizedRegNumber = normalizeInputText(rawRegNumber);
     const normalizedYear = normalizeInputText(rawYear);
     const normalizedPaymentPledge = normalizeInputText(rawPaymentPledge);
-    const normalizedDietary = normalizeInputText(combinedDietary);
-    const normalizedPresentation = normalizeInputText(presentationSummary);
+    const normalizedDietary = normalizeInputText(rawDietary);
+    const normalizedPaymentName = normalizeInputText(rawPaymentName);
     const normalizedMpesa = normalizeInputText(rawMpesaRef);
 
     const record: GalaRegistrationRecord = {
@@ -191,28 +178,23 @@ export async function POST(request: Request) {
       course: normalizedCourse,
       date: todayDate,
       regTime: todayTime,
-      membership: normalizedMembership,
       regNumber: normalizedRegNumber,
       yearOfStudy: normalizedYear,
       attendeeType: normalizedAttendeeType,
       paymentPledge: normalizedPaymentPledge,
       dietary: normalizedDietary,
-      hasPresentation: rawHasPresentation,
-      presentationCategory: normalizeInputText(rawPresentationCat),
-      presentationDesc: normalizeInputText(rawPresentationDesc),
+      paymentName: normalizedPaymentName,
       mpesaRef: normalizedMpesa,
+      ticketPackage: packageValue,
+      attendeeCount: ticketPricing.attendeeCount,
+      ticketPriceKsh: ticketPricing.totalKsh,
+      paymentStatus: normalizedPaymentName || normalizedMpesa ? "Pending verification" : "Unpaid",
     };
 
     const recordId = `gala-${randomUUID()}`;
     await savePortalRecord("gala", recordId, {
       ...record,
       id: recordId,
-      email: rawEmail,
-      hasPresentation: rawHasPresentation,
-      presentationCategory: normalizeInputText(rawPresentationCat),
-      presentationDesc: normalizeInputText(rawPresentationDesc),
-      mpesaRef: normalizedMpesa,
-      presentation: normalizedPresentation,
     });
 
     return NextResponse.json({

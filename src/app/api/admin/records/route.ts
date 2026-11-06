@@ -6,7 +6,6 @@ import {
   getAdminPortalRecords,
   getPortalRecord,
   deletePortalRecord,
-  nextPortalReference,
   permanentlyDeleteTrashedPortalRecord,
   restorePortalRecord,
   savePortalRecord,
@@ -56,24 +55,23 @@ const EDITABLE_FIELDS: Record<PortalRecordType, Set<string>> = {
     "excerpt", "content", "recapPhotos", "isPast",
   ]),
   membership: new Set([
-    "fullName", "regNumber", "email", "phone", "department", "yearOfStudy",
+    "fullName", "memberId", "regNumber", "email", "phone", "department", "yearOfStudy",
     "interest", "contribution", "membershipStatus", "paymentStatus", "status",
   ]),
   registration: new Set([
-    "fullName", "regNumber", "email", "phone", "department", "yearOfStudy",
+    "fullName", "memberId", "regNumber", "email", "phone", "department", "yearOfStudy",
     "interest", "contribution", "status",
   ]),
   contact: new Set(["name", "email", "category", "subject", "message", "status"]),
   gala: new Set([
-    "name", "contact", "course", "membership", "regNumber", "yearOfStudy",
-    "attendeeType", "paymentPledge", "dietary", "hasPresentation",
-    "presentationCategory", "presentationDesc", "mpesaRef", "email",
+    "name", "contact", "course", "regNumber", "yearOfStudy", "attendeeType",
+    "paymentPledge", "dietary", "paymentName", "mpesaRef", "paymentStatus",
   ]),
   roll_call: new Set([
-    "regNumber", "fullName", "department", "yearOfStudy", "sessionDate",
+    "regNumber", "fullName", "yearOfStudy", "sessionDate",
     "sessionTopic", "verified",
   ]),
-  meeting: new Set(["title", "sessionDate", "location", "description", "status"]),
+  meeting: new Set(["title", "sessionDate", "location", "description", "status", "opensAt", "closesAt"]),
 };
 
 const FIELD_MAX_LENGTHS: Record<string, number> = {
@@ -95,6 +93,7 @@ const FIELD_MAX_LENGTHS: Record<string, number> = {
   description: 5000,
   image: 2048,
   fullName: 200,
+  memberId: 50,
   email: 254,
   phone: 100,
   yearOfStudy: 30,
@@ -112,15 +111,16 @@ const FIELD_MAX_LENGTHS: Record<string, number> = {
   attendeeType: 100,
   paymentPledge: 200,
   dietary: 1000,
-  presentationCategory: 200,
-  presentationDesc: 3000,
+  paymentName: 100,
   mpesaRef: 100,
   sessionDate: 40,
+  opensAt: 5,
+  closesAt: 5,
   sessionTopic: 120,
   meetingId: 200,
 };
 
-const BOOLEAN_FIELDS = new Set(["hasPresentation", "isPast", "verified"]);
+const BOOLEAN_FIELDS = new Set(["isPast", "verified"]);
 const ARRAY_FIELDS: Record<string, number> = {
   highlights: 300,
   recapPhotos: 2048,
@@ -227,6 +227,13 @@ function validateUpdates(
       return null;
     }
     if (
+      field === "paymentStatus" &&
+      recordType === "gala" &&
+      !["Unpaid", "Pending verification", "Verified", "Rejected"].includes(fieldValue)
+    ) {
+      return null;
+    }
+    if (
       field === "status" &&
       recordType === "meeting" &&
       fieldValue !== "Draft" &&
@@ -239,6 +246,13 @@ function validateUpdates(
       field === "sessionDate" &&
       recordType === "meeting" &&
       !isValidIsoDate(fieldValue)
+    ) {
+      return null;
+    }
+    if (
+      recordType === "meeting" &&
+      (field === "opensAt" || field === "closesAt") &&
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(fieldValue)
     ) {
       return null;
     }
@@ -318,6 +332,7 @@ export async function POST(request: Request) {
     const department = typeof body.department === "string" ? body.department.trim() : "";
     const yearOfStudy = typeof body.yearOfStudy === "string" ? body.yearOfStudy.trim() : "";
     const interest = typeof body.interest === "string" ? body.interest.trim() : "";
+    const memberId = typeof body.memberId === "string" ? body.memberId.trim() : "";
 
     const nameCheck = isValidName(fullName);
     const regCheck = isValidRegNumber(regNumber);
@@ -333,7 +348,8 @@ export async function POST(request: Request) {
       department.length > 100 ||
       !yearOfStudy ||
       yearOfStudy.length > 30 ||
-      interest.length > 1000
+      interest.length > 1000 ||
+      memberId.length > 50
     ) {
       return NextResponse.json(
         { error: "Department, year, or interest details are invalid." },
@@ -352,7 +368,7 @@ export async function POST(request: Request) {
     const recordId = `membership-${randomUUID()}`;
     await recordAdminAction(request, "record.create", "membership", recordId);
     const memberRecord = {
-      memberId: await nextPortalReference("member"),
+      memberId: normalizeInputText(memberId),
       registrationDate: getNairobiDate(),
       timestamp: getNairobiTime(),
       fullName: normalizeInputText(fullName),
@@ -371,6 +387,12 @@ export async function POST(request: Request) {
     try {
       await savePortalRecord("membership", recordId, memberRecord);
     } catch (error) {
+      if (error instanceof Error && error.message.includes("portal_records_member_id_unique_idx")) {
+        return NextResponse.json(
+          { error: "That membership number is already assigned to another member." },
+          { status: 409 }
+        );
+      }
       if (error instanceof Error && error.message.includes("Registration number already exists")) {
         return NextResponse.json(
           { error: "A member with this registration number is already in the register." },
@@ -427,11 +449,39 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Record not found." }, { status: 404 });
     }
 
+    if (recordType === "meeting" && ("sessionDate" in updates || "opensAt" in updates || "closesAt" in updates)) {
+      const nextDate = String(updates.sessionDate ?? existingRecord.sessionDate ?? "");
+      const nextOpensAt = String(updates.opensAt ?? existingRecord.opensAt ?? "00:00");
+      const nextClosesAt = String(updates.closesAt ?? existingRecord.closesAt ?? "23:59");
+      if (
+        !isValidIsoDate(nextDate) ||
+        nextDate < getNairobiDate() ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(nextOpensAt) ||
+        !/^([01]\d|2[0-3]):[0-5]\d$/.test(nextClosesAt) ||
+        nextClosesAt <= nextOpensAt
+      ) {
+        return NextResponse.json(
+          { error: "Choose a valid future or current meeting date and a closing time later than opening time." },
+          { status: 400 }
+        );
+      }
+    }
+
     await recordAdminAction(request, "record.update", recordType, id);
-    await savePortalRecord(recordType, id, {
-      ...existingRecord,
-      ...updates,
-    });
+    try {
+      await savePortalRecord(recordType, id, {
+        ...existingRecord,
+        ...updates,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("portal_records_member_id_unique_idx")) {
+        return NextResponse.json(
+          { error: "That membership number is already assigned to another member." },
+          { status: 409 }
+        );
+      }
+      throw error;
+    }
     return NextResponse.json(
       { success: true },
       { headers: { "Cache-Control": "no-store" } }

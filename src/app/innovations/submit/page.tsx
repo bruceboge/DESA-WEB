@@ -12,6 +12,7 @@ import {
   ShieldCheckIcon,
 } from "@/components/Icons";
 import { engineeringPrograms } from "@/data/programs";
+import ProgramPicker from "@/components/ProgramPicker";
 import { convertImageToWebP, formatBytes } from "@/lib/imageOptimization";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import RichArticleEditor from "@/components/RichArticleEditor";
@@ -345,17 +346,7 @@ export default function SubmitArticlePage() {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
                     Program <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
-                  >
-                    {engineeringPrograms.map((prog) => (
-                      <option key={prog} value={prog}>
-                        {prog}
-                      </option>
-                    ))}
-                  </select>
+                  <ProgramPicker label="Engineering Program" value={formData.department} options={engineeringPrograms} required onChange={(department) => setFormData({ ...formData, department })} />
                 </div>
 
                 {/* Technical Category with User Write-In Feature */}
