@@ -118,15 +118,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (checkInMode !== "member" && checkInMode !== "manual") {
-      return NextResponse.json(
-        { success: false, error: "Select a valid check-in method." },
-        { status: 400 }
-      );
-    }
-
     const normalizedRegNumber = normalizeInputText(regNumber.toUpperCase());
-    const allowedYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Postgraduate"];
     let memberName = "";
     let memberYear = "";
     let memberDepartment = "";
@@ -137,6 +129,7 @@ export async function POST(request: Request) {
       if (!nameCheck.valid) {
         return NextResponse.json({ success: false, error: nameCheck.reason || "Enter your full name." }, { status: 400 });
       }
+      const allowedYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Postgraduate"];
       if (typeof yearOfStudy !== "string" || !allowedYears.includes(yearOfStudy)) {
         return NextResponse.json({ success: false, error: "Select a valid year of study." }, { status: 400 });
       }
@@ -183,13 +176,6 @@ export async function POST(request: Request) {
         );
       }
       isVerifiedMember = true;
-    }
-
-    if (!allowedYears.includes(memberYear)) {
-      return NextResponse.json(
-        { success: false, error: "Your membership record has an invalid year of study. Please contact the DESA Secretariat." },
-        { status: 422 }
-      );
     }
 
     const meeting = await getOpenMeeting(meetingId);
