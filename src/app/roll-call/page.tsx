@@ -87,7 +87,7 @@ export default function RollCallPage() {
     if (isSubmitting) return;
     if (!formData.regNumber.trim()) return;
     if (checkInMode === "manual" && (!manualDetails.fullName.trim() || !manualDetails.yearOfStudy)) return;
-    if (!canCheckIn) return;
+    if (!canCheckIn || !selectedMeeting) return;
 
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -104,7 +104,7 @@ export default function RollCallPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          regNumber: formData.regNumber, meetingId: formData.meetingId, website: formData.website,
+          regNumber: formData.regNumber, meetingId: selectedMeeting.id, website: formData.website,
           checkInMode: checkInMode === "manual" ? "manual" : "member",
           ...(checkInMode === "manual" ? manualDetails : {}),
         }),
@@ -253,7 +253,7 @@ export default function RollCallPage() {
                     { label: "Check in", complete: Boolean(lastReceipt) },
                   ].map((step, index) => (
                     <li key={step.label} className={`relative flex min-h-16 flex-col items-center justify-center gap-1 px-1 py-2 text-center ${index < 2 ? "border-r border-slate-200" : ""}`}>
-                      <span className={`flex h-6 w-6 items-center justify-center border text-[10px] font-black ${step.complete ? "border-[#0a5c36] bg-[#0a5c36] text-white" : "border-slate-300 bg-slate-50 text-slate-500"}`} aria-hidden="true">
+                      <span className={`flex h-6 w-6 items-center justify-center border text-[10px] font-black ${step.complete ? "border-[#0a5c36] bg-[#0a5c36] text-white" : "border-slate-300 bg-slate-100 text-slate-500"}`}>
                         {step.complete ? "✓" : `0${index + 1}`}
                       </span>
                       <span className="text-[10px] font-bold text-slate-600">{step.label}</span>
@@ -262,23 +262,39 @@ export default function RollCallPage() {
                 </ol>
 
                 <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1">
-                  <button type="button" onClick={() => { setCheckInMode("member"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "member" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>DESA Member</button>
-                  <button type="button" onClick={() => { setCheckInMode("manual"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "manual" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>Non-Member / Guest</button>
+                  <button type="button" onClick={() => { setCheckInMode("member"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "member" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>
+                    Member Register
+                  </button>
+                  <button type="button" onClick={() => { setCheckInMode("manual"); setSubmissionError(null); }} className={`rounded-lg px-3 py-2.5 text-xs font-bold ${checkInMode === "manual" ? "bg-white text-[#071325] shadow-sm" : "text-slate-500"}`}>
+                    Manual Entry
+                  </button>
                 </div>
 
                 <div>
                   <label htmlFor="rollcall-reg" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
                     Registration Number <span className="text-red-500">*</span>
                   </label>
-                  <input id="rollcall-reg" type="text" required minLength={6} maxLength={30} autoComplete="off" placeholder="e.g. E020-01-1234/2023" value={formData.regNumber} onChange={(e) => { setFormData({ ...formData, regNumber: e.target.value.toUpperCase() }); setSubmissionError(null); }} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] uppercase font-mono focus:outline-none focus:ring-2 focus:ring-[#e5a93c]" />
+                  <input id="rollcall-reg" type="text" required minLength={6} maxLength={30} autoComplete="off" placeholder="e.g. E020-01-1234/2023" value={formData.regNumber} onChange={(e) => { setFormData({ ...formData, regNumber: e.target.value }); setSubmissionError(null); }} className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10" />
                 </div>
 
                 {checkInMode === "member" ? (
                   <p className="border-l-2 border-slate-300 pl-3 text-xs text-slate-500">Your registration number is checked against the DESA register when you submit.</p>
                 ) : (
                   <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <label className="block text-xs font-bold text-slate-700">Full Name *<input required minLength={2} maxLength={70} value={manualDetails.fullName} onChange={(e) => setManualDetails({ ...manualDetails, fullName: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm" placeholder="Your full name" /></label>
-                    <label className="block text-xs font-bold text-slate-700">Year of Study *<select required value={manualDetails.yearOfStudy} onChange={(e) => setManualDetails({ ...manualDetails, yearOfStudy: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm"><option value="">Select year of study</option><option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option><option>Year 5</option></select></label>
+                    <label className="block text-xs font-bold text-slate-700">Full Name *
+                      <input required minLength={2} maxLength={70} value={manualDetails.fullName} onChange={(e) => setManualDetails({ ...manualDetails, fullName: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10" />
+                    </label>
+                    <label className="block text-xs font-bold text-slate-700">Year of Study *
+                      <select required value={manualDetails.yearOfStudy} onChange={(e) => setManualDetails({ ...manualDetails, yearOfStudy: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10">
+                        <option value="">Select a year</option>
+                        <option value="1">Year 1</option>
+                        <option value="2">Year 2</option>
+                        <option value="3">Year 3</option>
+                        <option value="4">Year 4</option>
+                        <option value="5">Year 5</option>
+                        <option value="Graduate">Graduate</option>
+                      </select>
+                    </label>
                   </div>
                 )}
 
@@ -286,7 +302,7 @@ export default function RollCallPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !canCheckIn || !formData.regNumber.trim() || (checkInMode === "manual" && (!manualDetails.fullName.trim() || !manualDetails.yearOfStudy))}
-                  className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? "Recording attendance…" : canCheckIn ? "Confirm & Record Attendance" : "Waiting for scheduled roll call"}
                 </button>

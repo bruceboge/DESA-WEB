@@ -64,7 +64,7 @@ function parseInline(text: string): React.ReactNode[] {
           href={url}
           target={url.startsWith("http") ? "_blank" : undefined}
           rel={url.startsWith("http") ? "noopener noreferrer" : undefined}
-          className="text-[#b87a14] hover:text-[#071325] font-semibold underline underline-offset-2 transition-colors inline-flex items-center gap-0.5"
+          className="text-[#b87a14] hover:text-[#071325] font-semibold underline underline-offset-2 transition-colors inline break-words"
         >
           {label}
         </a>
@@ -154,7 +154,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
   const rawBlocks = content.split(/\r?\n\r?\n/);
 
   return (
-    <div className={`space-y-4 text-slate-700 leading-relaxed text-sm sm:text-base ${className}`}>
+    <div className={`news-article-content min-w-0 max-w-full space-y-4 text-slate-700 leading-relaxed text-sm sm:text-base ${className}`}>
       {rawBlocks.map((block, bIdx) => {
         const trimmed = block.trim();
         if (!trimmed) return null;
@@ -176,7 +176,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
                   <span>{lang.toUpperCase()}</span>
                 </div>
               )}
-              <pre className="p-4 overflow-x-auto text-xs font-mono leading-relaxed">
+              <pre className="p-4 max-w-full overflow-x-auto whitespace-pre-wrap break-words text-xs font-mono leading-relaxed">
                 <code>{codeBody}</code>
               </pre>
             </div>
@@ -269,7 +269,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
                 return (
                   <li key={liIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#e5a93c] mt-2 shrink-0" />
-                    <span className="flex-1 leading-relaxed">{parseInline(cleanItem)}</span>
+                    <span className="flex-1 min-w-0 leading-relaxed">{parseInline(cleanItem)}</span>
                   </li>
                 );
               })}
@@ -293,7 +293,7 @@ export default function MarkdownRenderer({ content, className = "" }: MarkdownRe
                     <span className="font-mono text-xs font-bold text-[#b87a14] bg-[#e5a93c]/15 px-2 py-0.5 rounded shrink-0">
                       {liIdx + 1}
                     </span>
-                    <span className="flex-1 leading-relaxed pt-0.5">{parseInline(cleanItem)}</span>
+                    <span className="flex-1 min-w-0 leading-relaxed pt-0.5">{parseInline(cleanItem)}</span>
                   </li>
                 );
               })}
