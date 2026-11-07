@@ -290,8 +290,6 @@ export default function RollCallPage() {
                 >
                   {isSubmitting ? "Recording attendance…" : canCheckIn ? "Confirm & Record Attendance" : "Waiting for scheduled roll call"}
                 </button>
-                  </>
-                )}
               </form>
             </div>
           </div>
