@@ -1,0 +1,27 @@
+
+{
+  "id": "/",
+  "name": "DESA - DeKUT Engineering Students Association",
+  "short_name": "DESA",
+  "description": "Official DESA student association portal for Dedan Kimathi University of Technology.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#071325",
+  "theme_color": "#071325",
+  "icons": [
+    {
+      "src": "/images/desa-official-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/desa-official-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
