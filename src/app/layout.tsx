@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import { Analytics } from "@vercel/analytics/next";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 
 export const viewport: Viewport = {
   themeColor: "#071325",
@@ -11,6 +12,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://esa-dekut.vercel.app"),
+    manifest: "/manifest.webmanifest",
   title: {
     default: "DESA | Dedan Kimathi University Engineering Students Association",
     template: "%s",
