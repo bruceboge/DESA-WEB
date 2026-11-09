@@ -34,7 +34,7 @@ export interface RollCallRecord {
 
 const activeMembershipStatuses = ["active", "active registered member", "verified"];
 const allowedMemberYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Postgraduate"];
-const allowedGuestYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5"];
+const allowedGuestYears = ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Other"];
 
 function getCurrentNairobiTime(): string {
   return new Intl.DateTimeFormat("en-GB", {

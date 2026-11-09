@@ -49,45 +49,68 @@ export default function RollCallPage() {
   useEffect(() => {
     const controller = new AbortController();
     let initialLoad = true;
-    const loadMeetings = () => void fetch("/api/roll-call", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        const result = (await response.json()) as { meetings?: OpenMeeting[]; error?: string };
-        if (!response.ok) throw new Error(result.error || "Could not load open meetings.");
-        setMeetingLoadError(null);
-        const meetings = result.meetings || [];
-        setOpenMeetings(meetings);
-        setFormData((previous) => ({
-          ...previous,
-          meetingId: meetings[0]?.id || "",
-        }));
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          setMeetingLoadError(error instanceof Error ? error.message : "Could not load open meetings.");
-        }
-      })
-      .finally(() => {
-        if (!controller.signal.aborted && initialLoad) {
-          setIsLoadingMeetings(false);
-          initialLoad = false;
-        }
-      });
-    loadMeetings();
-    const refreshTimer = window.setInterval(loadMeetings, 15000);
+    let requestInFlight = false;
+    const loadMeetings = (allowWhileHidden = false) => {
+      if (
+        requestInFlight ||
+        controller.signal.aborted ||
+        (!allowWhileHidden && document.visibilityState === "hidden")
+      ) {
+        return;
+      }
+
+      requestInFlight = true;
+      void fetch("/api/roll-call", { cache: "no-store", signal: controller.signal })
+        .then(async (response) => {
+          const result = (await response.json()) as { meetings?: OpenMeeting[]; error?: string };
+          if (!response.ok) throw new Error(result.error || "Could not load open meetings.");
+          setMeetingLoadError(null);
+          const meetings = result.meetings || [];
+          setOpenMeetings(meetings);
+          setFormData((previous) => ({
+            ...previous,
+            meetingId: meetings.some((meeting) => meeting.id === previous.meetingId)
+              ? previous.meetingId
+              : meetings[0]?.id || "",
+          }));
+        })
+        .catch((error: unknown) => {
+          if (!controller.signal.aborted) {
+            setMeetingLoadError(error instanceof Error ? error.message : "Could not load open meetings.");
+          }
+        })
+        .finally(() => {
+          requestInFlight = false;
+          if (!controller.signal.aborted && initialLoad) {
+            setIsLoadingMeetings(false);
+            initialLoad = false;
+          }
+        });
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") loadMeetings();
+    };
+
+    loadMeetings(true);
+    const refreshTimer = window.setInterval(loadMeetings, 30000);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     return () => {
       controller.abort();
       window.clearInterval(refreshTimer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
   const selectedMeeting = openMeetings.find((meeting) => meeting.id === formData.meetingId);
   const canCheckIn = Boolean(selectedMeeting?.isOpen && !isLoadingMeetings && !meetingLoadError);
   const normalizedRegNumber = formData.regNumber.trim().toUpperCase();
+  const fullRegNumberPattern = /^[A-Z0-9]{3,6}-\d{2}-\d{3,5}\/\d{4}$/;
+  const hasFullRegistrationNumber = fullRegNumberPattern.test(normalizedRegNumber);
 
-  // Look up registration numbers only while a meeting is open. The server repeats this
-  // membership check when submitting, so client-provided details are never trusted.
+  // Look up registration numbers only while a meeting is open and the full registration
+  // number format has been entered. The server repeats this membership check on submit.
   useEffect(() => {
-    if (!canCheckIn || normalizedRegNumber.length < 6) return;
+    if (!canCheckIn || !hasFullRegistrationNumber) return;
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
@@ -137,14 +160,17 @@ export default function RollCallPage() {
   }, [canCheckIn, normalizedRegNumber, selectedMeeting?.id]);
 
   const handleRegistrationChange = (value: string) => {
-    setFormData((previous) => ({ ...previous, regNumber: value }));
-    setMembershipLookup(value.trim().length >= 6 ? { status: "checking" } : { status: "idle" });
+    const nextValue = value;
+    setFormData((previous) => ({ ...previous, regNumber: nextValue }));
+    const nextNormalized = nextValue.trim().toUpperCase();
+    const isValidFullFormat = fullRegNumberPattern.test(nextNormalized);
+    setMembershipLookup(nextValue.trim().length >= 6 && isValidFullFormat ? { status: "checking" } : { status: "idle" });
     setSubmissionError(null);
   };
 
   const handleCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting || !canCheckIn || !selectedMeeting) return;
+    if (isSubmitting || !canCheckIn || !selectedMeeting || !hasFullRegistrationNumber) return;
     if (membershipLookup.status === "checking" || membershipLookup.status === "error" || membershipLookup.status === "inactive") return;
     if (membershipLookup.status === "guest" && (!manualDetails.fullName.trim() || !manualDetails.yearOfStudy)) return;
 
@@ -194,11 +220,11 @@ export default function RollCallPage() {
     }
   };
 
-  const hasRegistrationNumber = normalizedRegNumber.length >= 6;
-  const lookupPending = canCheckIn && hasRegistrationNumber && membershipLookup.status === "checking";
-  const canSubmit = canCheckIn && hasRegistrationNumber && !isSubmitting &&
+  const lookupPending = canCheckIn && hasFullRegistrationNumber && membershipLookup.status === "checking";
+  const canSubmit = canCheckIn && hasFullRegistrationNumber && !isSubmitting &&
     !lookupPending && membershipLookup.status !== "error" && membershipLookup.status !== "inactive" &&
     (membershipLookup.status !== "guest" || Boolean(manualDetails.fullName.trim() && manualDetails.yearOfStudy));
+  const registrationHint = formData.regNumber.trim() && !hasFullRegistrationNumber ? "Enter the full reg. number in the format E020-01-0000/2026." : "";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -242,15 +268,10 @@ export default function RollCallPage() {
                 </div>
                 <div>
                   <h2 className="text-base sm:text-lg font-bold text-[#071325]">Session Check-In</h2>
-                  <p className="text-xs text-slate-500">One quick form for members and guests.</p>
+                  <p className="text-xs text-slate-500">Enter your details to record attendance.</p>
                 </div>
               </div>
 
-              <div className="mb-5 rounded-xl border border-[#e5a93c]/40 bg-[#fff9ed] p-3.5 text-xs leading-relaxed text-slate-700">
-                <p className="font-bold text-[#071325]">How to check in</p>
-                <p className="mt-1"><strong>DESA members:</strong> enter your registration number only. We’ll find your details in the register.</p>
-                <p className="mt-1"><strong>Not on the register?</strong> Enter your full name and year of study when those fields appear.</p>
-              </div>
 
               {submissionError && (
                 <div role="alert" className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
@@ -264,17 +285,17 @@ export default function RollCallPage() {
                   <input id="rollcall-website" type="text" name="website" tabIndex={-1} autoComplete="off" value={formData.website} onChange={(e) => setFormData({ ...formData, website: e.target.value })} />
                 </div>
 
-                <div className="border-l-4 border-[#071325] bg-slate-50 px-3.5 py-3 text-sm font-bold text-[#071325]" aria-live="polite" aria-label="Scheduled meeting">
-                  {selectedMeeting?.title ?? <span className="font-medium text-slate-600">{isLoadingMeetings ? "Checking today’s schedule…" : meetingLoadError ? "Schedule temporarily unavailable" : "No meeting scheduled yet"}</span>}
+                <div className="rounded-xl border border-[#e5a93c] bg-[#e5a93c] px-3.5 py-3 text-center text-sm font-extrabold text-[#071325] shadow-sm" aria-live="polite" aria-label="Scheduled meeting">
+                  {selectedMeeting?.title ?? <span className="font-medium text-[#071325]">{isLoadingMeetings ? "Checking today’s schedule…" : meetingLoadError ? "Schedule temporarily unavailable" : "No meeting scheduled yet"}</span>}
                 </div>
                 {!selectedMeeting && !isLoadingMeetings && !meetingLoadError && (
-                  <p className="-mt-2 text-xs text-slate-500">Check-in becomes available when a meeting is scheduled and open.</p>
+                  <p className="-mt-2 text-xs text-slate-500">Check-in only available when a meeting is scheduled and open.</p>
                 )}
                 {meetingLoadError && <p role="status" className="-mt-2 text-xs text-slate-500">We couldn’t refresh the schedule. Please try again shortly.</p>}
 
                 <ol aria-label="Check-in guide" className="grid grid-cols-3 border border-slate-200 bg-white">
                   {[
-                    { label: "Enter reg no.", complete: hasRegistrationNumber },
+                    { label: "Enter reg no.", complete: hasFullRegistrationNumber },
                     { label: "Confirm details", complete: membershipLookup.status === "member" || (membershipLookup.status === "guest" && Boolean(manualDetails.fullName.trim() && manualDetails.yearOfStudy)) },
                     { label: "Check in", complete: Boolean(lastReceipt) },
                   ].map((step, index) => (
@@ -298,33 +319,37 @@ export default function RollCallPage() {
                     minLength={6}
                     maxLength={30}
                     autoComplete="off"
-                    placeholder="e.g. E020-01-1234/2023"
+                    placeholder="E020-01-0000/2026"
                     value={formData.regNumber}
                     onChange={(e) => handleRegistrationChange(e.target.value)}
                     className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10"
                   />
                 </div>
 
-                {canCheckIn && hasRegistrationNumber && (
+                {registrationHint && (
+                  <p className="-mt-1 text-xs font-medium text-amber-700">{registrationHint}</p>
+                )}
+
+                {canCheckIn && hasFullRegistrationNumber && (
                   <div aria-live="polite" className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs">
-                    {membershipLookup.status === "checking" && <p className="text-slate-600">Checking the DESA member register…</p>}
+                    {membershipLookup.status === "checking" && <p className="text-slate-600">Checking…</p>}
                     {membershipLookup.status === "member" && (
                       <div className="border-l-2 border-[#0a5c36] pl-3">
-                        <p className="font-bold text-[#0a5c36]">Member found — no other details needed.</p>
+                        <p className="font-bold text-[#0a5c36]">Member found — SUBMIT YOUR ATTENDANCE.</p>
                         <p className="mt-1 text-slate-700">{membershipLookup.fullName} <span className="text-slate-500">· {membershipLookup.yearOfStudy}</span></p>
                       </div>
                     )}
-                    {membershipLookup.status === "guest" && <p className="font-medium text-slate-700">We couldn’t find this number in the register. Please enter your details below to check in as a guest.</p>}
+                    {membershipLookup.status === "guest" && <p className="font-medium text-slate-700">We couldn’t find your membership. Please enter your details below to check in.</p>}
                     {membershipLookup.status === "inactive" && <p role="alert" className="text-red-800">{membershipLookup.message}</p>}
-                    {membershipLookup.status === "error" && <p role="alert" className="text-red-800">{membershipLookup.message} Please correct the number or try again.</p>}
+                    {membershipLookup.status === "error" && <p role="alert" className="text-red-800">{membershipLookup.message}</p>}
                   </div>
                 )}
 
                 {membershipLookup.status === "guest" && (
                   <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#071325]">Guest details</p>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#071325]">Member details</p>
                     <label className="block text-xs font-bold text-slate-700">Full Name <span className="text-red-500">*</span>
-                      <input required minLength={2} maxLength={70} value={manualDetails.fullName} onChange={(e) => setManualDetails({ ...manualDetails, fullName: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10" />
+                      <input required minLength={2} maxLength={70} value={manualDetails.fullName} placeholder="Dedan Kimathi" onChange={(e) => setManualDetails({ ...manualDetails, fullName: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10" />
                     </label>
                     <label className="block text-xs font-bold text-slate-700">Year of Study <span className="text-red-500">*</span>
                       <select required value={manualDetails.yearOfStudy} onChange={(e) => setManualDetails({ ...manualDetails, yearOfStudy: e.target.value })} className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#071325] focus:outline-none focus:ring-2 focus:ring-[#071325]/10">
@@ -334,6 +359,7 @@ export default function RollCallPage() {
                         <option value="Year 3">Year 3</option>
                         <option value="Year 4">Year 4</option>
                         <option value="Year 5">Year 5</option>
+                        <option value="Other">Other</option>
                       </select>
                     </label>
                   </div>
@@ -344,7 +370,7 @@ export default function RollCallPage() {
                   disabled={!canSubmit}
                   className="w-full mt-3 bg-[#e5a93c] hover:bg-[#d48b12] text-[#071325] font-bold text-xs sm:text-sm uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isSubmitting ? "Recording attendance…" : lookupPending ? "Checking member register…" : canCheckIn ? "Confirm & Record Attendance" : "Waiting for scheduled roll call"}
+                  {isSubmitting ? "Recording attendance…" : lookupPending ? "Checking member…" : canCheckIn ? "Confirm & Record Attendance" : "Waiting for scheduled roll call"}
                 </button>
               </form>
             </div>
