@@ -10,6 +10,8 @@ import {
   ExternalLinkIcon,
 } from "@/components/Icons";
 import { getAllPosts } from "@/lib/posts";
+import OfflineNewsSync from "@/components/OfflineNewsSync";
+
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,7 @@ export default async function NewsEventsPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-12">
+        <OfflineNewsSync />
         {/* Section 1: Upcoming Events */}
         <section id="upcoming" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b-2 border-[#071325] min-w-0">

@@ -40,3 +40,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# Android Studio local settings
+**/.idea/
+
+# Android local SDK configuration
+android/local.properties

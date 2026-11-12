@@ -6,43 +6,259 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#071325">
   <title>DESA | Offline</title>
+
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
       background: #071325;
-      color: white;
+      color: #fff;
       font-family: Arial, sans-serif;
-      text-align: center;
     }
 
     main {
-      max-width: 420px;
-      padding: 30px;
+      width: min(900px, 100%);
+      margin: auto;
+      padding: 30px 20px;
     }
 
     h1 {
       color: #e5a93c;
     }
 
+    .notice {
+      border: 1px solid #34445a;
+      padding: 16px;
+      margin: 20px 0;
+      color: #cbd5e1;
+    }
+
+    .post {
+      background: #102039;
+      border: 1px solid #34445a;
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    .post h2 {
+      color: #e5a93c;
+    }
+
+    .post a {
+      color: #e5a93c;
+      font-weight: bold;
+    }
+
+    .post img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      margin: 12px 0;
+    }
+
     button {
-      padding: 12px 24px;
+      padding: 12px 20px;
       border: 0;
       background: #e5a93c;
       color: #071325;
       font-weight: bold;
       cursor: pointer;
     }
+
+    .content {
+      white-space: pre-wrap;
+      line-height: 1.7;
+      color: #e2e8f0;
+    }
+
+    .muted {
+      color: #94a3b8;
+      font-size: 13px;
+    }
   </style>
 </head>
+
 <body>
   <main>
     <h1>DESA</h1>
-    <h2>You're currently offline</h2>
-    <p>Please check your internet connection to continue using the DESA portal.</p>
+    <p class="muted">Offline reading mode</p>
+
+    <div id="notice" class="notice">
+      Loading saved information...
+    </div>
+
+    <section id="posts"></section>
+
     <button onclick="location.reload()">Try Again</button>
   </main>
+
+  <script>
+    const DB_NAME = "desa-offline";
+    const STORE_NAME = "content";
+    const NEWS_KEY = "news-events";
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    async function getSavedNews() {
+      const db = await openDatabase();
+
+      try {
+        return await new Promise((resolve, reject) => {
+          const transaction = db.transaction(
+            STORE_NAME,
+            "readonly"
+          );
+
+          const request = transaction
+            .objectStore(STORE_NAME)
+            .get(NEWS_KEY);
+
+          request.onsuccess = () => resolve(request.result || null);
+          request.onerror = () => reject(request.error);
+        });
+      } finally {
+        db.close();
+      }
+    }
+
+    function createElement(tag, className, text) {
+      const element = document.createElement(tag);
+
+      if (className) element.className = className;
+      if (text !== undefined) element.textContent = text;
+
+      return element;
+    }
+
+    function renderPost(post, container) {
+      const article = createElement("article", "post");
+
+      article.appendChild(
+        createElement("h2", "", post.title)
+      );
+
+      article.appendChild(
+        createElement(
+          "p",
+          "muted",
+          `${post.type || "News"} · ${post.date || ""}`
+        )
+      );
+
+      if (post.coverImage) {
+        const image = document.createElement("img");
+        image.src = post.coverImage;
+        image.alt = post.title;
+        image.loading = "lazy";
+        article.appendChild(image);
+      }
+
+      article.appendChild(
+        createElement("p", "content", post.content || post.excerpt || "")
+      );
+
+      if (post.recapPhotos && post.recapPhotos.length) {
+        post.recapPhotos.forEach((photo) => {
+          const image = document.createElement("img");
+          image.src = photo;
+          image.alt = "DESA event photo";
+          image.loading = "lazy";
+          article.appendChild(image);
+        });
+      }
+
+      const back = createElement("a", "", "Back to news and events");
+      back.href = "/news-events";
+      article.appendChild(back);
+
+      container.appendChild(article);
+    }
+
+    async function displayOfflineContent() {
+      const notice = document.getElementById("notice");
+      const container = document.getElementById("posts");
+
+      try {
+        const saved = await getSavedNews();
+
+        if (!saved || !Array.isArray(saved.posts) || !saved.posts.length) {
+          notice.textContent =
+            "No news or events have been saved yet. Visit this page while online to save them for offline reading.";
+          return;
+        }
+
+        const updated = saved.updatedAt
+          ? new Date(saved.updatedAt).toLocaleString()
+          : "Unknown";
+
+        notice.textContent =
+          `You are offline. Showing saved information. Last updated: ${updated}`;
+
+        const path = decodeURIComponent(location.pathname);
+        const prefix = "/news-events/";
+
+        if (path.startsWith(prefix)) {
+          const slug = path.slice(prefix.length).replace(/\/$/, "");
+          const post = saved.posts.find((item) => item.slug === slug);
+
+          if (post) {
+            renderPost(post, container);
+          } else {
+            notice.textContent =
+              "This article is not available in your saved offline information.";
+
+            const link = createElement("a", "", "View saved news and events");
+            link.href = "/news-events";
+            container.appendChild(link);
+          }
+
+          return;
+        }
+
+        saved.posts.forEach((post) => {
+          const article = createElement("article", "post");
+
+          article.appendChild(
+            createElement("h2", "", post.title)
+          );
+
+          article.appendChild(
+            createElement(
+              "p",
+              "muted",
+              `${post.type || "News"} · ${post.date || ""}`
+            )
+          );
+
+          article.appendChild(
+            createElement("p", "", post.excerpt || "")
+          );
+
+          const link = createElement("a", "", "Read saved article");
+          link.href = `/news-events/${encodeURIComponent(post.slug)}`;
+
+          article.appendChild(link);
+          container.appendChild(article);
+        });
+
+      } catch (error) {
+        notice.textContent =
+          "Saved information could not be accessed on this device.";
+      }
+    }
+
+    displayOfflineContent();
+  </script>
 </body>
 </html>
