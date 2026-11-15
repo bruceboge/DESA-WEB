@@ -8,9 +8,9 @@ type Props = { pendingArticles: BlogArticle[]; publishedArticles: BlogArticle[];
 export default function AdminBlogManagerPanel(props: Props) {
   const { pendingArticles, publishedArticles, onInspect, onApprove, onDelete } = props;
   return (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Pending Submissions Queue */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
                 <div>
                   <h2 className="text-lg font-bold text-[#071325]">
@@ -51,24 +51,24 @@ export default function AdminBlogManagerPanel(props: Props) {
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:shrink-0">
                         <button
                           onClick={() => onInspect(art)}
-                          className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                          className="min-h-11 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                         >
                           Inspect Article
                         </button>
                         <button
                           onClick={() => void onApprove(art.id)}
-                          className="px-4 py-2 bg-[#0a5c36] hover:bg-[#074729] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
+                          className="min-h-11 px-4 py-2 bg-[#0a5c36] hover:bg-[#074729] text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
                         >
                           Approve & Publish
                         </button>
                         <button
                           onClick={() => void onDelete(art.id)}
-                          className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                          className="min-h-11 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
                         >
-                          Reject
+                          Move to Trash
                         </button>
                       </div>
                     </div>
@@ -83,12 +83,17 @@ export default function AdminBlogManagerPanel(props: Props) {
             </div>
 
             {/* Published Articles List */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-4">
               <h2 className="text-lg font-bold text-[#071325]">
                 Published Blog Articles ({publishedArticles.length})
               </h2>
               <div className="space-y-3">
-                {publishedArticles.map((art) => (
+                {publishedArticles.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-9 text-center">
+                    <p className="text-sm font-semibold text-slate-700">No published articles yet</p>
+                    <p className="mt-1 text-xs text-slate-500">Approved student articles will appear here.</p>
+                  </div>
+                ) : publishedArticles.map((art) => (
                   <div
                     key={art.id}
                     className="p-4 rounded-xl border border-slate-200 bg-white hover:border-[#e5a93c] transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
@@ -106,7 +111,7 @@ export default function AdminBlogManagerPanel(props: Props) {
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:shrink-0">
                       <Link
                         href="/innovations"
                         target="_blank"
@@ -119,7 +124,7 @@ export default function AdminBlogManagerPanel(props: Props) {
                         onClick={() => void onDelete(art.id)}
                         className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                       >
-                        Unpublish
+                        Move to Trash
                       </button>
                     </div>
                   </div>

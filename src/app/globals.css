@@ -77,6 +77,25 @@ body {
   }
 }
 
+/* Keep the admin workspace's softer card language local to the admin route. */
+.admin-shell .rounded-2xl { border-radius: 1.25rem !important; }
+.admin-shell .rounded-3xl { border-radius: 1.6rem !important; }
+.admin-shell .rounded-xl { border-radius: 0.9rem !important; }
+.admin-shell .rounded-lg { border-radius: 0.65rem !important; }
+.admin-shell .rounded-md { border-radius: 0.5rem !important; }
+.admin-shell .rounded-full { border-radius: 9999px !important; }
+
+.admin-section-nav {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 639px) {
+  .admin-section-nav { scroll-snap-type: x proximity; }
+  .admin-section-nav > button { scroll-snap-align: start; }
+}
+
 
 /* Custom Academic Glassmorphism & Glows */
 .glass-navy {

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import type { AdminPortalRecord, PortalRecordType } from "@/lib/dataStore";
 import { engineeringPrograms } from "@/data/programs";
+import AdminDialog from "@/components/admin/AdminDialog";
 
 export type RecordGroup =
   | "members"
@@ -223,7 +224,10 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
   const [memberDraft, setMemberDraft] = useState<MemberDraft>(EMPTY_MEMBER_DRAFT);
   const [isCreatingMember, setIsCreatingMember] = useState(false);
   const [isChangingTrashState, setIsChangingTrashState] = useState(false);
-  const [pendingDeleteRecord, setPendingDeleteRecord] = useState<AdminPortalRecord | null>(null);
+  const [pendingRecordAction, setPendingRecordAction] = useState<{
+    record: AdminPortalRecord;
+    action: "trash" | "permanentDelete";
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -368,7 +372,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
       );
       setSelectedId(null);
       setDraftRecordId(null);
-      if (action === "permanentDelete") setPendingDeleteRecord(null);
+      if (action === "permanentDelete" || action === "trash") setPendingRecordAction(null);
       setReloadToken((current) => current + 1);
     } catch (actionError: unknown) {
       setError(actionError instanceof Error ? actionError.message : "Could not update record.");
@@ -381,9 +385,9 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
     record: AdminPortalRecord,
     action: "trash" | "restore" | "permanentDelete"
   ) => {
-    if (action === "permanentDelete") {
+    if (action === "permanentDelete" || action === "trash") {
       setError(null);
-      setPendingDeleteRecord(record);
+      setPendingRecordAction({ record, action });
       return;
     }
     void changeTrashState(record, action);
@@ -491,7 +495,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
 
           <div className="flex flex-wrap items-center gap-2.5">
             {/* View Mode Toggle */}
-            <div className="hidden sm:inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
@@ -548,7 +552,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
         </div>
 
         {/* Record Group Navigation Tabs */}
-        <div className="grid grid-cols-2 gap-2 pb-1 pt-0.5 sm:flex sm:overflow-x-auto sm:gap-1.5 sm:scrollbar-thin">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 pt-0.5">
           {RECORD_GROUPS.map((item) => {
             const isActive = group === item.value;
             return (
@@ -556,7 +560,7 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
                 key={item.value}
                 type="button"
                 onClick={() => selectGroup(item.value)}
-                className={`min-h-11 w-full whitespace-nowrap px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 sm:w-auto sm:shrink-0 ${
+                className={`min-h-11 w-auto shrink-0 whitespace-nowrap px-3 py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 ${
                   isActive
                     ? "bg-[#071325] text-[#e5a93c] shadow-sm font-bold"
                     : "bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/60"
@@ -1238,48 +1242,23 @@ export default function AdminRecordsManager({ initialGroup = "members" }: { init
         </div>
       )}
 
-      {pendingDeleteRecord && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#071325]/70 p-0 sm:items-center sm:p-4">
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="permanent-delete-title"
-            aria-describedby="permanent-delete-description"
-            className="w-full max-w-md border-2 border-[#071325] bg-white p-5 shadow-[6px_6px_0_0_#e5a93c] sm:p-6"
-          >
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-rose-700">Permanent action</p>
-            <h2 id="permanent-delete-title" className="mt-2 text-lg font-black text-slate-900">
-              Delete this record permanently?
-            </h2>
-            <p id="permanent-delete-description" className="mt-2 break-words text-sm text-slate-600">
-              “{getRecordTitle(pendingDeleteRecord)}” will be removed permanently and cannot be restored.
-            </p>
-            {error && <p role="alert" className="mt-3 border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">{error}</p>}
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                autoFocus
-                disabled={isChangingTrashState}
-                onClick={() => {
-                  setPendingDeleteRecord(null);
-                  setError(null);
-                }}
-                className="min-h-11 border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-800 hover:bg-slate-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isChangingTrashState}
-                onClick={() => void changeTrashState(pendingDeleteRecord, "permanentDelete")}
-                className="min-h-11 border-2 border-rose-800 bg-rose-700 px-3 py-2 text-sm font-extrabold text-white hover:bg-rose-800 disabled:opacity-50"
-              >
-                {isChangingTrashState ? "Deleting…" : "Delete permanently"}
-              </button>
-            </div>
-          </div>
+      <AdminDialog
+        open={pendingRecordAction !== null}
+        role="alertdialog"
+        title={pendingRecordAction?.action === "permanentDelete" ? "Delete record permanently?" : "Move record to Trash?"}
+        description={pendingRecordAction?.action === "permanentDelete"
+          ? `“${getRecordTitle(pendingRecordAction.record)}” will be removed permanently and cannot be restored.`
+          : pendingRecordAction ? `“${getRecordTitle(pendingRecordAction.record)}” will move to Trash and can be restored later.` : undefined}
+        onClose={() => { if (!isChangingTrashState) { setPendingRecordAction(null); setError(null); } }}
+      >
+        {error && <p role="alert" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" disabled={isChangingTrashState} onClick={() => { setPendingRecordAction(null); setError(null); }} className="min-h-11 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 disabled:opacity-50">Cancel</button>
+          <button type="button" disabled={isChangingTrashState || !pendingRecordAction} onClick={() => pendingRecordAction && void changeTrashState(pendingRecordAction.record, pendingRecordAction.action)} className="min-h-11 rounded-xl bg-rose-700 px-4 text-sm font-semibold text-white disabled:opacity-50">
+            {isChangingTrashState ? "Working…" : pendingRecordAction?.action === "permanentDelete" ? "Delete permanently" : "Move to Trash"}
+          </button>
         </div>
-      )}
+      </AdminDialog>
     </section>
   );
 }

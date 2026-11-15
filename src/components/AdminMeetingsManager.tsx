@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { AdminPortalRecord } from "@/lib/dataStore";
+import AdminDialog from "@/components/admin/AdminDialog";
 
 interface MeetingDraft {
   title: string;
@@ -53,6 +54,8 @@ export default function AdminMeetingsManager() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [pendingDeleteMeeting, setPendingDeleteMeeting] = useState<AdminPortalRecord | null>(null);
+  const [isDeletingMeeting, setIsDeletingMeeting] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [clockTick, setClockTick] = useState(0);
 
@@ -238,9 +241,9 @@ export default function AdminMeetingsManager() {
   };
 
   const moveMeetingToTrash = async (meeting: AdminPortalRecord) => {
-    if (!window.confirm(`Move “${recordText(meeting, "title")}” to Trash?`)) return;
     setError(null);
     setStatusMessage(null);
+    setIsDeletingMeeting(true);
     try {
       const response = await fetch("/api/admin", {
         method: "POST",
@@ -259,23 +262,26 @@ export default function AdminMeetingsManager() {
       setError(
         deleteError instanceof Error ? deleteError.message : "Could not move meeting to Trash."
       );
+    } finally {
+      setIsDeletingMeeting(false);
     }
   };
 
   return (
+    <>
     <section className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
         <div>
           <h2 className="text-lg font-bold text-[#071325]">Meetings & roll call</h2>
           <p className="mt-1 text-sm text-slate-500">
             Schedule the meeting date and check-in window. Attendance opens and closes automatically in Kenya time.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full gap-2 sm:w-auto">
           <button
             type="button"
             onClick={() => setReloadToken((current) => current + 1)}
-            className="min-h-11 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="min-h-11 flex-1 rounded-xl border border-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:flex-none"
           >
             Refresh
           </button>
@@ -285,7 +291,7 @@ export default function AdminMeetingsManager() {
               setError(null);
               setIsCreateOpen((open) => !open);
             }}
-            className="min-h-11 rounded-xl bg-[#e5a93c] px-4 py-2 text-sm font-bold text-[#071325] hover:bg-[#d48b12]"
+            className="min-h-11 flex-1 rounded-xl bg-[#e5a93c] px-4 py-2 text-sm font-bold text-[#071325] hover:bg-[#d48b12] sm:flex-none"
           >
             {isCreateOpen ? "Close form" : "+ Create meeting"}
           </button>
@@ -306,7 +312,7 @@ export default function AdminMeetingsManager() {
       {isCreateOpen && (
         <form
           onSubmit={publishMeeting}
-          className="space-y-4 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm"
+          className="space-y-4 rounded-2xl border border-amber-200 bg-white p-4 shadow-sm sm:p-5"
         >
           <div>
             <h3 className="font-bold text-slate-900">Create and publish meeting</h3>
@@ -454,7 +460,7 @@ export default function AdminMeetingsManager() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => void moveMeetingToTrash(meeting)}
+                        onClick={() => setPendingDeleteMeeting(meeting)}
                         className="min-h-10 min-w-14 rounded-lg px-2 py-2 text-[11px] font-semibold text-red-600 hover:bg-red-50"
                       >
                         Trash
@@ -571,5 +577,18 @@ export default function AdminMeetingsManager() {
         </div>
       </div>
     </section>
+    <AdminDialog
+      open={pendingDeleteMeeting !== null}
+      role="alertdialog"
+      title="Move meeting to Trash?"
+      description={pendingDeleteMeeting ? `“${recordText(pendingDeleteMeeting, "title")}” will be removed from the meetings list. You can restore it later from People & records → Trash.` : undefined}
+      onClose={() => setPendingDeleteMeeting(null)}
+    >
+      <div className="flex justify-end gap-2">
+        <button type="button" disabled={isDeletingMeeting} onClick={() => setPendingDeleteMeeting(null)} className="min-h-11 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 disabled:opacity-50">Cancel</button>
+        <button type="button" disabled={isDeletingMeeting} onClick={async () => { if (pendingDeleteMeeting) await moveMeetingToTrash(pendingDeleteMeeting); setPendingDeleteMeeting(null); }} className="min-h-11 rounded-xl bg-rose-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{isDeletingMeeting ? "Moving…" : "Move to Trash"}</button>
+      </div>
+    </AdminDialog>
+    </>
   );
 }
