@@ -14,6 +14,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/logo.png",
+        destination: "/images/desa-logo.jpg",
+      },
+    ];
+  },
   async redirects() {
     return [
       {
