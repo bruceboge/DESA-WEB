@@ -21,7 +21,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col">
       <TopBar />
       <Navbar />
-      <main className="flex-1 pb-20 md:pb-0">{children}</main>
+      <main className="flex-1 pb-24 md:pb-0">{children}</main>
       <Footer />
       <BackToTop />
       <CookieConsent />

@@ -12,27 +12,27 @@ const points = [
   {
     icon: CpuIcon,
     title: "Innovate",
-    desc: "Turn classroom theory into real-world engineering solutions, authored technical write-ups, and practical innovations across campus laboratories.",
+    desc: "Turn classroom ideas into practical solutions.",
   },
   {
     icon: UsersIcon,
     title: "Collaborate",
-    desc: "Connect across all five engineering disciplines at DeKUT, forming inter-departmental project teams, study circles, and peer networks.",
+    desc: "Build projects and friendships across disciplines.",
   },
   {
     icon: GraduationCapIcon,
     title: "Grow",
-    desc: "Gain verified leadership credentials, hands-on technical workshop mastery, and direct mentorship from Engineers Board of Kenya (EBK) professionals.",
+    desc: "Learn through workshops and peer mentorship.",
   },
   {
     icon: ShieldCheckIcon,
     title: "Make an Impact",
-    desc: "Contribute to sustainable technology initiatives, campus innovations, and community engineering solutions that address national challenges.",
+    desc: "Use engineering to help your community.",
   },
   {
     icon: BuildingIcon,
     title: "Build Your Future",
-    desc: "Unlock industrial attachments, corporate plant tours, professional accreditation pathways, and career mentorship for seamless post-graduation success.",
+    desc: "Explore industry, attachments, and career paths.",
   },
 ];
 
@@ -49,32 +49,28 @@ export default function ThreePillars() {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#071325] tracking-tight">
             The Heartbeat of Engineering at DeKUT
           </h2>
-          <p className="text-xs sm:text-sm text-slate-700 mt-3 leading-relaxed">
-            The Dedan Kimathi University Engineering Students Association (DESA) is the unified student body representing all engineering disciplines at DeKUT—bridging classroom theory with real-world innovation, peer mentorship, and career growth.
-          </p>
-          <p className="text-xs text-slate-500 mt-1.5">
-            DESA is built by student engineers, for student engineers. Here is how joining the association propels your university and professional journey:
+          <p className="mt-3 text-base leading-relaxed text-slate-700">
+            DESA brings DeKUT engineering students together to learn, build, and lead.
           </p>
         </div>
 
-        {/* Compact, Clean List — No Big Cards */}
-        <div className="divide-y-2 divide-slate-200 border-2 border-[#071325] shadow-[6px_6px_0_0_#e5a93c] bg-white">
+        <div className="divide-y divide-slate-200 border border-slate-200 bg-white">
           {points.map((pt) => {
             const Icon = pt.icon;
             return (
               <div
                 key={pt.title}
-                className="py-4 sm:py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6 hover:bg-[#fff9e9] px-3 sm:px-4 transition-colors group"
+                className="flex flex-col gap-3 px-3 py-3 transition-colors group hover:bg-[#fff9e9] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-4"
               >
-                <div className="flex items-start gap-3.5 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-[#071325] text-[#e5a93c] flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                    <Icon className="w-4 h-4" />
+                <div className="flex min-w-0 items-start gap-3.5">
+                  <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center bg-[#071325] text-[#e5a93c] transition-transform group-hover:scale-105">
+                    <Icon className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-[#071325] group-hover:text-[#b87a14] transition-colors leading-snug">
+                    <h3 className="text-sm font-bold leading-snug text-[#071325] transition-colors group-hover:text-[#b87a14]">
                       {pt.title}
                     </h3>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                    <p className="mt-0.5 text-base leading-snug text-slate-700">
                       {pt.desc}
                     </p>
                   </div>

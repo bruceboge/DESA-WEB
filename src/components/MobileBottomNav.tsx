@@ -80,21 +80,16 @@ export default function MobileBottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center min-w-[56px] py-1 px-1 rounded-xl transition-all duration-150 relative ${
+              className={`relative flex min-h-11 min-w-[60px] flex-col items-center justify-center rounded-xl px-1 py-1 transition-all duration-150 ${
                 isActive
                   ? "text-[#e5a93c]"
-                  : "text-slate-400 hover:text-slate-200"
+                  : "text-slate-300 hover:text-white"
               }`}
             >
-              <div className="relative">
-                {item.icon}
-                {isActive && (
-                  <span className="absolute -top-1 -right-1 w-1.5 h-1.5 rounded-full bg-[#e5a93c]" />
-                )}
-              </div>
+              {item.icon}
               <span
-                className={`text-[10px] mt-0.5 tracking-tight font-medium ${
-                  isActive ? "font-bold text-[#e5a93c]" : "text-slate-400"
+                className={`mt-0.5 text-xs tracking-tight font-medium ${
+                  isActive ? "font-bold text-[#f6c867]" : "text-slate-300"
                 }`}
               >
                 {item.label}

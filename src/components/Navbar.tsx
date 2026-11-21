@@ -8,19 +8,16 @@ import { usePathname } from "next/navigation";
 import { MenuIcon, CloseIcon, ChevronRightIcon } from "./Icons";
 
 export default function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname]);
+  const [mobileMenuPath, setMobileMenuPath] = useState<string | null>(null);
+  const mobileMenuOpen = mobileMenuPath !== null && mobileMenuPath === pathname;
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
 
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setMobileMenuOpen(false);
+        setMobileMenuPath(null);
       }
     };
 
@@ -38,21 +35,22 @@ export default function Navbar() {
     { label: "Innovations Blog", href: "/innovations" },
     { label: "News & Events", href: "/news-events" },
     { label: "Gallery", href: "/gallery" },
-    { label: "Membership", href: "/membership" },
+    { label: "Membership", href: "/membership#register" },
     { label: "Contact", href: "/contact" },
   ];
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
+    const path = href.split("#", 1)[0];
+    if (path === "/") return pathname === "/";
+    return pathname.startsWith(path);
   };
 
   return (
     <>
       {/* Main Navigation Header */}
-      <header className="sticky top-0 z-50 bg-[#071325]/95 backdrop-blur-md border-b border-[#e5a93c]/20 shadow-[0_4px_0_0_#e5a93c]">
+      <header className="sticky top-0 z-50 border-b border-[#e5a93c]/20 bg-[#071325]/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
+          <div className="flex h-14 items-center justify-between sm:h-20">
 
             {/* Logo and University Identity */}
             <Link
@@ -119,18 +117,18 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Navigation Controls */}
-            <div className="flex lg:hidden items-center gap-2">
+            <div className="flex items-center gap-3 lg:hidden">
               <Link
                 href="/membership#register"
-                className="min-h-11 inline-flex items-center justify-center bg-[#e5a93c] hover:bg-[#d48b12] text-xs font-bold px-4 border-2 border-[#071325] shadow-[3px_3px_0_0_#e5a93c] transition-colors"
+                className="inline-flex min-h-11 items-center justify-center border-2 border-[#071325] bg-[#e5a93c] px-4 text-xs font-bold transition-colors hover:bg-[#d48b12]"
               >
                 Join
               </Link>
 
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen((open) => !open)}
-                className="min-h-11 min-w-11 inline-flex items-center justify-center text-slate-300 hover:text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e5a93c] active:bg-white/10"
+                onClick={() => setMobileMenuPath(mobileMenuOpen ? null : pathname)}
+                className="inline-flex min-h-11 min-w-11 items-center justify-center p-2 text-slate-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#e5a93c] active:bg-white/10"
                 aria-label={
                   mobileMenuOpen
                     ? "Close navigation menu"
@@ -153,13 +151,13 @@ export default function Navbar() {
 
       {/* Mobile Drawer - Outside the Sticky Header */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 top-14 z-[100] lg:hidden sm:top-20">
 
           {/* Background Overlay */}
           <button
             type="button"
             aria-label="Close navigation menu"
-            onClick={() => setMobileMenuOpen(false)}
+            onClick={() => setMobileMenuPath(null)}
             className="absolute inset-0 h-full w-full bg-[#071325]/50"
           />
 
@@ -167,7 +165,7 @@ export default function Navbar() {
           <nav
             id="mobile-navigation"
             aria-label="Mobile navigation"
-            className="absolute left-0 right-0 top-16 sm:top-20 z-[101] max-h-[calc(100dvh-4rem)] sm:max-h-[calc(100dvh-5rem)] overflow-y-auto border-b-2 border-[#071325] bg-white px-4 pb-6 pt-3 shadow-[0_8px_0_0_#e5a93c]"
+            className="absolute inset-y-0 right-0 z-[101] flex w-72 max-w-[85vw] flex-col overflow-y-auto border-l-2 border-[#071325] bg-white px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 shadow-2xl"
           >
 
             <div className="flex flex-col gap-1.5">
@@ -178,7 +176,7 @@ export default function Navbar() {
                   <Link
                     key={link.label}
                     href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setMobileMenuPath(null)}
                     aria-current={active ? "page" : undefined}
                     className={`flex min-h-11 items-center justify-between border px-3 py-2.5 text-sm font-semibold transition-colors ${
                       active
@@ -188,9 +186,6 @@ export default function Navbar() {
                   >
                     <span>{link.label}</span>
 
-                    {active && (
-                      <span className="h-2 w-2 bg-[#e5a93c]" />
-                    )}
                   </Link>
                 );
               })}
@@ -200,7 +195,7 @@ export default function Navbar() {
             <div className="mt-3 border-t border-slate-200 pt-3">
               <Link
                 href="/membership#register"
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => setMobileMenuPath(null)}
                 className="block min-h-11 w-full border-2 border-[#071325] bg-[#e5a93c] px-4 py-3 text-center text-sm font-bold text-[#071325] shadow-[3px_3px_0_0_#071325] transition-colors hover:bg-[#d48b12]"
               >
                 Register as DESA Member

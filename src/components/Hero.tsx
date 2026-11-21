@@ -1,94 +1,68 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowRightIcon,
-  ShieldCheckIcon,
-  CpuIcon,
-  AwardIcon,
-} from "./Icons";
-
+import campusImage from "../../public/images/dekut-campus.webp";
+import { ArrowRightIcon } from "./Icons";
 
 export default function Hero() {
   return (
-    <section id="hero" className="relative bg-[#071325] text-white overflow-hidden lg:min-h-[700px] flex flex-col justify-between">
-      {/* Background Drone Campus Image with Balanced Semi-Transparent Overlay */}
-      <div className="absolute inset-0 z-0">
+    <section id="hero" className="relative flex flex-col justify-between overflow-hidden bg-[#071325] text-white lg:min-h-[700px]">
+      <div className="absolute inset-0 z-0 bg-[#071325]">
         <Image
-          src="/images/dekut-campus.jpg"
-          alt="Dedan Kimathi University of Technology (DeKUT) Main Campus Lush Aerial View"
+          src={campusImage}
+          alt="Dedan Kimathi University of Technology (DeKUT) Main Campus Aerial View"
           fill
           sizes="100vw"
           priority
-          className="object-cover object-center opacity-70 transform scale-105 transition-transform duration-1000 ease-out"
+          placeholder="blur"
+          className="scale-105 object-cover object-center opacity-70"
         />
         <div className="absolute inset-0 bg-[#071325]/75"></div>
       </div>
 
-      {/* Main Hero Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 lg:pt-16 pb-8 sm:pb-12 flex-1 flex flex-col justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-12 items-center">
-
-          {/* Left Column: Headline, Description & CTAs */}
-          <div className="lg:col-span-10 lg:col-start-2 space-y-4 sm:space-y-6">
-
-            {/* Top Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#e5a93c] border-2 border-[#071325] text-[#071325] text-xs font-extrabold uppercase tracking-[0.16em] shadow-[4px_4px_0_0_#071325]">
-              <span className="w-2 h-2 rounded-full bg-[#e5a93c] animate-pulse"></span>
-              <span>Official SOE Students Body</span>
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pb-6 pt-6 sm:px-6 sm:pb-12 sm:pt-12 lg:px-8 lg:pt-16">
+        <div className="grid grid-cols-1 items-center gap-6 sm:gap-8 lg:grid-cols-12 lg:gap-12">
+          <div className="space-y-3 sm:col-span-10 sm:col-start-2 sm:space-y-6">
+            <div className="inline-flex items-center border-2 border-[#071325] bg-[#e5a93c] px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.12em] text-[#071325]">
+              Official Students Body
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white leading-[0.92]">
-              Inspiring Engineering Minds. <br className="hidden sm:block" />
-              <span className="text-[#e5a93c]">Shaping Kenya&apos;s Future.</span>
+            <h1 className="text-3xl font-black uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Inspiring Engineering Minds.
+              <span className="block text-[#e5a93c]">Shaping Kenya&apos;s Future.</span>
             </h1>
 
-            {/* University SEO Paragraph */}
-            <p className="text-sm sm:text-lg text-slate-300 max-w-4xl leading-relaxed text-left">
-              <span className="sm:hidden">
-                Empowering visionary student engineers at Dedan Kimathi University of Technology across Mechatronics, Mechanical, Electrical, Civil, and Chemical disciplines.
-              </span>
-              <span className="hidden sm:inline">
-                Welcome to the official page of the <strong className="text-white font-semibold">DeKUT Engineering Students Association (DESA)</strong> at <strong className="text-white font-semibold">Dedan Kimathi University of Technology (DeKUT)</strong>. We nurture visionary student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical disciplines, bridging world-class academic rigour with industrial mastery.
-              </span>
+            <p className="text-base leading-relaxed text-slate-200 sm:max-w-4xl sm:text-lg">
+              Welcome to the official page of the{" "}
+              <strong className="font-semibold text-white">DeKUT Engineering Students Association (DESA)</strong>{" "}
+              at{" "}
+              <strong className="font-semibold text-white">Dedan Kimathi University of Technology (DeKUT)</strong>.
+              {" "}We bring together student engineers across Mechatronics, Mechanical, Electrical, Civil, and Chemical disciplines.
             </p>
 
-            {/* Action Buttons: Dual Command Center CTAs */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-4 pt-1 sm:pt-2">
+            <div className="grid grid-cols-2 items-stretch gap-3 pt-1 sm:flex sm:items-center sm:gap-4 sm:pt-2">
+              <Link
+                href="/membership#register"
+                className="flex min-h-12 items-center justify-center gap-2 border-2 border-[#071325] bg-[#e5a93c] px-3 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-[#071325] shadow-[4px_4px_0_0_#e5a93c] transition-colors hover:bg-white sm:px-6 sm:text-sm"
+              >
+                Join DESA
+              </Link>
+
               <Link
                 href="/news-events"
-                className="min-h-12 justify-center bg-[#e5a93c] hover:bg-white text-[#071325] text-xs sm:text-sm font-extrabold uppercase tracking-wide px-4 sm:px-6 py-3 border-2 border-[#071325] shadow-[5px_5px_0_0_#e5a93c] hover:shadow-[7px_7px_0_0_#ffffff] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer text-center"
+                className="flex min-h-12 items-center justify-center gap-1.5 border-2 border-white/80 bg-[#071325]/35 px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-white transition-colors hover:border-[#e5a93c] hover:text-[#e5a93c] sm:gap-2 sm:px-6 sm:text-sm"
               >
-                <span>Explore Events</span>
-                <ArrowRightIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              </Link>
-
-              <Link
-                href="/membership#lookup"
-                className="min-h-12 justify-center bg-[#071325] hover:bg-[#142646] text-white text-xs sm:text-sm font-bold uppercase tracking-wide px-4 sm:px-6 py-3 border-2 border-white hover:border-[#e5a93c] shadow-[5px_5px_0_0_#ffffff] hover:shadow-[7px_7px_0_0_#e5a93c] transition-all flex items-center gap-1.5 sm:gap-2 text-center"
-              >
-                <span>Membership</span>
+                Explore Events
+                <ArrowRightIcon className="h-4 w-4 shrink-0" />
               </Link>
             </div>
 
-            {/* Quick Accreditation Badges */}
-            <div className="pt-4 sm:pt-5 flex flex-wrap items-center gap-y-2.5 gap-x-4 sm:gap-x-8 text-xs text-slate-200 border-t-2 border-[#e5a93c]">
-              <div className="flex items-center gap-2">
-                <ShieldCheckIcon className="w-4 h-4 text-[#e5a93c] shrink-0" />
-                <span>Official Student Body</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <AwardIcon className="w-4 h-4 text-[#e5a93c] shrink-0" />
-                <span>Engineering Centered</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CpuIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Innovation & Tech Hub</span>
-              </div>
+            <div className="hidden border-t border-[#e5a93c]/70 pt-5 text-xs text-slate-200 sm:flex sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-2">
+              <span>Official Student Body</span>
+              <span>Engineering Centered</span>
+              <span>Innovation &amp; Tech Hub</span>
             </div>
           </div>
-
         </div>
       </div>
     </section>

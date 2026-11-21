@@ -25,7 +25,7 @@ export default function LatestDispatches({ posts }: LatestDispatchesProps) {
               DESA / Dispatches
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase text-[#071325] tracking-tight leading-[0.95] max-w-3xl">
-              Latest Dispatches & Event Calendar
+              Latest Dispatches & Events Calendar
             </h2>
             <p className="text-sm text-slate-700 mt-3">
               Upcoming technical sessions, campus workshops, and concluded excursion recaps.
@@ -45,7 +45,7 @@ export default function LatestDispatches({ posts }: LatestDispatchesProps) {
           {featured.map((post, index) => (
             <article
               key={post.slug}
-              className="bg-white border-2 border-[#071325] shadow-[5px_5px_0_0_#071325] hover:shadow-[7px_7px_0_0_#e5a93c] hover:border-[#b87a14] transition-all flex flex-col justify-between overflow-hidden group"
+              className="flex flex-col justify-between overflow-hidden border-2 border-[#071325] bg-white transition-colors hover:border-[#b87a14] group"
             >
               <div>
                 <div className="relative h-48 w-full bg-[#071325] overflow-hidden border-b-2 border-[#071325]">
