@@ -45,7 +45,7 @@ export default function AdminArticlePreviewDialog({ article, onClose, onApprove,
 
         <div className="flex items-center justify-end gap-2.5 border-t border-slate-200 pt-4">
           <button onClick={() => void onDelete(article.id)} className="cursor-pointer bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition-colors hover:bg-red-100">
-            Reject & Move to Trash
+            Move to Trash
           </button>
           {article.status === "Pending Review" && (
             <button onClick={() => void onApprove(article.id)} className="cursor-pointer bg-[#0a5c36] px-5 py-2 text-xs font-bold text-white shadow transition-colors hover:bg-[#074729]">

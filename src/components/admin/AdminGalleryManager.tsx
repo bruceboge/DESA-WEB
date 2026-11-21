@@ -10,9 +10,9 @@ type Props = { galleryForm: GalleryFormDraft; setGalleryForm: Dispatch<SetStateA
 export default function AdminGalleryManagerPanel(props: Props) {
   const { galleryForm, setGalleryForm, galleryDraftStatus, discardGalleryDraft, handleGalleryPhotoSelect, isUploadingGalleryImage, galleryImagePreview, galleryCompressionStats, handleGallerySubmit, isAddingGalleryPhoto, photos, handleDeletePhoto, categories } = props;
   return (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Upload New Official Photo */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-sm space-y-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-[#071325]">
                   Upload Photos to Gallery
@@ -38,15 +38,16 @@ export default function AdminGalleryManagerPanel(props: Props) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Photo File */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-photo-file" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Event Photo <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="gallery-photo-file"
                       type="file"
                       required
                       accept="image/png, image/jpeg, image/webp"
                       onChange={handleGalleryPhotoSelect}
-                      className="w-full text-xs text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#071325] file:text-[#e5a93c] hover:file:bg-[#0c1a32] cursor-pointer"
+                      className="w-full text-sm text-slate-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#071325] file:text-[#e5a93c] hover:file:bg-[#0c1a32] cursor-pointer"
                     />
                     {isUploadingGalleryImage && (
                       <span className="text-[11px] text-slate-500 mt-1 block">
@@ -73,27 +74,29 @@ export default function AdminGalleryManagerPanel(props: Props) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-title" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Event / Photo Title <span className="text-red-500">*</span>
                     </label>
                     <input
+                      id="gallery-title"
                       type="text"
                       required
                       placeholder="e.g. Masquerade Dinner 2026 Red Carpet"
                       value={galleryForm.title}
                       onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-category" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Category
                     </label>
                     <select
+                      id="gallery-category"
                       value={galleryForm.category}
                       onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     >
                       {categories.map((cat) => (
                         <option key={cat} value={cat}>
@@ -104,55 +107,59 @@ export default function AdminGalleryManagerPanel(props: Props) {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-department" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Department / Group
                     </label>
                     <input
+                      id="gallery-department"
                       type="text"
                       placeholder="e.g. School of Engineering"
                       value={galleryForm.department}
                       onChange={(e) => setGalleryForm({ ...galleryForm, department: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-location" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Location
                     </label>
                     <input
+                      id="gallery-location"
                       type="text"
                       placeholder="e.g. Golden Gates Hotel, Nyeri"
                       value={galleryForm.location}
                       onChange={(e) => setGalleryForm({ ...galleryForm, location: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-date" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Date
                     </label>
                     <input
+                      id="gallery-date"
                       type="text"
                       placeholder="e.g. 4 December 2026"
                       value={galleryForm.date}
                       onChange={(e) => setGalleryForm({ ...galleryForm, date: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     />
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">
+                    <label htmlFor="gallery-description" className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
                       Caption / Narrative <span className="text-red-500">*</span>
                     </label>
                     <textarea
+                      id="gallery-description"
                       required
                       rows={2}
                       placeholder="Official caption describing the moment..."
                       value={galleryForm.description}
                       onChange={(e) => setGalleryForm({ ...galleryForm, description: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-[#071325] focus:outline-none focus:ring-2 focus:ring-[#e5a93c]"
                     />
                   </div>
                 </div>
@@ -160,7 +167,7 @@ export default function AdminGalleryManagerPanel(props: Props) {
                 <button
                   type="submit"
                   disabled={isAddingGalleryPhoto || !galleryForm.image}
-                  className="bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] font-bold text-xs px-6 py-3 rounded-xl transition-colors shadow cursor-pointer disabled:opacity-50"
+                  className="bg-[#071325] hover:bg-[#0c1a32] text-[#e5a93c] font-bold text-sm px-6 py-3 rounded-xl transition-colors shadow cursor-pointer disabled:opacity-50"
                 >
                   {isAddingGalleryPhoto ? "Adding to Official Gallery..." : "Add to Official Gallery"}
                 </button>
@@ -172,8 +179,13 @@ export default function AdminGalleryManagerPanel(props: Props) {
               <h3 className="text-base font-bold text-[#071325]">
                 Current Official Gallery Photos ({photos.length})
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {photos.map((p) => (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {photos.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-10 text-center sm:col-span-2 xl:col-span-3">
+                    <p className="text-sm font-semibold text-slate-700">The gallery is ready for its first photo</p>
+                    <p className="mt-1 text-xs text-slate-500">Uploaded official photos will appear here.</p>
+                  </div>
+                ) : photos.map((p) => (
                   <div
                     key={p.id}
                     className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between"
