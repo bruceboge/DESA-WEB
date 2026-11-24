@@ -176,6 +176,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#e5a93c] selection:text-[#071325]" suppressHydrationWarning>
         <AppShell>{children}</AppShell>
+        <ServiceWorkerRegister />
         <Analytics />
       </body>
     </html>

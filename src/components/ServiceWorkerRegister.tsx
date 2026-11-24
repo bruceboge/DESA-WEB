@@ -15,12 +15,57 @@ export default function ServiceWorkerRegister() {
     }
 
     navigator.serviceWorker
-      .register("/sw.js")
+      .register("/sw.js", {
+        scope: "/",
+        updateViaCache: "none",
+      })
       .then((registration) => {
         console.log(
           "DESA Service Worker registered:",
           registration.scope
         );
+
+        const activateWaitingWorker = () => {
+          if (registration.waiting) {
+            registration.waiting.postMessage({ type: "SKIP_WAITING" });
+          }
+        };
+
+        const reloadWhenControlled = () => {
+          window.location.reload();
+        };
+
+        registration.addEventListener("updatefound", () => {
+          const installingWorker = registration.installing;
+          if (!installingWorker) {
+            return;
+          }
+
+          installingWorker.addEventListener("statechange", () => {
+            if (
+              installingWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              activateWaitingWorker();
+            }
+          });
+        });
+
+        navigator.serviceWorker.addEventListener(
+          "controllerchange",
+          reloadWhenControlled,
+          { once: true }
+        );
+
+        registration.update();
+
+        window.addEventListener("online", () => {
+          registration.update();
+        });
+
+        window.addEventListener("focus", () => {
+          registration.update();
+        });
       })
       .catch((error) => {
         console.error(
