@@ -245,15 +245,6 @@ export default function RollCallPage() {
                 Record your in-person attendance for any technical workshop, general meeting, or engineering session.
               </p>
             </div>
-            <div className="lg:col-span-4 bg-[#0c1a32] rounded-2xl p-5 border border-slate-800 shadow-xl space-y-3">
-              <div className="flex items-center gap-2 pb-2.5 border-b border-slate-800">
-                <ShieldCheckIcon className="w-5 h-5 text-[#e5a93c]" />
-                <span className="text-xs uppercase font-bold tracking-wider text-[#e5a93c]">Privacy &amp; Data Protection</span>
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed text-justify">
-                <strong>We value your privacy.</strong> Attendance entries are private and used only for DESA meeting records.
-              </p>
-            </div>
           </div>
         </div>
       </section>

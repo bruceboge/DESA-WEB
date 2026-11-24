@@ -97,7 +97,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="col-span-1 lg:col-span-4">
+          <div className="col-span-2 sm:col-span-1 lg:col-span-4">
             <h4 className="border-b border-slate-800 pb-2 text-xs font-bold uppercase tracking-wider text-white">
               Contact
             </h4>
@@ -112,7 +112,7 @@ export default function Footer() {
                 <MailIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#e5a93c]" />
                 <a
                   href="mailto:engineeringstudentsassociation@dkut.ac.ke"
-                  className="break-all text-xs leading-relaxed transition-colors hover:text-[#e5a93c]"
+                  className="whitespace-nowrap text-[10px] leading-relaxed transition-colors hover:text-[#e5a93c] sm:text-xs"
                 >
                   engineeringstudentsassociation@dkut.ac.ke
                 </a>
@@ -121,10 +121,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-4 pt-5 text-xs sm:pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="leading-relaxed text-slate-500">
-            © {new Date().getFullYear()} Dedan Kimathi University Engineering Students Association (DESA).
-          </div>
+        <div className="flex flex-col gap-4 pt-5 text-xs sm:pt-6 md:flex-row md:items-center md:justify-end">
           <nav aria-label="Footer policies" className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link href="/privacy" className="text-slate-400 hover:text-[#e5a93c] transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="text-slate-400 hover:text-[#e5a93c] transition-colors">Terms of Use</Link>
@@ -134,17 +131,22 @@ export default function Footer() {
         </div>
 
         <div className="mt-5 border-t border-slate-800 py-4 text-center text-[11px] leading-relaxed text-slate-500 sm:text-xs">
-          Designed for the Engineering Community by{" "}
-          <span className="font-medium text-slate-300">Adiel Mairani</span>
-          {" "}and{" "}
-          <a
-            href="https://bruceboge.me"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-slate-300 transition-colors hover:text-[#e5a93c]"
-          >
+          <p>
+            Designed for the Engineering Community by{" "}
+            <span className="font-medium text-slate-300">Adiel Mairani</span>
+            {" "}and{" "}
+            <a
+              href="https://bruceboge.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-slate-300 transition-colors hover:text-[#e5a93c]"
+            >
               Bruce Boge
-          </a>
+            </a>
+          </p>
+          <p className="mt-2 text-slate-500">
+            © {new Date().getFullYear()} Dedan Kimathi University Engineering Students Association (DESA).
+          </p>
         </div>
       </div>
     </footer>
